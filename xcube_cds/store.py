@@ -20,6 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import atexit
+import os.path
+import shutil
+import tempfile
 from typing import Iterator, Tuple, Optional
 
 import xarray as xr
@@ -41,7 +45,23 @@ from xcube_cds.constants import CDS_DATA_OPENER_ID
 
 import cdsapi
 
+
 class CDSDataOpener(DataOpener):
+
+    def __init__(self):
+        # Create a temporary directory to hold downloaded NetCDF files and
+        # a hook to delete it when the interpreter exits. xarray.open reads
+        # data lazily so we can't just delete the file after returning the
+        # Dataset. We could also use weakref hooks to delete individual files
+        # when the corresponding object is garbage collected, but even then
+        # the directory is useful to group the files and offer an extra
+        # assurance that they will be deleted.
+        tempdir = tempfile.mkdtemp()
+
+        def delete_tempdir():
+            shutil.rmtree(tempdir, ignore_errors=True)
+        atexit.register(delete_tempdir)
+        self._tempdir = tempdir
 
     ###########################################################################
     # DataOpener implementation
@@ -55,8 +75,11 @@ class CDSDataOpener(DataOpener):
 
         era5_params = dict(
             dataset_name=JsonStringSchema(min_length=1),
-            product_type=JsonStringSchema(
-                enum=['monthly_averaged_reanalysis_by_hour_of_day']),
+            product_type=JsonArraySchema(
+                items=(JsonStringSchema(
+                    enum=['monthly_averaged_reanalysis_by_hour_of_day'])
+                )
+            ),
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
                     enum=['2m_temperature']
@@ -88,9 +111,9 @@ class CDSDataOpener(DataOpener):
         required = [
             'product_type',
             'variable_names',
-            'years',
+            'hours',
             'months',
-            'hours'
+            'years',
         ]
         return JsonObjectSchema(
             properties=dict(
@@ -105,9 +128,15 @@ class CDSDataOpener(DataOpener):
 
         client = cdsapi.Client()
 
-        file_path = 'fixme.nc'
-        client.retrieve(data_id, CDSDataOpener._transform_params(open_params),
-                        file_path)
+        # We can't generate a safe unique filename (since the file is created
+        # by client.retrieve, so name generation and file creation won't be
+        # atomic). Instead we atomically create a subdirectory of the temporary
+        # directory for the single file.
+        subdir = tempfile.mkdtemp(dir=self._tempdir)
+        file_path = os.path.join(subdir, 'data.nc')
+        cds_api_params = CDSDataOpener._transform_params(open_params)
+
+        client.retrieve(data_id, cds_api_params, file_path)
         return xr.open_dataset(file_path, decode_cf=True)
 
     @staticmethod
@@ -119,37 +148,42 @@ class CDSDataOpener(DataOpener):
         :return: parameters in form expected by the CDS API
         """
 
+        # Transform our key names and value formats to those expected by
+        # the CDS API.
         transformed = {kv[0]: kv[1]
                        for kv in [CDSDataOpener._transform_param(k, v)
                                   for k, v in plugin_params.items()]}
-        desingletonned = {k: CDSDataOpener._strip_singleton(v)
-                          for k, v in transformed.items()}
+
+        # Transform singleton list values into their single members, as
+        # required by the CDS API.
+        desingletonned = \
+            {k: (v[0] if isinstance(v, list) and len(v) == 1 else v)
+             for k, v in transformed.items()}
+
+        # Add output format parameter.
         desingletonned['format'] = 'netcdf'
         return desingletonned
 
     @staticmethod
-    def _transform_param(key_in, value_in):
-        # TODO: implement the transformations
-        # convert hour integers to hh:mm format
-        # convert month integers to two-digit strings
-        # add 'format' : 'netcdf'
-        # rename keys as required
-        if key_in == 'variable_names':
-            pass
-        elif key_in == 'hours':
-            pass
-        elif key_in == 'months':
-            pass
-        elif key_in == 'years':
-            pass
-        elif key_in == 'bbox':
-            pass
-
-        return key_in, value_in
+    def _transform_param(key, value):
+        if key == 'product_type':
+            return key, value
+        if key == 'variable_names':
+            return 'variable', value
+        elif key == 'hours':
+            return 'time', list(map(lambda x: f'{x:02d}:00', value))
+        elif key == 'months':
+            return 'month', list(map(lambda x: f'{x:02d}', value))
+        elif key == 'years':
+            return 'year', list(map(lambda x: f'{x:04d}', value))
+        elif key == 'bbox':
+            return 'area', value
+        else:
+            raise ValueError(f'Unhandled key "{key}"')
 
     @staticmethod
     def _strip_singleton(sequence):
-        return sequence[0] if len(sequence) == 0 else sequence
+        return
 
 
 class CDSDataStore(CDSDataOpener, DataStore):
