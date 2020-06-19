@@ -22,6 +22,7 @@
 
 import atexit
 import os.path
+import re
 import shutil
 import tempfile
 from typing import Iterator, Tuple, Optional
@@ -48,7 +49,7 @@ import cdsapi
 
 class CDSDataOpener(DataOpener):
 
-    def __init__(self):
+    def __init__(self, normalize_names: Optional[bool] = False):
         # Create a temporary directory to hold downloaded NetCDF files and
         # a hook to delete it when the interpreter exits. xarray.open reads
         # data lazily so we can't just delete the file after returning the
@@ -57,6 +58,8 @@ class CDSDataOpener(DataOpener):
         # the directory is useful to group the files and offer an extra
         # assurance that they will be deleted.
         tempdir = tempfile.mkdtemp()
+
+        self.normalize_names = normalize_names
 
         def delete_tempdir():
             shutil.rmtree(tempdir, ignore_errors=True)
@@ -82,7 +85,8 @@ class CDSDataOpener(DataOpener):
             ),
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
-                    enum=['2m_temperature']
+                    enum=['2m_temperature',
+                          'vertical_integral_of_temperature']
                 )),
                 unique_items=True
             ),
@@ -137,7 +141,18 @@ class CDSDataOpener(DataOpener):
         cds_api_params = CDSDataOpener._transform_params(open_params)
 
         client.retrieve(data_id, cds_api_params, file_path)
-        return xr.open_dataset(file_path, decode_cf=True)
+        dataset = xr.open_dataset(file_path, decode_cf=True)
+
+        if self.normalize_names:
+            rename_dict = {}
+            for name in dataset.data_vars.keys():
+                normalized_name = re.sub('\W|^(?=\d)', '_', name)
+                if name != normalized_name:
+                    rename_dict[name] = normalized_name
+            dataset_renamed = dataset.rename_vars(rename_dict)
+            return dataset_renamed
+        else:
+            return dataset
 
     @staticmethod
     def _transform_params(plugin_params):
@@ -188,7 +203,8 @@ class CDSDataOpener(DataOpener):
 
 class CDSDataStore(CDSDataOpener, DataStore):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self._dataset_ids = 'reanalysis-era5-single-levels-monthly-means',
 
     ###########################################################################
