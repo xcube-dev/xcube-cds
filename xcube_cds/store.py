@@ -41,7 +41,7 @@ from xcube.util.jsonschema import JsonIntegerSchema
 from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
-from xcube_cds.constants import DEFAULT_NUM_RETRIES
+from xcube_cds.constants import DEFAULT_NUM_RETRIES, ERA5_PARAMETERS
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 
 import cdsapi
@@ -50,6 +50,8 @@ import cdsapi
 class CDSDataOpener(DataOpener):
 
     def __init__(self, normalize_names: Optional[bool] = False):
+        self.normalize_names = normalize_names
+
         # Create a temporary directory to hold downloaded NetCDF files and
         # a hook to delete it when the interpreter exits. xarray.open reads
         # data lazily so we can't just delete the file after returning the
@@ -58,8 +60,6 @@ class CDSDataOpener(DataOpener):
         # the directory is useful to group the files and offer an extra
         # assurance that they will be deleted.
         tempdir = tempfile.mkdtemp()
-
-        self.normalize_names = normalize_names
 
         def delete_tempdir():
             shutil.rmtree(tempdir, ignore_errors=True)
@@ -80,13 +80,16 @@ class CDSDataOpener(DataOpener):
             dataset_name=JsonStringSchema(min_length=1),
             product_type=JsonArraySchema(
                 items=(JsonStringSchema(
-                    enum=['monthly_averaged_reanalysis_by_hour_of_day'])
+                    enum=['monthly_averaged_ensemble_members',
+                          'monthly_averaged_ensemble_members_by_hour_of_day',
+                          'monthly_averaged_reanalysis',
+                          'monthly_averaged_reanalysis_by_hour_of_day', ])
                 )
             ),
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
-                    enum=['2m_temperature',
-                          'vertical_integral_of_temperature']
+                    enum=[cds_api_name
+                          for cds_api_name, _, _, _ in ERA5_PARAMETERS]
                 )),
                 unique_items=True
             ),
@@ -140,8 +143,16 @@ class CDSDataOpener(DataOpener):
         file_path = os.path.join(subdir, 'data.nc')
         cds_api_params = CDSDataOpener._transform_params(open_params)
 
+        # This call returns a Result object, which at present we make
+        # no use of.
         client.retrieve(data_id, cds_api_params, file_path)
+
+        # decode_cf is the default, but it's clearer to make it explicit.
         dataset = xr.open_dataset(file_path, decode_cf=True)
+
+        # The API doesn't close the session automatically, so we need to
+        # do it explicitly here to avoid leaving an open socket.
+        client.session.close()
 
         if self.normalize_names:
             rename_dict = {}
@@ -196,10 +207,6 @@ class CDSDataOpener(DataOpener):
         else:
             raise ValueError(f'Unhandled key "{key}"')
 
-    @staticmethod
-    def _strip_singleton(sequence):
-        return
-
 
 class CDSDataStore(CDSDataOpener, DataStore):
 
@@ -237,17 +244,27 @@ class CDSDataStore(CDSDataOpener, DataStore):
         return data_id in self._dataset_ids
 
     def describe_data(self, data_id: str) -> DataDescriptor:
+        if data_id not in self._dataset_ids:
+            raise ValueError(f'data_id "{data_id}" not supported.')
         return DatasetDescriptor(
             data_id=data_id,
-            data_vars=[VariableDescriptor(
-                name="t2m",
+            data_vars=self._create_era5_variable_descriptors())
+
+    @staticmethod
+    def _create_era5_variable_descriptors():
+        return [
+            VariableDescriptor(
+                name=netcdf_name,
                 # dtype string format not formally defined as of 2020-06-18.
                 # t2m is actually stored as a short with scale and offset in
                 # the NetCDF file, but converted to float by xarray on opening:
                 # see http://xarray.pydata.org/en/stable/io.html .
                 dtype='float32',
                 dims=('time', 'latitude', 'longitude'),
-                attrs=dict(units='K', long_name='2 metre temperature'))])
+                description=long_name,
+                attrs=dict(units=units, long_name=long_name))
+            for (api_name, netcdf_name, units, long_name) in ERA5_PARAMETERS
+        ]
 
     # noinspection PyTypeChecker
     def search_data(self, type_id: Optional[str] = None, **search_params) -> \
