@@ -28,16 +28,15 @@ from xcube_cds.constants import CDS_DATA_OPENER_ID
 
 
 def init_plugin(ext_registry: extension.ExtensionRegistry):
-    # xcube DataAccessor extensions
     ext_registry.add_extension(
         loader=extension.import_component('xcube_cds.store:CDSDataStore'),
         point=EXTENSION_POINT_DATA_STORES,
         name=CDS_DATA_STORE_ID,
-        description='CDS API')
+        description='Climate Data Store API')
 
-    # xcube DataAccessor extensions
     ext_registry.add_extension(
         loader=extension.import_component('xcube_cds.store:CDSDataOpener'),
         point=EXTENSION_POINT_DATA_OPENERS,
         name=CDS_DATA_OPENER_ID,
-        description='xarray.Dataset in NetCDF format from CDS Hub Cloud API')
+        description='xarray.Dataset in NetCDF format '
+                    'from Climate Data Store API')

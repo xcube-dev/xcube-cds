@@ -39,7 +39,6 @@ class CDSStoreTest(unittest.TestCase):
             hours=[0], months=[1], years=[2019]
         )
         self.assertIsNotNone(dataset)
-        self.ass
 
     def test_normalize_variable_names(self):
         store = CDSDataStore(normalize_names=True)

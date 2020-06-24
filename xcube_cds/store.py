@@ -72,7 +72,7 @@ class CDSDataOpener(DataOpener):
     def get_open_data_params_schema(self, data_id: Optional[str] = None) ->\
             JsonObjectSchema:
 
-        self._validate_data_id(data_id)
+        self._validate_data_id(data_id, allow_none=True)
 
         era5_params = dict(
             dataset_name=JsonStringSchema(min_length=1),
@@ -195,8 +195,12 @@ class CDSDataOpener(DataOpener):
         else:
             raise ValueError(f'Unhandled key "{key}"')
 
-    def _validate_data_id(self, data_id):
+    def _validate_data_id(self, data_id, allow_none=False):
+        if (data_id is None) and allow_none:
+            return
         if data_id not in self._valid_data_ids:
+            import traceback
+            traceback.print_stack()
             raise ValueError(f'Unknown data id "{data_id}"')
 
 
@@ -276,7 +280,7 @@ class CDSDataStore(CDSDataOpener, DataStore):
                             type_id: Optional[str] = None) -> \
             Tuple[str, ...]:
         self._assert_valid_type_id(type_id)
-        self._validate_data_id(data_id)
+        self._assert_valid_opener_id(data_id)
         return CDS_DATA_OPENER_ID,
 
     def get_open_data_params_schema(self, data_id: Optional[str] = None,
