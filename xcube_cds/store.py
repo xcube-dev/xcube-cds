@@ -36,7 +36,7 @@ from xcube.core.store.descriptor import TYPE_ID_DATASET
 from xcube.core.store.descriptor import VariableDescriptor
 from xcube.core.store.store import DataStore
 from xcube.core.store.store import DataStoreError
-from xcube.util.jsonschema import JsonArraySchema
+from xcube.util.jsonschema import JsonArraySchema, JsonBooleanSchema
 from xcube.util.jsonschema import JsonIntegerSchema
 from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
@@ -48,10 +48,9 @@ import cdsapi
 
 
 class CDSDataOpener(DataOpener):
+    """A data opener for the Copernicus Climate Data Store"""
 
-    def __init__(self, normalize_names: Optional[bool] = False):
-        self.normalize_names = normalize_names
-
+    def __init__(self):
         # Create a temporary directory to hold downloaded NetCDF files and
         # a hook to delete it when the interpreter exits. xarray.open reads
         # data lazily so we can't just delete the file after returning the
@@ -65,6 +64,7 @@ class CDSDataOpener(DataOpener):
             shutil.rmtree(tempdir, ignore_errors=True)
         atexit.register(delete_tempdir)
         self._tempdir = tempdir
+        self._valid_data_ids = ('reanalysis-era5-single-levels-monthly-means', )
 
     ###########################################################################
     # DataOpener implementation
@@ -72,9 +72,7 @@ class CDSDataOpener(DataOpener):
     def get_open_data_params_schema(self, data_id: Optional[str] = None) ->\
             JsonObjectSchema:
 
-        valid_data_ids = ['reanalysis-era5-single-levels-monthly-means']
-        if data_id not in valid_data_ids:
-            raise ValueError(f'Unknown data id "{data_id}"')
+        self._validate_data_id(data_id)
 
         era5_params = dict(
             dataset_name=JsonStringSchema(min_length=1),
@@ -84,7 +82,7 @@ class CDSDataOpener(DataOpener):
                           'monthly_averaged_ensemble_members_by_hour_of_day',
                           'monthly_averaged_reanalysis',
                           'monthly_averaged_reanalysis_by_hour_of_day', ])
-                )
+                       )
             ),
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
@@ -154,21 +152,11 @@ class CDSDataOpener(DataOpener):
         # do it explicitly here to avoid leaving an open socket.
         client.session.close()
 
-        if self.normalize_names:
-            rename_dict = {}
-            for name in dataset.data_vars.keys():
-                normalized_name = re.sub('\W|^(?=\d)', '_', name)
-                if name != normalized_name:
-                    rename_dict[name] = normalized_name
-            dataset_renamed = dataset.rename_vars(rename_dict)
-            return dataset_renamed
-        else:
-            return dataset
+        return dataset
 
     @staticmethod
     def _transform_params(plugin_params):
-        """
-        Transform supplied parameters to CDS API format.
+        """Transform supplied parameters to CDS API format.
 
         :param plugin_params: parameters in form expected by this plugin
         :return: parameters in form expected by the CDS API
@@ -207,28 +195,41 @@ class CDSDataOpener(DataOpener):
         else:
             raise ValueError(f'Unhandled key "{key}"')
 
+    def _validate_data_id(self, data_id):
+        if data_id not in self._valid_data_ids:
+            raise ValueError(f'Unknown data id "{data_id}"')
+
 
 class CDSDataStore(CDSDataOpener, DataStore):
 
-    def __init__(self, **kwargs):
+    def __init__(self,
+                 normalize_names: Optional[bool] = False,
+                 num_retries: Optional[int] = DEFAULT_NUM_RETRIES,
+                 **kwargs):
         super().__init__(**kwargs)
-        self._dataset_ids = 'reanalysis-era5-single-levels-monthly-means',
+        self.normalize_names = normalize_names
+        self.num_retries = num_retries
 
     ###########################################################################
     # DataStore implementation
 
     @classmethod
     def get_data_store_params_schema(cls) -> JsonObjectSchema:
+        params = dict(
+            normalize_names=JsonBooleanSchema(default=False)
+        )
+
         # For now, let CDS API use defaults or environment variables for
         # most parameters.
         cds_params = dict(
             num_retries=JsonIntegerSchema(default=DEFAULT_NUM_RETRIES,
                                           minimum=0),
         )
-        required = None
+
+        params.update(cds_params)
         return JsonObjectSchema(
-            properties=cds_params,
-            required=required,
+            properties=params,
+            required=None,
             additional_properties=False
         )
 
@@ -238,14 +239,13 @@ class CDSDataStore(CDSDataOpener, DataStore):
 
     def get_data_ids(self, type_id: Optional[str] = None) -> Iterator[str]:
         self._assert_valid_type_id(type_id)
-        return iter(self._dataset_ids)
+        return iter(self._valid_data_ids)
 
     def has_data(self, data_id: str) -> bool:
-        return data_id in self._dataset_ids
+        return data_id in self._valid_data_ids
 
     def describe_data(self, data_id: str) -> DataDescriptor:
-        if data_id not in self._dataset_ids:
-            raise ValueError(f'data_id "{data_id}" not supported.')
+        self._validate_data_id(data_id)
         return DatasetDescriptor(
             data_id=data_id,
             data_vars=self._create_era5_variable_descriptors())
@@ -276,19 +276,31 @@ class CDSDataStore(CDSDataOpener, DataStore):
                             type_id: Optional[str] = None) -> \
             Tuple[str, ...]:
         self._assert_valid_type_id(type_id)
+        self._validate_data_id(data_id)
         return CDS_DATA_OPENER_ID,
 
     def get_open_data_params_schema(self, data_id: Optional[str] = None,
                                     opener_id: Optional[str] = None) -> \
             JsonObjectSchema:
         self._assert_valid_opener_id(opener_id)
-
+        self._validate_data_id(data_id)
         return super().get_open_data_params_schema(data_id)
 
     def open_data(self, data_id: str, opener_id: Optional[str] = None,
                   **open_params) -> xr.Dataset:
         self._assert_valid_opener_id(opener_id)
-        return super().open_data(data_id, **open_params)
+        self._validate_data_id(data_id)
+        dataset = super().open_data(data_id, **open_params)
+        if self.normalize_names:
+            rename_dict = {}
+            for name in dataset.data_vars.keys():
+                normalized_name = re.sub('\W|^(?=\d)', '_', name)
+                if name != normalized_name:
+                    rename_dict[name] = normalized_name
+            dataset_renamed = dataset.rename_vars(rename_dict)
+            return dataset_renamed
+        else:
+            return dataset
 
     ###########################################################################
     # Implementation helpers

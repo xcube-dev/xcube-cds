@@ -22,22 +22,56 @@
 
 import unittest
 
+from jsonschema import ValidationError
+
 from xcube_cds.store import CDSDataOpener
+from xcube_cds.store import CDSDataStore
 
 
 class CDSStoreTest(unittest.TestCase):
-    def test_open(self):
 
+    def test_open(self):
         opener = CDSDataOpener()
         dataset = opener.open_data(
             'reanalysis-era5-single-levels-monthly-means',
             product_type=['monthly_averaged_reanalysis_by_hour_of_day'],
             variable_names=['2m_temperature'],
-            hours=[0],
-            months=[1],
-            years=[2019]
+            hours=[0], months=[1], years=[2019]
         )
         self.assertIsNotNone(dataset)
+        self.ass
+
+    def test_normalize_variable_names(self):
+        store = CDSDataStore(normalize_names=True)
+        dataset = store.open_data(
+            'reanalysis-era5-single-levels-monthly-means',
+            product_type=['monthly_averaged_reanalysis_by_hour_of_day'],
+            # Should be returned as p54.162, and normalized to p54_162.
+            variable_names=['vertical_integral_of_temperature'],
+            hours=[0], months=[1], years=[2019]
+        )
+        self.assertIsNotNone(dataset)
+        self.assertTrue('p54_162' in dataset.variables)
+
+    def test_invalid_data_id(self):
+        store = CDSDataStore()
+        with self.assertRaises(ValueError):
+            store.open_data(
+                'this-data-id-does-not-exist',
+                product_type=['monthly_averaged_reanalysis_by_hour_of_day'],
+                variable_names=['2m_temperature'],
+                hours=[0], months=[1], years=[2019]
+            )
+
+    def test_request_parameter_out_of_range(self):
+        store = CDSDataStore()
+        with self.assertRaises(ValidationError):
+            store.open_data(
+                'reanalysis-era5-single-levels-monthly-means',
+                product_type=['monthly_averaged_reanalysis_by_hour_of_day'],
+                variable_names=['2m_temperature'],
+                hours=[25], months=[1], years=[2019]
+            )
 
 
 if __name__ == '__main__':
