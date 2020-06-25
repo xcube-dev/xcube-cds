@@ -62,63 +62,75 @@ class CDSDataOpener(DataOpener):
 
         def delete_tempdir():
             shutil.rmtree(tempdir, ignore_errors=True)
+
         atexit.register(delete_tempdir)
         self._tempdir = tempdir
-        self._valid_data_ids = ('reanalysis-era5-single-levels-monthly-means', )
+        self._valid_data_ids = ('reanalysis-era5-single-levels-monthly-means',)
 
     ###########################################################################
     # DataOpener implementation
 
-    def get_open_data_params_schema(self, data_id: Optional[str] = None) ->\
+    def get_open_data_params_schema(self, data_id: Optional[str] = None) -> \
             JsonObjectSchema:
 
         self._validate_data_id(data_id, allow_none=True)
 
         era5_params = dict(
-            dataset_name=JsonStringSchema(min_length=1),
+            dataset_name=JsonStringSchema(min_length=1,
+                                          enum=list(self._valid_data_ids),
+                                          default=self._valid_data_ids[0]),
             product_type=JsonArraySchema(
                 items=(JsonStringSchema(
                     enum=['monthly_averaged_ensemble_members',
                           'monthly_averaged_ensemble_members_by_hour_of_day',
                           'monthly_averaged_reanalysis',
                           'monthly_averaged_reanalysis_by_hour_of_day', ])
-                       )
+                ),
+                unique_items=True,
+                default=['monthly_averaged_reanalysis'] # not supported?
             ),
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
+                    min_length=1,
                     enum=[cds_api_name
                           for cds_api_name, _, _, _ in ERA5_PARAMETERS]
                 )),
                 unique_items=True
             ),
-            hours=JsonArraySchema(
-                items=(JsonIntegerSchema(minimum=0, maximum=23),),
-                unique_items=True,
-                min_items=1
-            ),
-            months=JsonArraySchema(
-                items=(JsonIntegerSchema(minimum=1, maximum=12),),
-                unique_items=True,
-                min_items=1
-            ),
-            years=JsonArraySchema(
-                items=(JsonIntegerSchema(minimum=1979, maximum=2020),),
-                unique_items=True,
-                min_items=1
-            ),
+            crs=JsonStringSchema(nullable=True, default='WGS84',
+                                 enum=[None, 'WGS84']),
             # N, W, S, E
             bbox=JsonArraySchema(items=(
                 JsonNumberSchema(minimum=-90, maximum=90),
                 JsonNumberSchema(minimum=-180, maximum=180),
                 JsonNumberSchema(minimum=-90, maximum=90),
-                JsonNumberSchema(minimum=-180, maximum=180)))
+                JsonNumberSchema(minimum=-180, maximum=180))),
+            spatial_res=JsonNumberSchema(minimum=0.25, maximum=10),
+            time_range=JsonArraySchema(
+                items=[JsonStringSchema(format='date-time'),
+                       JsonStringSchema(format='date-time', nullable=True)]),
+            time_period=JsonStringSchema(const='1M'),
+            hours=JsonArraySchema(
+                items=JsonIntegerSchema(minimum=0, maximum=23),
+                unique_items=True,
+                min_items=1
+            ),
+            months=JsonArraySchema(
+                items=JsonIntegerSchema(minimum=1, maximum=12),
+                unique_items=True,
+                min_items=1
+            ),
+            years=JsonArraySchema(
+                items=JsonIntegerSchema(minimum=1979, maximum=2020),
+                unique_items=True,
+                min_items=1
+            ),
         )
         required = [
-            'product_type',
             'variable_names',
-            'hours',
-            'months',
-            'years',
+            'bbox',
+            'spatial_res',
+            'time_range',
         ]
         return JsonObjectSchema(
             properties=dict(
@@ -162,38 +174,62 @@ class CDSDataOpener(DataOpener):
         :return: parameters in form expected by the CDS API
         """
 
-        # Transform our key names and value formats to those expected by
-        # the CDS API.
-        transformed = {kv[0]: kv[1]
-                       for kv in [CDSDataOpener._transform_param(k, v)
-                                  for k, v in plugin_params.items()]}
+        # Translate our parameters to the CDS API scheme. Initially we use
+        # default values for "month" and "time", and set "year" from the
+        # compulsory time_range parameter.
+        params_combined = {
+            'product_type': plugin_params['product_type'] if 'product_type' in plugin_params else 'monthly_averaged_reanalysis',
+            'variable': plugin_params['variable_names'],
+            'year': CDSDataOpener._time_range_to_years(
+                plugin_params['time_range']),
+            'month': ['01', '02', '03', '04', '05', '06', '07', '08', '09',
+                      '10', '11', '12', ],
+            'time': ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00',
+                     '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
+                     '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
+                     '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', ],
+            'area': plugin_params['bbox'],
+            # Note: the "grid" parameter is not via the web interface, but is
+            # described at
+            # https://confluence.ecmwf.int/display/CKB/ERA5%3A+Web+API+to+CDS+API .
+            'grid': [plugin_params['spatial_res'],
+                     plugin_params['spatial_res']],
+            'format': 'netcdf'
+        }
+
+        # If any of the "years", "months", and "hours" parameters were passed,
+        # they override the time specifications above.
+        time_params = {
+            k1: v1 for k1, v1 in [CDSDataOpener._transform_param(k0, v0)
+                                  for k0, v0 in plugin_params.items()]
+            if k1 is not None}
+        params_combined.update(time_params)
 
         # Transform singleton list values into their single members, as
         # required by the CDS API.
-        desingletonned = \
-            {k: (v[0] if isinstance(v, list) and len(v) == 1 else v)
-             for k, v in transformed.items()}
+        desingletonned = {
+            k: (v[0] if isinstance(v, list) and len(v) == 1 else v)
+            for k, v in params_combined.items()}
 
-        # Add output format parameter.
-        desingletonned['format'] = 'netcdf'
         return desingletonned
 
     @staticmethod
     def _transform_param(key, value):
-        if key == 'product_type':
-            return key, value
-        if key == 'variable_names':
-            return 'variable', value
-        elif key == 'hours':
+        if key == 'hours':
             return 'time', list(map(lambda x: f'{x:02d}:00', value))
         elif key == 'months':
             return 'month', list(map(lambda x: f'{x:02d}', value))
         elif key == 'years':
             return 'year', list(map(lambda x: f'{x:04d}', value))
-        elif key == 'bbox':
-            return 'area', value
         else:
-            raise ValueError(f'Unhandled key "{key}"')
+            return None, None
+
+    @staticmethod
+    def _time_range_to_years(range_array):
+        year_start = int(range_array[0][:4])
+        # Default end year value currently hard-coded for ERA5
+        year_end = 2020 if range_array[1] is None else int(range_array[1][:4])
+        return list(range(year_start, year_end + 1))
 
     def _validate_data_id(self, data_id, allow_none=False):
         if (data_id is None) and allow_none:
@@ -265,7 +301,6 @@ class CDSDataStore(CDSDataOpener, DataStore):
                 # see http://xarray.pydata.org/en/stable/io.html .
                 dtype='float32',
                 dims=('time', 'latitude', 'longitude'),
-                description=long_name,
                 attrs=dict(units=units, long_name=long_name))
             for (api_name, netcdf_name, units, long_name) in ERA5_PARAMETERS
         ]
