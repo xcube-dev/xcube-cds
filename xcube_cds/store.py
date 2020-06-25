@@ -27,24 +27,25 @@ import shutil
 import tempfile
 from typing import Iterator, Tuple, Optional
 
+import cdsapi
 import xarray as xr
 
-from xcube.core.store.accessor import DataOpener
-from xcube.core.store.descriptor import DataDescriptor
-from xcube.core.store.descriptor import DatasetDescriptor
-from xcube.core.store.descriptor import TYPE_ID_DATASET
-from xcube.core.store.descriptor import VariableDescriptor
-from xcube.core.store.store import DataStore
-from xcube.core.store.store import DataStoreError
-from xcube.util.jsonschema import JsonArraySchema, JsonBooleanSchema
+from xcube.core.store import DataDescriptor
+from xcube.core.store import DataOpener
+from xcube.core.store import DataStore
+from xcube.core.store import DataStoreError
+from xcube.core.store import DatasetDescriptor
+from xcube.core.store import TYPE_ID_DATASET
+from xcube.core.store import VariableDescriptor
+from xcube.util.jsonschema import JsonArraySchema
+from xcube.util.jsonschema import JsonBooleanSchema
 from xcube.util.jsonschema import JsonIntegerSchema
 from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
-from xcube_cds.constants import DEFAULT_NUM_RETRIES, ERA5_PARAMETERS
 from xcube_cds.constants import CDS_DATA_OPENER_ID
-
-import cdsapi
+from xcube_cds.constants import DEFAULT_NUM_RETRIES
+from xcube_cds.constants import ERA5_PARAMETERS
 
 
 class CDSDataOpener(DataOpener):
@@ -87,7 +88,7 @@ class CDSDataOpener(DataOpener):
                           'monthly_averaged_reanalysis_by_hour_of_day', ])
                 ),
                 unique_items=True,
-                default=['monthly_averaged_reanalysis'] # not supported?
+                default=['monthly_averaged_reanalysis']  # not supported?
             ),
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
@@ -178,7 +179,8 @@ class CDSDataOpener(DataOpener):
         # default values for "month" and "time", and set "year" from the
         # compulsory time_range parameter.
         params_combined = {
-            'product_type': plugin_params['product_type'] if 'product_type' in plugin_params else 'monthly_averaged_reanalysis',
+            'product_type': plugin_params[
+                'product_type'] if 'product_type' in plugin_params else 'monthly_averaged_reanalysis',
             'variable': plugin_params['variable_names'],
             'year': CDSDataOpener._time_range_to_years(
                 plugin_params['time_range']),
