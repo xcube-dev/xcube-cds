@@ -41,7 +41,7 @@ $ python setup.py develop
 
 xcube_cds makes use of the
 [cdsapi Python library](https://github.com/ecmwf/cdsapi) to connect to the CDS
-API. You can install into an xcube environment using pip:
+API. You can install it into an xcube environment using pip:
 
 ```
 $ conda activate xcube
