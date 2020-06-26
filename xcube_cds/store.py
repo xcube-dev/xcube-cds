@@ -333,6 +333,18 @@ class CDSDataStore(CDSDataOpener, DataStore):
         self._assert_valid_opener_id(opener_id)
         self._validate_data_id(data_id)
         dataset = super().open_data(data_id, **open_params)
+
+        dataset = dataset.rename_dims({
+            'longitude': 'lon',
+            'latitude': 'lat'
+        })
+        dataset.transpose('time', 'lat', 'lon')
+        dataset.coords['time'].attrs['standard_name'] = 'time'
+        # TODO: Temporal coordinate variables MUST have units, standard_name,
+        # and any others. standard_name MUST be "time", units MUST have
+        # format "<deltatime> since <datetime>", where datetime must have
+        # ISO-format.
+
         if self.normalize_names:
             rename_dict = {}
             for name in dataset.data_vars.keys():
