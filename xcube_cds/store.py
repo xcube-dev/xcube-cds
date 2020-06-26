@@ -118,7 +118,8 @@ class CDSDataOpener(DataOpener):
                 JsonNumberSchema(minimum=-180, maximum=180),
                 JsonNumberSchema(minimum=-90, maximum=90),
                 JsonNumberSchema(minimum=-180, maximum=180))),
-            spatial_res=JsonNumberSchema(minimum=0.25, maximum=10),
+            spatial_res=JsonNumberSchema(minimum=0.25, maximum=10,
+                                         default=0.25),
             time_range=JsonArraySchema(
                 items=[JsonStringSchema(format='date-time'),
                        JsonStringSchema(format='date-time', nullable=True)]),
@@ -302,9 +303,17 @@ class CDSDataStore(CDSDataOpener, DataStore):
 
     def describe_data(self, data_id: str) -> DataDescriptor:
         self._validate_data_id(data_id)
+        # TODO: generalize -- at present this is hardcoded for ERA5
         return DatasetDescriptor(
             data_id=data_id,
-            data_vars=self._create_era5_variable_descriptors())
+            data_vars=self._create_era5_variable_descriptors(),
+            crs='WGS84',
+            bbox=(90, -180, -90, 180),
+            spatial_res=0.25,
+            time_range=('1979-01-01', None),
+            time_period='1M',
+            open_params_schema=self.get_open_data_params_schema(data_id)
+        )
 
     @staticmethod
     def _create_era5_variable_descriptors():
