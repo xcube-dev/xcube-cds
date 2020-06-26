@@ -33,21 +33,26 @@ class CDSStoreTest(unittest.TestCase):
     def test_open(self):
         opener = CDSDataOpener()
         dataset = opener.open_data(
-            'reanalysis-era5-single-levels-monthly-means',
-            product_type=['monthly_averaged_reanalysis_by_hour_of_day'],
+            'reanalysis-era5-single-levels-monthly-means:'
+            'monthly_averaged_reanalysis',
             variable_names=['2m_temperature'],
-            hours=[0], months=[1], years=[2019]
+            bbox=[1, -1, -1, 1],
+            spatial_res=0.25,
+            time_period='1M',
+            time_range=['2019-01-01', '2020-12-31']
         )
         self.assertIsNotNone(dataset)
 
     def test_normalize_variable_names(self):
         store = CDSDataStore(normalize_names=True)
         dataset = store.open_data(
-            'reanalysis-era5-single-levels-monthly-means',
-            product_type=['monthly_averaged_reanalysis_by_hour_of_day'],
+            'reanalysis-era5-single-levels-monthly-means:'
+            'monthly_averaged_reanalysis',
             # Should be returned as p54.162, and normalized to p54_162.
             variable_names=['vertical_integral_of_temperature'],
-            hours=[0], months=[1], years=[2019]
+            bbox=[2, -2, -2, 2],
+            spatial_res=1.0,
+            time_range=['2019-01-01', None]
         )
         self.assertIsNotNone(dataset)
         self.assertTrue('p54_162' in dataset.variables)
@@ -57,7 +62,6 @@ class CDSStoreTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             store.open_data(
                 'this-data-id-does-not-exist',
-                product_type=['monthly_averaged_reanalysis_by_hour_of_day'],
                 variable_names=['2m_temperature'],
                 hours=[0], months=[1], years=[2019]
             )
@@ -66,10 +70,13 @@ class CDSStoreTest(unittest.TestCase):
         store = CDSDataStore()
         with self.assertRaises(ValidationError):
             store.open_data(
-                'reanalysis-era5-single-levels-monthly-means',
-                product_type=['monthly_averaged_reanalysis_by_hour_of_day'],
+                'reanalysis-era5-single-levels-monthly-means:'
+                'monthly_averaged_reanalysis_by_hour_of_day',
                 variable_names=['2m_temperature'],
-                hours=[25], months=[1], years=[2019]
+                bbox=[1, -1, -1, 181],
+                spatial_res=0.25,
+                time_period='1M',
+                time_range=['2019-01-01', '2020-12-31']
             )
 
 

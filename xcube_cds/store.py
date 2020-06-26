@@ -66,7 +66,18 @@ class CDSDataOpener(DataOpener):
 
         atexit.register(delete_tempdir)
         self._tempdir = tempdir
-        self._valid_data_ids = ('reanalysis-era5-single-levels-monthly-means',)
+        self._product_types = (
+            'monthly_averaged_ensemble_members',
+            'monthly_averaged_ensemble_members_by_hour_of_day',
+            'monthly_averaged_reanalysis',
+            'monthly_averaged_reanalysis_by_hour_of_day',
+        )
+        # product_type is actually a request parameter, but we implement
+        # it as a suffix to the data_id to make it possible to specify
+        # requests using only the standard, known store parameters.
+        self._valid_data_ids = tuple(
+            f'reanalysis-era5-single-levels-monthly-means:{product_type}'
+            for product_type in self._product_types)
 
     ###########################################################################
     # DataOpener implementation
@@ -80,16 +91,6 @@ class CDSDataOpener(DataOpener):
             dataset_name=JsonStringSchema(min_length=1,
                                           enum=list(self._valid_data_ids),
                                           default=self._valid_data_ids[0]),
-            product_type=JsonArraySchema(
-                items=(JsonStringSchema(
-                    enum=['monthly_averaged_ensemble_members',
-                          'monthly_averaged_ensemble_members_by_hour_of_day',
-                          'monthly_averaged_reanalysis',
-                          'monthly_averaged_reanalysis_by_hour_of_day', ])
-                ),
-                unique_items=True,
-                default=['monthly_averaged_reanalysis']  # not supported?
-            ),
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
                     min_length=1,
@@ -152,11 +153,12 @@ class CDSDataOpener(DataOpener):
         # directory for the single file.
         subdir = tempfile.mkdtemp(dir=self._tempdir)
         file_path = os.path.join(subdir, 'data.nc')
-        cds_api_params = CDSDataOpener._transform_params(open_params)
+        dataset_name, cds_api_params = \
+            CDSDataOpener._transform_params(open_params, data_id)
 
         # This call returns a Result object, which at present we make
         # no use of.
-        client.retrieve(data_id, cds_api_params, file_path)
+        client.retrieve(dataset_name, cds_api_params, file_path)
 
         # decode_cf is the default, but it's clearer to make it explicit.
         dataset = xr.open_dataset(file_path, decode_cf=True)
@@ -168,19 +170,20 @@ class CDSDataOpener(DataOpener):
         return dataset
 
     @staticmethod
-    def _transform_params(plugin_params):
+    def _transform_params(plugin_params, data_id):
         """Transform supplied parameters to CDS API format.
 
         :param plugin_params: parameters in form expected by this plugin
         :return: parameters in form expected by the CDS API
         """
 
+        dataset_name, product_type = data_id.split(':')
+
         # Translate our parameters to the CDS API scheme. Initially we use
         # default values for "month" and "time", and set "year" from the
         # compulsory time_range parameter.
         params_combined = {
-            'product_type': plugin_params[
-                'product_type'] if 'product_type' in plugin_params else 'monthly_averaged_reanalysis',
+            'product_type': product_type,
             'variable': plugin_params['variable_names'],
             'year': CDSDataOpener._time_range_to_years(
                 plugin_params['time_range']),
@@ -191,8 +194,8 @@ class CDSDataOpener(DataOpener):
                      '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
                      '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', ],
             'area': plugin_params['bbox'],
-            # Note: the "grid" parameter is not via the web interface, but is
-            # described at
+            # Note: the "grid" parameter is not exposed via the web interface,
+            # but is described at
             # https://confluence.ecmwf.int/display/CKB/ERA5%3A+Web+API+to+CDS+API .
             'grid': [plugin_params['spatial_res'],
                      plugin_params['spatial_res']],
@@ -213,7 +216,7 @@ class CDSDataOpener(DataOpener):
             k: (v[0] if isinstance(v, list) and len(v) == 1 else v)
             for k, v in params_combined.items()}
 
-        return desingletonned
+        return dataset_name, desingletonned
 
     @staticmethod
     def _transform_param(key, value):
@@ -237,8 +240,6 @@ class CDSDataOpener(DataOpener):
         if (data_id is None) and allow_none:
             return
         if data_id not in self._valid_data_ids:
-            import traceback
-            traceback.print_stack()
             raise ValueError(f'Unknown data id "{data_id}"')
 
 
