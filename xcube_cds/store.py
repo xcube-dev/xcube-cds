@@ -66,18 +66,29 @@ class CDSDataOpener(DataOpener):
 
         atexit.register(delete_tempdir)
         self._tempdir = tempdir
-        self._product_types = (
-            'monthly_averaged_ensemble_members',
-            'monthly_averaged_ensemble_members_by_hour_of_day',
-            'monthly_averaged_reanalysis',
-            'monthly_averaged_reanalysis_by_hour_of_day',
+        product_types = (
+            ('monthly_averaged_ensemble_members',
+             'Monthly averaged ensemble members',),
+            ('monthly_averaged_ensemble_members_by_hour_of_day',
+             'Monthly averaged ensemble members by hour of day',),
+            ('monthly_averaged_reanalysis', 'Monthly averaged reanalysis',),
+            ('monthly_averaged_reanalysis_by_hour_of_day',
+             'Monthly averaged reanalysis by hour of day',)
         )
+
         # product_type is actually a request parameter, but we implement
         # it as a suffix to the data_id to make it possible to specify
         # requests using only the standard, known store parameters.
         self._valid_data_ids = tuple(
             f'reanalysis-era5-single-levels-monthly-means:{product_type}'
-            for product_type in self._product_types)
+            for (product_type, _) in product_types)
+
+        self._data_id_to_human_readable = {
+            f'reanalysis-era5-single-levels-monthly-means:{product_type}':
+                ('ERA5 monthly averaged data on single levels – ' +
+                 human_readable)
+            for (product_type, human_readable) in product_types
+        }
 
     ###########################################################################
     # DataOpener implementation
@@ -280,9 +291,11 @@ class CDSDataStore(CDSDataOpener, DataStore):
     def get_type_ids(cls) -> Tuple[str, ...]:
         return TYPE_ID_DATASET,
 
-    def get_data_ids(self, type_id: Optional[str] = None) -> Iterator[str]:
+    def get_data_ids(self, type_id: Optional[str] = None) -> \
+            Iterator[Tuple[str, Optional[str]]]:
         self._assert_valid_type_id(type_id)
-        return iter(self._valid_data_ids)
+        return iter((data_id, self._data_id_to_human_readable[data_id])
+                    for data_id in self._valid_data_ids)
 
     def has_data(self, data_id: str) -> bool:
         return data_id in self._valid_data_ids
