@@ -360,8 +360,18 @@ class CDSDataStore(CDSDataOpener, DataStore):
             'longitude': 'lon',
             'latitude': 'lat'
         })
-        dataset.transpose('time', 'lat', 'lon')
+        dataset = dataset.rename_vars({'longitude': 'lon', 'latitude': 'lat'})
+        dataset.transpose('time', ..., 'lat', 'lon')
         dataset.coords['time'].attrs['standard_name'] = 'time'
+        dataset.coords['lat'].attrs['standard_name'] = 'latitude'
+        dataset.coords['lon'].attrs['standard_name'] = 'longitude'
+
+        # Correct units not entirely clear: cubespec document says
+        # degrees_north / degrees_east for WGS84 Schema, but SH Plugin
+        # had decimal_degrees.
+        dataset.coords['lat'].attrs['units'] = 'degrees_north'
+        dataset.coords['lon'].attrs['units'] = 'degrees_east'
+
         # TODO: Temporal coordinate variables MUST have units, standard_name,
         # and any others. standard_name MUST be "time", units MUST have
         # format "<deltatime> since <datetime>", where datetime must have
@@ -370,7 +380,7 @@ class CDSDataStore(CDSDataOpener, DataStore):
         if self.normalize_names:
             rename_dict = {}
             for name in dataset.data_vars.keys():
-                normalized_name = re.sub('\W|^(?=\d)', '_', name)
+                normalized_name = re.sub(r'\W|^(?=\d)', '_', name)
                 if name != normalized_name:
                     rename_dict[name] = normalized_name
             dataset_renamed = dataset.rename_vars(rename_dict)
