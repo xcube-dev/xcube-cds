@@ -48,10 +48,13 @@ from xcube_cds.constants import DEFAULT_NUM_RETRIES
 from xcube_cds.constants import ERA5_PARAMETERS
 import xcube.core.normalize
 
+
 class CDSDataOpener(DataOpener):
     """A data opener for the Copernicus Climate Data Store"""
 
-    def __init__(self):
+    def __init__(self, normalize_names: Optional[bool] = False):
+        self.normalize_names = normalize_names
+
         # Create a temporary directory to hold downloaded NetCDF files and
         # a hook to delete it when the interpreter exits. xarray.open reads
         # data lazily so we can't just delete the file after returning the
@@ -112,12 +115,12 @@ class CDSDataOpener(DataOpener):
             ),
             crs=JsonStringSchema(nullable=True, default='WGS84',
                                  enum=[None, 'WGS84']),
-            # N, W, S, E
+            # W, S, E, N (will be converted to N, W, S, E)
             bbox=JsonArraySchema(items=(
-                JsonNumberSchema(minimum=-90, maximum=90),
                 JsonNumberSchema(minimum=-180, maximum=180),
                 JsonNumberSchema(minimum=-90, maximum=90),
-                JsonNumberSchema(minimum=-180, maximum=180))),
+                JsonNumberSchema(minimum=-180, maximum=180),
+                JsonNumberSchema(minimum=-90, maximum=90))),
             spatial_res=JsonNumberSchema(minimum=0.25, maximum=10,
                                          default=0.25),
             time_range=JsonArraySchema(
@@ -179,7 +182,39 @@ class CDSDataOpener(DataOpener):
         # do it explicitly here to avoid leaving an open socket.
         client.session.close()
 
-        return dataset
+        dataset = dataset.rename_dims({
+            'longitude': 'lon',
+            'latitude': 'lat'
+        })
+        dataset = dataset.rename_vars({'longitude': 'lon', 'latitude': 'lat'})
+        dataset.transpose('time', ..., 'lat', 'lon')
+        dataset.coords['time'].attrs['standard_name'] = 'time'
+        dataset.coords['lat'].attrs['standard_name'] = 'latitude'
+        dataset.coords['lon'].attrs['standard_name'] = 'longitude'
+
+        # Correct units not entirely clear: cubespec document says
+        # degrees_north / degrees_east for WGS84 Schema, but SH Plugin
+        # had decimal_degrees.
+        dataset.coords['lat'].attrs['units'] = 'degrees_north'
+        dataset.coords['lon'].attrs['units'] = 'degrees_east'
+
+        # TODO: Temporal coordinate variables MUST have units, standard_name,
+        # and any others. standard_name MUST be "time", units MUST have
+        # format "<deltatime> since <datetime>", where datetime must have
+        # ISO-format.
+
+        dataset = xcube.core.normalize.normalize_dataset(dataset)
+
+        if self.normalize_names:
+            rename_dict = {}
+            for name in dataset.data_vars.keys():
+                normalized_name = re.sub(r'\W|^(?=\d)', '_', name)
+                if name != normalized_name:
+                    rename_dict[name] = normalized_name
+            dataset_renamed = dataset.rename_vars(rename_dict)
+            return dataset_renamed
+        else:
+            return dataset
 
     @staticmethod
     def _transform_params(plugin_params, data_id):
@@ -190,6 +225,9 @@ class CDSDataOpener(DataOpener):
         """
 
         dataset_name, product_type = data_id.split(':')
+
+        # We need to split out the bounding box co-ordinates to re-order them.
+        x1, y1, x2, y2 = plugin_params['bbox']
 
         # Translate our parameters to the CDS API scheme. Initially we use
         # default values for "month" and "time", and set "year" from the
@@ -205,7 +243,7 @@ class CDSDataOpener(DataOpener):
                      '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
                      '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
                      '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', ],
-            'area': plugin_params['bbox'],
+            'area': [y2, x1, y1, x2],
             # Note: the "grid" parameter is not exposed via the web interface,
             # but is described at
             # https://confluence.ecmwf.int/display/CKB/ERA5%3A+Web+API+to+CDS+API .
@@ -258,11 +296,9 @@ class CDSDataOpener(DataOpener):
 class CDSDataStore(CDSDataOpener, DataStore):
 
     def __init__(self,
-                 normalize_names: Optional[bool] = False,
                  num_retries: Optional[int] = DEFAULT_NUM_RETRIES,
                  **kwargs):
         super().__init__(**kwargs)
-        self.normalize_names = normalize_names
         self.num_retries = num_retries
 
     ###########################################################################
@@ -354,41 +390,7 @@ class CDSDataStore(CDSDataOpener, DataStore):
                   **open_params) -> xr.Dataset:
         self._assert_valid_opener_id(opener_id)
         self._validate_data_id(data_id)
-        dataset = super().open_data(data_id, **open_params)
-
-        dataset = dataset.rename_dims({
-            'longitude': 'lon',
-            'latitude': 'lat'
-        })
-        dataset = dataset.rename_vars({'longitude': 'lon', 'latitude': 'lat'})
-        dataset.transpose('time', ..., 'lat', 'lon')
-        dataset.coords['time'].attrs['standard_name'] = 'time'
-        dataset.coords['lat'].attrs['standard_name'] = 'latitude'
-        dataset.coords['lon'].attrs['standard_name'] = 'longitude'
-
-        # Correct units not entirely clear: cubespec document says
-        # degrees_north / degrees_east for WGS84 Schema, but SH Plugin
-        # had decimal_degrees.
-        dataset.coords['lat'].attrs['units'] = 'degrees_north'
-        dataset.coords['lon'].attrs['units'] = 'degrees_east'
-
-        # TODO: Temporal coordinate variables MUST have units, standard_name,
-        # and any others. standard_name MUST be "time", units MUST have
-        # format "<deltatime> since <datetime>", where datetime must have
-        # ISO-format.
-
-        dataset = xcube.core.normalize.normalize_dataset(dataset)
-
-        if self.normalize_names:
-            rename_dict = {}
-            for name in dataset.data_vars.keys():
-                normalized_name = re.sub(r'\W|^(?=\d)', '_', name)
-                if name != normalized_name:
-                    rename_dict[name] = normalized_name
-            dataset_renamed = dataset.rename_vars(rename_dict)
-            return dataset_renamed
-        else:
-            return dataset
+        return super().open_data(data_id, **open_params)
 
     ###########################################################################
     # Implementation helpers

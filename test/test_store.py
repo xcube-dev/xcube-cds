@@ -36,7 +36,7 @@ class CDSStoreTest(unittest.TestCase):
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
             variable_names=['2m_temperature'],
-            bbox=[1, -1, -1, 1],
+            bbox=[-1, -1, 1, 1],
             spatial_res=0.25,
             time_period='1M',
             time_range=['2019-01-01', '2020-12-31']
@@ -50,7 +50,7 @@ class CDSStoreTest(unittest.TestCase):
             'monthly_averaged_reanalysis',
             # Should be returned as p54.162, and normalized to p54_162.
             variable_names=['vertical_integral_of_temperature'],
-            bbox=[2, -2, -2, 2],
+            bbox=[-2, -2, 2, 2],
             spatial_res=1.0,
             time_range=['2019-01-01', None]
         )
@@ -73,7 +73,7 @@ class CDSStoreTest(unittest.TestCase):
                 'reanalysis-era5-single-levels-monthly-means:'
                 'monthly_averaged_reanalysis_by_hour_of_day',
                 variable_names=['2m_temperature'],
-                bbox=[1, -1, -1, 181],
+                bbox=[-1, -1, 181, 1],
                 spatial_res=0.25,
                 time_period='1M',
                 time_range=['2019-01-01', '2020-12-31']
