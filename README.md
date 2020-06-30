@@ -10,7 +10,8 @@ Currently supported datasets:
 
 ## Setup
 
-xcube and cdsapi must be installed before the xcube_cds plugin.
+[xcube](https://github.com/dcs4cop/xcube) and cdsapi must be installed
+before the xcube_cds plugin.
 In order to use the xcube_cds plugin, you also need to obtain a CDS API key
 and write it to a configuration file. Additionally, you need to use the CDS
 website to agree to the terms of use for any datasets you acccess. These
@@ -18,16 +19,7 @@ steps are described in more detail below.
 
 ### Install xcube
 
-[xcube](https://github.com/dcs4cop/xcube) can be installed from
-[conda-forge](https://conda-forge.org/) using the
-conda package manager, like this:
-
-```
-$ conda create --name xcube xcube>=0.4
-$ conda activate xcube
-```
-
-xcube can also be built from source, like this:
+xcube 0.5 can be built from source, like this:
 
 ```
 $ git clone https://github.com/dcs4cop/xcube.git
@@ -37,12 +29,20 @@ $ conda activate xcube
 $ python setup.py develop
 ```
 
+Once xcube 0.5 becomes available on [conda-forge](https://conda-forge.org/),
+it can be installed using the conda package manager, like this:
+
+```
+$ conda create --name xcube xcube>=0.5
+$ conda activate xcube
+```
+
 ### Install cdsapi
 
 xcube_cds makes use of the
-[cdsapi Python library](https://github.com/ecmwf/cdsapi) to connect to the CDS
-API, which is also available from conda-forge. You can install it into an
-xcube environment like this:
+[cdsapi Python library](https://github.com/ecmwf/cdsapi),
+which is available from conda-forge, to connect to the CDS API.
+You can install it into an xcube environment like this:
 
 ```
 $ conda activate xcube
