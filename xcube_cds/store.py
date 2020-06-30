@@ -46,7 +46,7 @@ from xcube.util.jsonschema import JsonStringSchema
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.constants import DEFAULT_NUM_RETRIES
 from xcube_cds.constants import ERA5_PARAMETERS
-
+import xcube.core.normalize
 
 class CDSDataOpener(DataOpener):
     """A data opener for the Copernicus Climate Data Store"""
@@ -376,6 +376,8 @@ class CDSDataStore(CDSDataOpener, DataStore):
         # and any others. standard_name MUST be "time", units MUST have
         # format "<deltatime> since <datetime>", where datetime must have
         # ISO-format.
+
+        dataset = xcube.core.normalize.normalize_dataset(dataset)
 
         if self.normalize_names:
             rename_dict = {}
