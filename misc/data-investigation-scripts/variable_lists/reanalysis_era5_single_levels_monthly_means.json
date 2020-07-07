@@ -1,0 +1,16 @@
+{
+  "dataset": "reanalysis-era5-single-levels-monthly-means",
+  "parameters": {
+    "format": "netcdf",
+    "product_type": "monthly_averaged_reanalysis_by_hour_of_day",
+    "time": "00:00",
+    "year": "2019",
+    "month": "01",
+    "area": [
+      1,
+      -1,
+      -1,
+      1
+    ]
+  }
+}
