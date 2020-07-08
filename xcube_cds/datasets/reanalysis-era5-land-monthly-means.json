@@ -1,0 +1,329 @@
+{
+  "identifier": "reanalysis-era5-land-monthly-means",
+  "description": "ERA5-Land monthly averaged data from 1981 to present",
+  "product_types": [
+    [
+      "monthly_averaged_reanalysis",
+      "Monthly averaged reanalysis"
+    ],
+    [
+      "monthly_averaged_reanalysis_by_hour_of_day",
+      "Monthly averaged reanalysis by hour of day"
+    ]
+  ],
+  "crs": "WGS84",
+  "bbox": [
+    90,
+    -180,
+    -90,
+    180
+  ],
+  "spatial_res": 0.1,
+  "time_range": [
+    "1981-01-01",
+    null
+  ],
+  "time_period": "1M",
+  "variables": [
+    [
+      "10m_u_component_of_wind",
+      "u10",
+      "m s**-1",
+      "10 metre U wind component"
+    ],
+    [
+      "10m_v_component_of_wind",
+      "v10",
+      "m s**-1",
+      "10 metre V wind component"
+    ],
+    [
+      "2m_dewpoint_temperature",
+      "d2m",
+      "K",
+      "2 metre dewpoint temperature"
+    ],
+    [
+      "2m_temperature",
+      "t2m",
+      "K",
+      "2 metre temperature"
+    ],
+    [
+      "evaporation_from_bare_soil",
+      "evabs",
+      "m of water equivalent",
+      "Evaporation from bare soil"
+    ],
+    [
+      "evaporation_from_open_water_surfaces_excluding_oceans",
+      "evaow",
+      "m of water equivalent",
+      "Evaporation from open water surfaces excluding oceans"
+    ],
+    [
+      "evaporation_from_the_top_of_canopy",
+      "evatc",
+      "m of water equivalent",
+      "Evaporation from the top of canopy"
+    ],
+    [
+      "evaporation_from_vegetation_transpiration",
+      "evavt",
+      "m of water equivalent",
+      "Evaporation from vegetation transpiration"
+    ],
+    [
+      "forecast_albedo",
+      "fal",
+      "[0 - 1]",
+      "Forecast albedo"
+    ],
+    [
+      "lake_bottom_temperature",
+      "lblt",
+      "K",
+      "Lake bottom temperature"
+    ],
+    [
+      "lake_ice_depth",
+      "licd",
+      "m",
+      "Lake ice depth"
+    ],
+    [
+      "lake_ice_temperature",
+      "lict",
+      "K",
+      "Lake ice temperature"
+    ],
+    [
+      "lake_mix_layer_depth",
+      "lmld",
+      "m",
+      "Lake mix-layer depth"
+    ],
+    [
+      "lake_mix_layer_temperature",
+      "lmlt",
+      "K",
+      "Lake mix-layer temperature"
+    ],
+    [
+      "lake_shape_factor",
+      "lshf",
+      "dimensionless",
+      "Lake shape factor"
+    ],
+    [
+      "lake_total_layer_temperature",
+      "ltlt",
+      "K",
+      "Lake total layer temperature"
+    ],
+    [
+      "leaf_area_index_high_vegetation",
+      "lai_hv",
+      "m**2 m**-2",
+      "Leaf area index, high vegetation"
+    ],
+    [
+      "leaf_area_index_low_vegetation",
+      "lai_lv",
+      "m**2 m**-2",
+      "Leaf area index, low vegetation"
+    ],
+    [
+      "potential_evaporation",
+      "pev",
+      "m",
+      "Potential evaporation"
+    ],
+    [
+      "runoff",
+      "ro",
+      "m",
+      "Runoff"
+    ],
+    [
+      "skin_reservoir_content",
+      "src",
+      "m of water equivalent",
+      "Skin reservoir content"
+    ],
+    [
+      "skin_temperature",
+      "skt",
+      "K",
+      "Skin temperature"
+    ],
+    [
+      "snow_albedo",
+      "asn",
+      "[0 - 1]",
+      "Snow albedo"
+    ],
+    [
+      "snow_cover",
+      "snowc",
+      "%",
+      "Snow cover"
+    ],
+    [
+      "snow_density",
+      "rsn",
+      "kg m**-3",
+      "Snow density"
+    ],
+    [
+      "snow_depth",
+      "sde",
+      "m",
+      "Snow depth"
+    ],
+    [
+      "snow_depth_water_equivalent",
+      "sd",
+      "m of water equivalent",
+      "Snow depth"
+    ],
+    [
+      "snow_evaporation",
+      "es",
+      "m of water equivalent",
+      "Snow evaporation"
+    ],
+    [
+      "snowfall",
+      "sf",
+      "m of water equivalent",
+      "Snowfall"
+    ],
+    [
+      "snowmelt",
+      "smlt",
+      "m of water equivalent",
+      "Snowmelt"
+    ],
+    [
+      "soil_temperature_level_1",
+      "stl1",
+      "K",
+      "Soil temperature level 1"
+    ],
+    [
+      "soil_temperature_level_2",
+      "stl2",
+      "K",
+      "Soil temperature level 2"
+    ],
+    [
+      "soil_temperature_level_3",
+      "stl3",
+      "K",
+      "Soil temperature level 3"
+    ],
+    [
+      "soil_temperature_level_4",
+      "stl4",
+      "K",
+      "Soil temperature level 4"
+    ],
+    [
+      "sub_surface_runoff",
+      "ssro",
+      "m",
+      "Sub-surface runoff"
+    ],
+    [
+      "surface_latent_heat_flux",
+      "slhf",
+      "J m**-2",
+      "Surface latent heat flux"
+    ],
+    [
+      "surface_net_solar_radiation",
+      "ssr",
+      "J m**-2",
+      "Surface net solar radiation"
+    ],
+    [
+      "surface_net_thermal_radiation",
+      "str",
+      "J m**-2",
+      "Surface net thermal radiation"
+    ],
+    [
+      "surface_pressure",
+      "sp",
+      "Pa",
+      "Surface pressure"
+    ],
+    [
+      "surface_runoff",
+      "sro",
+      "m",
+      "Surface runoff"
+    ],
+    [
+      "surface_sensible_heat_flux",
+      "sshf",
+      "J m**-2",
+      "Surface sensible heat flux"
+    ],
+    [
+      "surface_solar_radiation_downwards",
+      "ssrd",
+      "J m**-2",
+      "Surface solar radiation downwards"
+    ],
+    [
+      "surface_thermal_radiation_downwards",
+      "strd",
+      "J m**-2",
+      "Surface thermal radiation downwards"
+    ],
+    [
+      "temperature_of_snow_layer",
+      "tsn",
+      "K",
+      "Temperature of snow layer"
+    ],
+    [
+      "total_evaporation",
+      "e",
+      "m of water equivalent",
+      "Evaporation"
+    ],
+    [
+      "total_precipitation",
+      "tp",
+      "m",
+      "Total precipitation"
+    ],
+    [
+      "volumetric_soil_water_layer_1",
+      "swvl1",
+      "m**3 m**-3",
+      "Volumetric soil water layer 1"
+    ],
+    [
+      "volumetric_soil_water_layer_2",
+      "swvl2",
+      "m**3 m**-3",
+      "Volumetric soil water layer 2"
+    ],
+    [
+      "volumetric_soil_water_layer_3",
+      "swvl3",
+      "m**3 m**-3",
+      "Volumetric soil water layer 3"
+    ],
+    [
+      "volumetric_soil_water_layer_4",
+      "swvl4",
+      "m**3 m**-3",
+      "Volumetric soil water layer 4"
+    ]
+  ]
+}

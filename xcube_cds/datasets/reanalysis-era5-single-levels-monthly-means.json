@@ -19,6 +19,19 @@
    "Monthly averaged reanalysis by hour of day"
   ]
  ],
+ "crs": "WGS84",
+ "bbox": [
+  90,
+  -180,
+  -90,
+  180
+ ],
+ "spatial_res": 0.25,
+ "time_range": [
+  "1979-01-01",
+  null
+ ],
+ "time_period": "1M",
  "variables": [
   [
    "100m_u_component_of_wind",

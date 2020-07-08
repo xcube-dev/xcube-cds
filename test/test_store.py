@@ -79,6 +79,21 @@ class CDSStoreTest(unittest.TestCase):
                 time_range=['2019-01-01', '2020-12-31']
             )
 
+    def test_era5_land_monthly(self):
+        store = CDSDataStore()
+        dataset = store.open_data(
+            'reanalysis-era5-land-monthly-means:'
+            'monthly_averaged_reanalysis',
+            variable_names=['2m_temperature', '10m_u_component_of_wind'],
+            bbox=[9.5, 49.5, 10.5, 50.5],
+            spatial_res=0.1,
+            time_period='1M',
+            time_range=['2015-01-01', '2016-12-31']
+        )
+        self.assertIsNotNone(dataset)
+        self.assertTrue('t2m' in dataset.variables)
+        self.assertTrue('u10' in dataset.variables)
+
 
 if __name__ == '__main__':
     unittest.main()

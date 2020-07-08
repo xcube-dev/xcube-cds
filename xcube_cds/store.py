@@ -144,9 +144,11 @@ class CDSDataOpener(DataOpener):
         # overwritten.
 
         dataset_id, _ = data_id.split(':')
-        variable_info_table = self._dataset_dicts[dataset_id]['variables']
+        ds_info = self._dataset_dicts[dataset_id]
+        variable_info_table = ds_info['variables']
+        bbox = ds_info['bbox']
 
-        era5_params = dict(
+        params = dict(
             dataset_name=JsonStringSchema(min_length=1,
                                           enum=list(self._valid_data_ids)),
             variable_names=JsonArraySchema(
@@ -157,36 +159,43 @@ class CDSDataOpener(DataOpener):
                 )),
                 unique_items=True
             ),
-            crs=JsonStringSchema(nullable=True, default='WGS84',
-                                 enum=[None, 'WGS84']),
+            crs=JsonStringSchema(nullable=True, default=ds_info['crs'],
+                                 enum=[None, ds_info['crs']]),
             # W, S, E, N (will be converted to N, W, S, E)
             bbox=JsonArraySchema(items=(
-                JsonNumberSchema(minimum=-180, maximum=180),
-                JsonNumberSchema(minimum=-90, maximum=90),
-                JsonNumberSchema(minimum=-180, maximum=180),
-                JsonNumberSchema(minimum=-90, maximum=90))),
-            spatial_res=JsonNumberSchema(minimum=0.25, maximum=10,
-                                         default=0.25),
+                JsonNumberSchema(minimum=bbox[1], maximum=bbox[3]),
+                JsonNumberSchema(minimum=bbox[2], maximum=bbox[0]),
+                JsonNumberSchema(minimum=bbox[1], maximum=bbox[3]),
+                JsonNumberSchema(minimum=bbox[2], maximum=bbox[0]))),
+            spatial_res=JsonNumberSchema(minimum=ds_info['spatial_res'],
+                                         maximum=10,
+                                         default=ds_info['spatial_res']),
             time_range=JsonArraySchema(
                 items=[JsonStringSchema(format='date-time'),
                        JsonStringSchema(format='date-time', nullable=True)]),
-            time_period=JsonStringSchema(const='1M'),
-            hours=JsonArraySchema(
-                items=JsonIntegerSchema(minimum=0, maximum=23),
-                unique_items=True,
-                min_items=1
-            ),
-            months=JsonArraySchema(
-                items=JsonIntegerSchema(minimum=1, maximum=12),
-                unique_items=True,
-                min_items=1
-            ),
-            years=JsonArraySchema(
-                items=JsonIntegerSchema(minimum=1979, maximum=2020),
-                unique_items=True,
-                min_items=1
-            ),
+            time_period=JsonStringSchema(const=ds_info['time_period']),
         )
+
+        # TODO: work out what to do with these ERA5-specific parameters.
+        # Is it worth keeping them if the UI won't support anything beyond
+        # the standard parameters anyway?
+        #
+        # hours = JsonArraySchema(
+        #     items=JsonIntegerSchema(minimum=0, maximum=23),
+        #     unique_items=True,
+        #     min_items=1
+        # ),
+        # months = JsonArraySchema(
+        #     items=JsonIntegerSchema(minimum=1, maximum=12),
+        #     unique_items=True,
+        #     min_items=1
+        # ),
+        # years = JsonArraySchema(
+        #     items=JsonIntegerSchema(minimum=1979, maximum=2020),
+        #     unique_items=True,
+        #     min_items=1
+        # ),
+
         required = [
             'variable_names',
             'bbox',
@@ -195,7 +204,7 @@ class CDSDataOpener(DataOpener):
         ]
         return JsonObjectSchema(
             properties=dict(
-                **era5_params,
+                **params,
             ),
             required=required
         )
@@ -387,20 +396,21 @@ class CDSDataStore(CDSDataOpener, DataStore):
 
     def describe_data(self, data_id: str) -> DataDescriptor:
         self._validate_data_id(data_id)
-        # TODO: generalize -- at present this is hardcoded for ERA5
+        ds_info = self._dataset_dicts[data_id]
+
         return DatasetDescriptor(
             data_id=data_id,
-            data_vars=self._create_era5_variable_descriptors(),
-            crs='WGS84',
-            bbox=(90, -180, -90, 180),
-            spatial_res=0.25,
-            time_range=('1979-01-01', None),
-            time_period='1M',
+            data_vars=self._create_variable_descriptors(data_id),
+            crs=ds_info['crs'],
+            bbox=tuple(ds_info['bbox']),
+            spatial_res=ds_info['spatial_res'],
+            time_range=tuple(ds_info['time_range']),
+            time_period=ds_info('time_period'),
             open_params_schema=self.get_open_data_params_schema(data_id)
         )
 
-    def _create_era5_variable_descriptors(self):
-        dataset_id = 'reanalysis-era5-single-levels-monthly-means'
+    def _create_variable_descriptors(self, data_id):
+        dataset_id, _ = data_id.split(':')
 
         return [
             VariableDescriptor(
@@ -412,7 +422,8 @@ class CDSDataStore(CDSDataOpener, DataStore):
                 dtype='float32',
                 dims=('time', 'latitude', 'longitude'),
                 attrs=dict(units=units, long_name=long_name))
-            for (api_name, netcdf_name, units, long_name) in self._dataset_dicts[dataset_id]['variables']
+            for (api_name, netcdf_name, units, long_name)
+            in self._dataset_dicts[dataset_id]['variables']
         ]
 
     # noinspection PyTypeChecker
