@@ -1,0 +1,11 @@
+{"dataset": "reanalysis-era5-single-levels",
+ "parameters":   {
+     "product_type": "reanalysis",
+     "year": "2019",
+     "month": "01",
+     "day": "01",
+     "time": "00:00",
+     "area": [ 1, -1, -1, 1 ],
+     "format": "netcdf"
+ }
+}
