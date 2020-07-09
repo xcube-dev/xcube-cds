@@ -39,9 +39,13 @@ class CDSStoreTest(unittest.TestCase):
             bbox=[-1, -1, 1, 1],
             spatial_res=0.25,
             time_period='1M',
-            time_range=['2019-01-01', '2020-12-31']
+            time_range=['2015-10-15', '2016-02-02']
         )
         self.assertIsNotNone(dataset)
+        # We expect the closest representable time selection corresponding
+        # to the requested range: months 10-12 and 1-2 for years 2015 and 2016,
+        # thus (3 + 2) * 2 = 10 time-points in total.
+        self.assertEqual(10, len(dataset.variables['time']))
 
     def test_normalize_variable_names(self):
         store = CDSDataStore(normalize_names=True)
@@ -93,6 +97,22 @@ class CDSStoreTest(unittest.TestCase):
         self.assertIsNotNone(dataset)
         self.assertTrue('t2m' in dataset.variables)
         self.assertTrue('u10' in dataset.variables)
+
+    def test_era5_single_levels_hourly(self):
+        store = CDSDataStore()
+        dataset = store.open_data(
+            'reanalysis-era5-single-levels:'
+            'reanalysis',
+            variable_names=['2m_temperature'],
+            bbox=[9, 49, 11, 51],
+            spatial_res=0.25,
+            time_period='1H',
+            time_range=['2015-01-01 20:00',
+                        '2015-01-02 08:00']
+        )
+        self.assertIsNotNone(dataset)
+        self.assertTrue('t2m' in dataset.variables)
+        self.assertEqual(26, len(dataset.variables['time']))
 
 
 if __name__ == '__main__':

@@ -21,13 +21,17 @@
 # SOFTWARE.
 
 import atexit
+import datetime
+import dateutil.parser
+import dateutil.rrule
+import dateutil.relativedelta
 import json
 import os
 import pathlib
 import re
 import shutil
 import tempfile
-from typing import Iterator, Tuple, Optional
+from typing import Iterator, Tuple, List, Optional, Dict
 
 import cdsapi
 import xarray as xr
@@ -209,10 +213,6 @@ class CDSDataOpener(DataOpener):
             required=required
         )
 
-    @staticmethod
-    def _read_variables_for_dataset(dataset_id: str) -> Tuple[Tuple]:
-        pass
-
     def open_data(self, data_id: str, **open_params) -> xr.Dataset:
         schema = self.get_open_data_params_schema(data_id)
         schema.validate_instance(open_params)
@@ -286,20 +286,11 @@ class CDSDataOpener(DataOpener):
         # We need to split out the bounding box co-ordinates to re-order them.
         x1, y1, x2, y2 = plugin_params['bbox']
 
-        # Translate our parameters to the CDS API scheme. Initially we use
-        # default values for "month" and "time", and set "year" from the
-        # compulsory time_range parameter.
+        # Translate our parameters (excluding time parameters) to the CDS API
+        # scheme.
         params_combined = {
             'product_type': product_type,
             'variable': plugin_params['variable_names'],
-            'year': CDSDataOpener._time_range_to_years(
-                plugin_params['time_range']),
-            'month': ['01', '02', '03', '04', '05', '06', '07', '08', '09',
-                      '10', '11', '12', ],
-            'time': ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00',
-                     '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
-                     '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
-                     '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', ],
             'area': [y2, x1, y1, x2],
             # Note: the "grid" parameter is not exposed via the web interface,
             # but is described at
@@ -309,13 +300,17 @@ class CDSDataOpener(DataOpener):
             'format': 'netcdf'
         }
 
-        # If any of the "years", "months", and "hours" parameters were passed,
-        # they override the time specifications above.
-        time_params = {
-            k1: v1 for k1, v1 in [CDSDataOpener._transform_param(k0, v0)
-                                  for k0, v0 in plugin_params.items()]
-            if k1 is not None}
-        params_combined.update(time_params)
+        # Convert the time range specification to the nearest equivalent
+        # in the CDS "orthogonal time units" scheme.
+        time_params_from_range = CDSDataOpener._transform_time_params(
+            CDSDataOpener._convert_time_range(plugin_params['time_range']))
+        params_combined.update(time_params_from_range)
+
+        # If any of the "years", "months", "days", and "hours" parameters
+        # were passed, they override the time specifications above.
+        time_params_explicit = \
+            CDSDataOpener._transform_time_params(plugin_params)
+        params_combined.update(time_params_explicit)
 
         # Transform singleton list values into their single members, as
         # required by the CDS API.
@@ -326,9 +321,18 @@ class CDSDataOpener(DataOpener):
         return dataset_name, desingletonned
 
     @staticmethod
-    def _transform_param(key, value):
+    def _transform_time_params(params: Dict):
+        return {
+            k1: v1 for k1, v1 in [CDSDataOpener._transform_time_param(k0, v0)
+                                  for k0, v0 in params.items()]
+            if k1 is not None}
+
+    @staticmethod
+    def _transform_time_param(key, value):
         if key == 'hours':
             return 'time', list(map(lambda x: f'{x:02d}:00', value))
+        if key == 'days':
+            return 'day', list(map(lambda x: f'{x:02d}', value))
         elif key == 'months':
             return 'month', list(map(lambda x: f'{x:02d}', value))
         elif key == 'years':
@@ -337,11 +341,64 @@ class CDSDataOpener(DataOpener):
             return None, None
 
     @staticmethod
-    def _time_range_to_years(range_array):
-        year_start = int(range_array[0][:4])
-        # Default end year value currently hard-coded for ERA5
-        year_end = 2020 if range_array[1] is None else int(range_array[1][:4])
-        return list(range(year_start, year_end + 1))
+    def _convert_time_range(time_range: List[str]) -> \
+            Dict[str, List[int]]:
+        """Convert a time range to a CDS-style time specification.
+
+        This method converts a time range specification (i.e. a straightforward
+        pair of "start time" and "end time") into the closest corresponding
+        specification for CDS datasets such as ERA5 (which allow orthogonal
+        selection of subsets of years, months, days, and hours). "Closest"
+        here means the narrowest selection which will cover the entire
+        requested time range, although it will often cover significantly more.
+        For example, the range 2000-12-31 to 2002-01-02 would be translated
+        to a request for all of 2000-2002, since every hour, day, and month
+        must be selected.
+
+        :param time_range: a length-2 list of ISO-8601 date/time strings
+        :return: a dictionary with keys 'hours', 'days', 'months', and
+            'years', and values which are lists of ints
+        """
+
+        if len(time_range) != 2:
+            raise ValueError(f'time_range must have a length of 2, '
+                             'not {len(time_range)}.')
+
+        time0 = dateutil.parser.isoparse(time_range[0])
+        time1 = datetime.datetime.now() if time_range[1] is None \
+            else dateutil.parser.isoparse(time_range[1])
+
+        # We use datetime's recurrence rule features to enumerate the
+        # hour / day / month numbers which intersect with the selected time
+        # range.
+
+        hour0 = datetime.datetime(time0.year, time0.month, time0.day,
+                                  time0.hour, 0)
+        hour1 = datetime.datetime(time1.year, time1.month, time1.day,
+                                  time1.hour, 59)
+        hours = [dt.hour for dt in dateutil.rrule.rrule(
+            freq=dateutil.rrule.HOURLY, count=24,
+            dtstart=hour0, until=hour1)]
+        hours.sort()
+
+        day0 = datetime.datetime(time0.year, time0.month, time0.day, 0, 1)
+        day1 = datetime.datetime(time1.year, time1.month, time1.day, 23, 59)
+        days = [dt.day for dt in dateutil.rrule.rrule(
+            freq=dateutil.rrule.DAILY, count=31, dtstart=day0, until=day1)]
+        days = sorted(set(days))
+
+        month0 = datetime.datetime(time0.year, time0.month, 1)
+        month1 = datetime.datetime(time1.year, time1.month, 28)
+        months = [dt.month for dt in dateutil.rrule.rrule(
+            freq=dateutil.rrule.MONTHLY, count=12,
+            dtstart=month0, until=month1)]
+        months.sort()
+
+        years = list(range(time0.year, time1.year + 1))
+
+        return dict(hours=hours,
+                    days=days,
+                    months=months, years=years)
 
     def _validate_data_id(self, data_id, allow_none=False):
         if (data_id is None) and allow_none:
