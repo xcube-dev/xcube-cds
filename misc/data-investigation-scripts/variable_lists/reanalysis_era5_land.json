@@ -1,0 +1,12 @@
+{
+  "dataset": "reanalysis-era5-land",
+    "parameters": {
+        "product_type": "monthly_averaged_reanalysis",
+        "year": "2019",
+        "month": "01",
+        "day": "01",
+        "time": "00:00",
+        "area": [50, 9, 49, 10],
+        "format": "netcdf"
+    }
+}
