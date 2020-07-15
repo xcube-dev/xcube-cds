@@ -128,11 +128,18 @@ class CDSDataOpener(DataOpener):
             # it as a suffix to the data_id to make it possible to specify
             # requests using only the standard, known store parameters.
             product_types = ds_dict['product_types']
-            for pt_id, pt_desc in product_types:
-                data_id = ds_id + ':' + pt_id
-                self._valid_data_ids.add(data_id)
-                self._data_id_to_human_readable[data_id] = \
-                    ds_dict['description'] + ' \N{EN DASH} ' + pt_desc
+            if len(product_types) == 0:
+                # No product types defined (i.e. there is just a single,
+                # implicit product type), so we just use the dataset ID without
+                # a suffix.
+                self._valid_data_ids.add(ds_id)
+                self._data_id_to_human_readable[ds_id] = ds_dict['description']
+            else:
+                for pt_id, pt_desc in product_types:
+                    data_id = ds_id + ':' + pt_id
+                    self._valid_data_ids.add(data_id)
+                    self._data_id_to_human_readable[data_id] = \
+                        ds_dict['description'] + ' \N{EN DASH} ' + pt_desc
 
 
     ###########################################################################
@@ -147,7 +154,9 @@ class CDSDataOpener(DataOpener):
         # data_id==None. If data_id is supplied, its values can be
         # overwritten.
 
-        dataset_id, _ = data_id.split(':')
+        # If the data_id has a product type suffix, remove it.
+        dataset_id = data_id.split(':')[0] if ':' in data_id else data_id
+
         ds_info = self._dataset_dicts[dataset_id]
         variable_info_table = ds_info['variables']
         bbox = ds_info['bbox']
@@ -281,7 +290,8 @@ class CDSDataOpener(DataOpener):
         :return: parameters in form expected by the CDS API
         """
 
-        dataset_name, product_type = data_id.split(':')
+        dataset_name, product_type = \
+            data_id.split(':') if ':' in data_id else data_id, None
 
         # We need to split out the bounding box co-ordinates to re-order them.
         x1, y1, x2, y2 = plugin_params['bbox']
@@ -289,7 +299,6 @@ class CDSDataOpener(DataOpener):
         # Translate our parameters (excluding time parameters) to the CDS API
         # scheme.
         params_combined = {
-            'product_type': product_type,
             'variable': plugin_params['variable_names'],
             'area': [y2, x1, y1, x2],
             # Note: the "grid" parameter is not exposed via the web interface,
@@ -299,6 +308,9 @@ class CDSDataOpener(DataOpener):
                      plugin_params['spatial_res']],
             'format': 'netcdf'
         }
+
+        if product_type is not None:
+            params_combined['product_type'] = product_type
 
         # Convert the time range specification to the nearest equivalent
         # in the CDS "orthogonal time units" scheme.

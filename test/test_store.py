@@ -114,6 +114,21 @@ class CDSStoreTest(unittest.TestCase):
         self.assertTrue('t2m' in dataset.variables)
         self.assertEqual(26, len(dataset.variables['time']))
 
+    def test_era5_land_hourly(self):
+        store = CDSDataStore()
+        dataset = store.open_data(
+            'reanalysis-era5-land',
+            variable_names=['2m_temperature'],
+            bbox=[9.5, 49.5, 10.5, 50.5],
+            spatial_res=0.1,
+            time_period='1H',
+            time_range=['2015-01-01 20:00',
+                        '2015-01-02 08:00']
+        )
+        self.assertIsNotNone(dataset)
+        self.assertTrue('t2m' in dataset.variables)
+        self.assertEqual(26, len(dataset.variables['time']))
+
 
 if __name__ == '__main__':
     unittest.main()
