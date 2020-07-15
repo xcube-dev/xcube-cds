@@ -8,8 +8,8 @@ from the CDS API a NetCDF file containing data for only that variable.
 The file is saved with the name of the request variable used to obtain it.
 
 read-var-metadata-from-nc.py reads the files produced by
-request-one-var-per-file.py and prints out the filename, the variable
-name, and some variable attributes. In effect it produces a table
-showing the relationship between request variable, the corresponding
-(but often very differently named) NetCDF variable, and other variable
-metadata.
+request-one-var-per-file.py and prints out a JSON structure giving, for each
+file, the filename, the variable name, and some variable attributes. In effect
+it produces a table showing the relationship between request variable, the
+corresponding (but often very differently named) NetCDF variable, and other
+variable metadata.

@@ -11,6 +11,8 @@ prints the filename, variable name, and values of the 'units' and
 import xarray as xr
 import os
 import re
+import json
+import sys
 
 
 DATA_DIR = 'nc-single-var'
@@ -22,8 +24,7 @@ def main():
     for filename in filenames:
         param_table.append(read_param_data(filename))
     param_table.sort()
-    for param in param_table:
-        print(param, ',', sep='')
+    json.dump(param_table, sys.stdout, indent=2)
 
         
 def read_param_data(filename):
