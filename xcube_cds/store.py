@@ -291,7 +291,7 @@ class CDSDataOpener(DataOpener):
         """
 
         dataset_name, product_type = \
-            data_id.split(':') if ':' in data_id else data_id, None
+            data_id.split(':') if ':' in data_id else (data_id, None)
 
         # We need to split out the bounding box co-ordinates to re-order them.
         x1, y1, x2, y2 = plugin_params['bbox']
