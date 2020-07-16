@@ -13,24 +13,26 @@ import os
 import re
 import json
 import sys
-
-
-DATA_DIR = 'nc-single-var'
+import argparse
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input-dir', default='nc-single-var')
+    args = parser.parse_args()
+
     param_table = []
-    filenames = os.listdir(DATA_DIR)
+    filenames = os.listdir(args.input_dir)
     for filename in filenames:
-        param_table.append(read_param_data(filename))
+        param_table.append(read_param_data(args.input_dir, filename))
     param_table.sort()
     json.dump(param_table, sys.stdout, indent=2)
 
         
-def read_param_data(filename):
+def read_param_data(parent_dir, filename):
     param_name_request = re.sub('[.]nc$', '', filename)
-    with xr.open_dataset(os.path.join(DATA_DIR, filename),
-                              decode_cf=True) as dataset:
+    with xr.open_dataset(os.path.join(parent_dir, filename),
+                         decode_cf=True) as dataset:
         var_names = set(dataset.variables.keys())
         (var_name, ) = var_names - {'latitude', 'longitude', 'time'}
         attrs = dataset.variables[var_name].attrs
