@@ -103,6 +103,10 @@ class CDSDataOpener(DataOpener):
         # name for each request parameter, without having to trust that the
         # documentation is correct.
         #
+        # Unfortunately this procedure doesn't work with all datasets, since
+        # some (e.g. satellite-soil-moisture) don't have a one-to-one mapping
+        # from request variables to output variables.
+        #
         # Table fields are:
         # 1. request parameter name in CDS API
         # 2. NetCDF variable name (NB: not always CF-conformant)
@@ -140,7 +144,6 @@ class CDSDataOpener(DataOpener):
                     self._valid_data_ids.add(data_id)
                     self._data_id_to_human_readable[data_id] = \
                         ds_dict['description'] + ' \N{EN DASH} ' + pt_desc
-
 
     ###########################################################################
     # DataOpener implementation
@@ -188,27 +191,6 @@ class CDSDataOpener(DataOpener):
                        JsonStringSchema(format='date-time', nullable=True)]),
             time_period=JsonStringSchema(const=ds_info['time_period']),
         )
-
-        # TODO: work out what to do with these ERA5-specific parameters.
-        # Is it worth keeping them if the UI won't support anything beyond
-        # the standard parameters anyway?
-        #
-        # hours = JsonArraySchema(
-        #     items=JsonIntegerSchema(minimum=0, maximum=23),
-        #     unique_items=True,
-        #     min_items=1
-        # ),
-        # months = JsonArraySchema(
-        #     items=JsonIntegerSchema(minimum=1, maximum=12),
-        #     unique_items=True,
-        #     min_items=1
-        # ),
-        # years = JsonArraySchema(
-        #     items=JsonIntegerSchema(minimum=1979, maximum=2020),
-        #     unique_items=True,
-        #     min_items=1
-        # ),
-
         required = [
             'variable_names',
             'bbox',
