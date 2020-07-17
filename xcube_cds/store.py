@@ -280,14 +280,23 @@ class CDSDataOpener(DataOpener):
 
         # Translate our parameters (excluding time parameters) to the CDS API
         # scheme.
+        resolution = plugin_params['spatial_res']
         params_combined = {
             'variable': plugin_params['variable_names'],
-            'area': [y2, x1, y1, x2],
+            # For the ERA5 dataset, we need to crop the area by half a
+            # cell-width. ERA5 data are points, but xcube treats them as
+            # cell centres. The bounds of a grid of cells are half a cell-width
+            # outside the bounds of a grid of points, so we have to crop each
+            # edge by half a cell-width to end up with the requested bounds.
+            # See https://confluence.ecmwf.int/display/CKB/ERA5%3A+What+is+the+spatial+reference#ERA5:Whatisthespatialreference-Visualisationofregularlat/londata
+            'area': [y2 - resolution / 2,
+                     x1 + resolution / 2,
+                     y1 + resolution / 2,
+                     x2 - resolution / 2],
             # Note: the "grid" parameter is not exposed via the web interface,
             # but is described at
-            # https://confluence.ecmwf.int/display/CKB/ERA5%3A+Web+API+to+CDS+API .
-            'grid': [plugin_params['spatial_res'],
-                     plugin_params['spatial_res']],
+            # https://confluence.ecmwf.int/display/CKB/ERA5%3A+Web+API+to+CDS+API
+            'grid': [resolution, resolution],
             'format': 'netcdf'
         }
 

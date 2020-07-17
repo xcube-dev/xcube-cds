@@ -26,6 +26,7 @@ from jsonschema import ValidationError
 
 from xcube_cds.store import CDSDataOpener
 from xcube_cds.store import CDSDataStore
+import xcube
 
 
 class CDSStoreTest(unittest.TestCase):
@@ -128,6 +129,28 @@ class CDSStoreTest(unittest.TestCase):
         self.assertIsNotNone(dataset)
         self.assertTrue('t2m' in dataset.variables)
         self.assertEqual(26, len(dataset.variables['time']))
+
+    def test_era5_bounds(self):
+        opener = CDSDataOpener()
+        dataset = opener.open_data(
+            'reanalysis-era5-single-levels-monthly-means:'
+            'monthly_averaged_reanalysis',
+            variable_names=['2m_temperature'],
+            bbox=[-180, -90, 180, 90],
+            spatial_res=0.25,
+            time_period='1M',
+            time_range=['2015-10-15', '2015-10-15']
+        )
+
+        self.assertIsNotNone(dataset)
+
+        west, south, east, north = xcube.core.geom.get_dataset_bounds(dataset)
+        self.assertGreaterEqual(west, -180.0)
+        self.assertGreaterEqual(south, -90.0)
+        self.assertLessEqual(east, 180.0)
+        self.assertLessEqual(north, 90.0)
+        self.assertNotEqual(west, east)
+        self.assertLessEqual(south, north)
 
 
 if __name__ == '__main__':
