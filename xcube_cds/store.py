@@ -26,6 +26,7 @@ import os
 import re
 import shutil
 import tempfile
+from abc import abstractmethod, ABC
 from typing import Iterator, Tuple, List, Optional, Dict
 
 import cdsapi
@@ -46,7 +47,25 @@ from xcube.util.jsonschema import JsonObjectSchema
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.constants import DEFAULT_NUM_RETRIES
 
-from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
+
+class CDSDatasetHandler(ABC):
+
+    @abstractmethod
+    def get_supported_data_ids(self) -> List[str]:
+        pass
+
+    @abstractmethod
+    def get_open_data_params_schema(self, data_id: Optional[str] = None) -> \
+            JsonObjectSchema:
+        pass
+
+    @abstractmethod
+    def get_human_readable_data_id(self, data_id: str):
+        pass
+
+    @abstractmethod
+    def describe_data(self, data_id: str) -> DataDescriptor:
+        pass
 
 
 class CDSDataOpener(DataOpener):
@@ -55,10 +74,11 @@ class CDSDataOpener(DataOpener):
     def __init__(self, normalize_names: Optional[bool] = False):
         self._normalize_names = normalize_names
         self._create_temporary_directory()
-        self._handler_registry = {}
+        self._handler_registry: Dict[str, CDSDatasetHandler] = {}
+        from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
         self._register_dataset_handler(ERA5DatasetHandler())
 
-    def _register_dataset_handler(self, handler):
+    def _register_dataset_handler(self, handler: CDSDatasetHandler):
         for data_id in handler.get_supported_data_ids():
             self._handler_registry[data_id] = handler
 
@@ -93,7 +113,7 @@ class CDSDataOpener(DataOpener):
         if data_id is None:
             raise NotImplementedError("data_id==None not implemented yet.")
         else:
-            return _handler_registry[data_id].\
+            return self._handler_registry[data_id].\
                 get_open_data_params_schema(data_id)
 
     def open_data(self, data_id: str, **open_params) -> xr.Dataset:
@@ -298,7 +318,7 @@ class CDSDataOpener(DataOpener):
     def _validate_data_id(self, data_id, allow_none=False):
         if (data_id is None) and allow_none:
             return
-        if data_id not in _handler_registry:
+        if data_id not in self._handler_registry:
             raise ValueError(f'Unknown data id "{data_id}"')
 
 
@@ -341,16 +361,16 @@ class CDSDataStore(CDSDataOpener, DataStore):
             Iterator[Tuple[str, Optional[str]]]:
         self._assert_valid_type_id(type_id)
         return iter((data_id,
-                     _handler_registry[data_id].
+                     self._handler_registry[data_id].
                      get_human_readable_data_id[data_id])
-                    for data_id in _handler_registry)
+                    for data_id in self._handler_registry)
 
     def has_data(self, data_id: str) -> bool:
-        return data_id in _handler_registry
+        return data_id in self._handler_registry
 
     def describe_data(self, data_id: str) -> DataDescriptor:
         self._validate_data_id(data_id)
-        return _handler_registry[data_id].describe_data(data_id)
+        return self._handler_registry[data_id].describe_data(data_id)
 
     # noinspection PyTypeChecker
     def search_data(self, type_id: Optional[str] = None, **search_params) -> \

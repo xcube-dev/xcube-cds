@@ -8,8 +8,10 @@ from xcube.core.store import DataDescriptor, DatasetDescriptor, \
 from xcube.util.jsonschema import JsonObjectSchema, JsonStringSchema, \
     JsonArraySchema, JsonNumberSchema
 
+from xcube_cds.store import CDSDatasetHandler
 
-class ERA5DatasetHandler:
+
+class ERA5DatasetHandler(CDSDatasetHandler):
 
     def __init__(self):
         self._read_dataset_info()
