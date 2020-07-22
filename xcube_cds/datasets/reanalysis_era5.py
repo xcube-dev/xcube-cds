@@ -1,8 +1,32 @@
+# MIT License
+#
+# Copyright (c) 2020 Brockmann Consult GmbH
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 import json
 import os
 import pathlib
+import re
 from typing import List, Optional
-
+import xarray as xr
+import xcube
 from xcube.core.store import DataDescriptor, DatasetDescriptor, \
     VariableDescriptor
 from xcube.util.jsonschema import JsonObjectSchema, JsonStringSchema, \
@@ -168,3 +192,68 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             for (api_name, netcdf_name, units, long_name)
             in self._dataset_dicts[dataset_id]['variables']
         ]
+
+    def transform_params(self, plugin_params, data_id):
+        """Transform supplied parameters to CDS API format.
+
+        :param plugin_params: parameters in form expected by this plugin
+        :param data_id: the ID of the requested dataset
+        :return: parameters in form expected by the CDS API
+        """
+
+        dataset_name, product_type = \
+            data_id.split(':') if ':' in data_id else (data_id, None)
+
+        # We need to split out the bounding box co-ordinates to re-order them.
+        x1, y1, x2, y2 = plugin_params['bbox']
+
+        # Translate our parameters (excluding time parameters) to the CDS API
+        # scheme.
+        resolution = plugin_params['spatial_res']
+        params_combined = {
+            'variable': plugin_params['variable_names'],
+            # For the ERA5 dataset, we need to crop the area by half a
+            # cell-width. ERA5 data are points, but xcube treats them as
+            # cell centres. The bounds of a grid of cells are half a cell-width
+            # outside the bounds of a grid of points, so we have to crop each
+            # edge by half a cell-width to end up with the requested bounds.
+            # See https://confluence.ecmwf.int/display/CKB/ERA5%3A+What+is+the+spatial+reference#ERA5:Whatisthespatialreference-Visualisationofregularlat/londata
+            'area': [y2 - resolution / 2,
+                     x1 + resolution / 2,
+                     y1 + resolution / 2,
+                     x2 - resolution / 2],
+            # Note: the "grid" parameter is not exposed via the web interface,
+            # but is described at
+            # https://confluence.ecmwf.int/display/CKB/ERA5%3A+Web+API+to+CDS+API
+            'grid': [resolution, resolution],
+            'format': 'netcdf'
+        }
+
+        if product_type is not None:
+            params_combined['product_type'] = product_type
+
+        # Convert the time range specification to the nearest equivalent
+        # in the CDS "orthogonal time units" scheme.
+        time_params_from_range = self.transform_time_params(
+            self.convert_time_range(plugin_params['time_range']))
+        params_combined.update(time_params_from_range)
+
+        # If any of the "years", "months", "days", and "hours" parameters
+        # were passed, they override the time specifications above.
+        time_params_explicit = \
+            self.transform_time_params(plugin_params)
+        params_combined.update(time_params_explicit)
+
+        # Transform singleton list values into their single members, as
+        # required by the CDS API.
+        desingletonned = {
+            k: (v[0] if isinstance(v, list) and len(v) == 1 else v)
+            for k, v in params_combined.items()}
+
+        return dataset_name, desingletonned
+
+    def read_file(self, dataset_name, cds_api_params, file_path):
+
+        # decode_cf is the default, but it's clearer to make it explicit.
+        return xr.open_dataset(file_path, decode_cf=True)
+

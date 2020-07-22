@@ -67,183 +67,22 @@ class CDSDatasetHandler(ABC):
     def describe_data(self, data_id: str) -> DataDescriptor:
         pass
 
+    @abstractmethod
+    def transform_params(self, plugin_params, data_id: str):
+        pass
 
-class CDSDataOpener(DataOpener):
-    """A data opener for the Copernicus Climate Data Store"""
+    @abstractmethod
+    def read_file(self, dataset_name, cds_api_params, file_path):
+        pass
 
-    def __init__(self, normalize_names: Optional[bool] = False):
-        self._normalize_names = normalize_names
-        self._create_temporary_directory()
-        self._handler_registry: Dict[str, CDSDatasetHandler] = {}
-        from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
-        self._register_dataset_handler(ERA5DatasetHandler())
-
-    def _register_dataset_handler(self, handler: CDSDatasetHandler):
-        for data_id in handler.get_supported_data_ids():
-            self._handler_registry[data_id] = handler
-
-    def _create_temporary_directory(self):
-        # Create a temporary directory to hold downloaded NetCDF files and
-        # a hook to delete it when the interpreter exits. xarray.open reads
-        # data lazily so we can't just delete the file after returning the
-        # Dataset. We could also use weakref hooks to delete individual files
-        # when the corresponding object is garbage collected, but even then
-        # the directory is useful to group the files and offer an extra
-        # assurance that they will be deleted.
-        tempdir = tempfile.mkdtemp()
-
-        def delete_tempdir():
-            shutil.rmtree(tempdir, ignore_errors=True)
-
-        atexit.register(delete_tempdir)
-        self._tempdir = tempdir
-
-    ###########################################################################
-    # DataOpener implementation
-
-    def get_open_data_params_schema(self, data_id: Optional[str] = None) -> \
-            JsonObjectSchema:
-
-        self._validate_data_id(data_id, allow_none=True)
-
-        # TODO: define a broad default schema here for the case where
-        # data_id==None. If data_id is supplied, its values can be
-        # overwritten.
-
-        if data_id is None:
-            raise NotImplementedError("data_id==None not implemented yet.")
-        else:
-            return self._handler_registry[data_id].\
-                get_open_data_params_schema(data_id)
-
-    def open_data(self, data_id: str, **open_params) -> xr.Dataset:
-        schema = self.get_open_data_params_schema(data_id)
-        schema.validate_instance(open_params)
-
-        client = cdsapi.Client()
-
-        # We can't generate a safe unique filename (since the file is created
-        # by client.retrieve, so name generation and file creation won't be
-        # atomic). Instead we atomically create a subdirectory of the temporary
-        # directory for the single file.
-        subdir = tempfile.mkdtemp(dir=self._tempdir)
-        file_path = os.path.join(subdir, 'data.nc')
-        dataset_name, cds_api_params = \
-            CDSDataOpener._transform_params(open_params, data_id)
-
-        # This call returns a Result object, which at present we make
-        # no use of.
-        client.retrieve(dataset_name, cds_api_params, file_path)
-
-        # decode_cf is the default, but it's clearer to make it explicit.
-        dataset = xr.open_dataset(file_path, decode_cf=True)
-
-        # The API doesn't close the session automatically, so we need to
-        # do it explicitly here to avoid leaving an open socket.
-        client.session.close()
-
-        dataset = dataset.rename_dims({
-            'longitude': 'lon',
-            'latitude': 'lat'
-        })
-        dataset = dataset.rename_vars({'longitude': 'lon', 'latitude': 'lat'})
-        dataset.transpose('time', ..., 'lat', 'lon')
-        dataset.coords['time'].attrs['standard_name'] = 'time'
-        dataset.coords['lat'].attrs['standard_name'] = 'latitude'
-        dataset.coords['lon'].attrs['standard_name'] = 'longitude'
-
-        # Correct units not entirely clear: cubespec document says
-        # degrees_north / degrees_east for WGS84 Schema, but SH Plugin
-        # had decimal_degrees.
-        dataset.coords['lat'].attrs['units'] = 'degrees_north'
-        dataset.coords['lon'].attrs['units'] = 'degrees_east'
-
-        # TODO: Temporal coordinate variables MUST have units, standard_name,
-        # and any others. standard_name MUST be "time", units MUST have
-        # format "<deltatime> since <datetime>", where datetime must have
-        # ISO-format.
-
-        dataset = xcube.core.normalize.normalize_dataset(dataset)
-
-        if self._normalize_names:
-            rename_dict = {}
-            for name in dataset.data_vars.keys():
-                normalized_name = re.sub(r'\W|^(?=\d)', '_', name)
-                if name != normalized_name:
-                    rename_dict[name] = normalized_name
-            dataset_renamed = dataset.rename_vars(rename_dict)
-            return dataset_renamed
-        else:
-            return dataset
-
-    @staticmethod
-    def _transform_params(plugin_params, data_id):
-        """Transform supplied parameters to CDS API format.
-
-        :param plugin_params: parameters in form expected by this plugin
-        :return: parameters in form expected by the CDS API
-        """
-
-        dataset_name, product_type = \
-            data_id.split(':') if ':' in data_id else (data_id, None)
-
-        # We need to split out the bounding box co-ordinates to re-order them.
-        x1, y1, x2, y2 = plugin_params['bbox']
-
-        # Translate our parameters (excluding time parameters) to the CDS API
-        # scheme.
-        resolution = plugin_params['spatial_res']
-        params_combined = {
-            'variable': plugin_params['variable_names'],
-            # For the ERA5 dataset, we need to crop the area by half a
-            # cell-width. ERA5 data are points, but xcube treats them as
-            # cell centres. The bounds of a grid of cells are half a cell-width
-            # outside the bounds of a grid of points, so we have to crop each
-            # edge by half a cell-width to end up with the requested bounds.
-            # See https://confluence.ecmwf.int/display/CKB/ERA5%3A+What+is+the+spatial+reference#ERA5:Whatisthespatialreference-Visualisationofregularlat/londata
-            'area': [y2 - resolution / 2,
-                     x1 + resolution / 2,
-                     y1 + resolution / 2,
-                     x2 - resolution / 2],
-            # Note: the "grid" parameter is not exposed via the web interface,
-            # but is described at
-            # https://confluence.ecmwf.int/display/CKB/ERA5%3A+Web+API+to+CDS+API
-            'grid': [resolution, resolution],
-            'format': 'netcdf'
-        }
-
-        if product_type is not None:
-            params_combined['product_type'] = product_type
-
-        # Convert the time range specification to the nearest equivalent
-        # in the CDS "orthogonal time units" scheme.
-        time_params_from_range = CDSDataOpener._transform_time_params(
-            CDSDataOpener._convert_time_range(plugin_params['time_range']))
-        params_combined.update(time_params_from_range)
-
-        # If any of the "years", "months", "days", and "hours" parameters
-        # were passed, they override the time specifications above.
-        time_params_explicit = \
-            CDSDataOpener._transform_time_params(plugin_params)
-        params_combined.update(time_params_explicit)
-
-        # Transform singleton list values into their single members, as
-        # required by the CDS API.
-        desingletonned = {
-            k: (v[0] if isinstance(v, list) and len(v) == 1 else v)
-            for k, v in params_combined.items()}
-
-        return dataset_name, desingletonned
-
-    @staticmethod
-    def _transform_time_params(params: Dict):
+    def transform_time_params(self, params: Dict):
         return {
-            k1: v1 for k1, v1 in [CDSDataOpener._transform_time_param(k0, v0)
+            k1: v1 for k1, v1 in [self.transform_time_param(k0, v0)
                                   for k0, v0 in params.items()]
             if k1 is not None}
 
     @staticmethod
-    def _transform_time_param(key, value):
+    def transform_time_param(key: str, value: int):
         if key == 'hours':
             return 'time', list(map(lambda x: f'{x:02d}:00', value))
         if key == 'days':
@@ -256,7 +95,7 @@ class CDSDataOpener(DataOpener):
             return None, None
 
     @staticmethod
-    def _convert_time_range(time_range: List[str]) -> \
+    def convert_time_range(time_range: List[str]) -> \
             Dict[str, List[int]]:
         """Convert a time range to a CDS-style time specification.
 
@@ -314,6 +153,133 @@ class CDSDataOpener(DataOpener):
         return dict(hours=hours,
                     days=days,
                     months=months, years=years)
+
+
+class CDSDataOpener(DataOpener):
+    """A data opener for the Copernicus Climate Data Store"""
+
+    def __init__(self, normalize_names: Optional[bool] = False):
+        self._normalize_names = normalize_names
+        self._create_temporary_directory()
+        self._handler_registry: Dict[str, CDSDatasetHandler] = {}
+        from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
+        self._register_dataset_handler(ERA5DatasetHandler())
+
+    def _register_dataset_handler(self, handler: CDSDatasetHandler):
+        for data_id in handler.get_supported_data_ids():
+            self._handler_registry[data_id] = handler
+
+    def _create_temporary_directory(self):
+        # Create a temporary directory to hold downloaded NetCDF files and
+        # a hook to delete it when the interpreter exits. xarray.open reads
+        # data lazily so we can't just delete the file after returning the
+        # Dataset. We could also use weakref hooks to delete individual files
+        # when the corresponding object is garbage collected, but even then
+        # the directory is useful to group the files and offer an extra
+        # assurance that they will be deleted.
+        tempdir = tempfile.mkdtemp()
+
+        def delete_tempdir():
+            shutil.rmtree(tempdir, ignore_errors=True)
+
+        atexit.register(delete_tempdir)
+        self._tempdir = tempdir
+
+    ###########################################################################
+    # DataOpener implementation
+
+    def get_open_data_params_schema(self, data_id: Optional[str] = None) -> \
+            JsonObjectSchema:
+
+        self._validate_data_id(data_id, allow_none=True)
+
+        # TODO: define a broad default schema here for the case where
+        # data_id==None. If data_id is supplied, its values can be
+        # overwritten.
+
+        if data_id is None:
+            raise NotImplementedError("data_id==None not implemented yet.")
+        else:
+            return self._handler_registry[data_id].\
+                get_open_data_params_schema(data_id)
+
+    def open_data(self, data_id: str, **open_params) -> xr.Dataset:
+        schema = self.get_open_data_params_schema(data_id)
+        schema.validate_instance(open_params)
+
+        handler = self._handler_registry[data_id]
+        dataset_name, cds_api_params = \
+            handler.transform_params(open_params, data_id)
+
+        client = None
+        try:
+            client = cdsapi.Client()
+
+            # We can't generate a safe unique filename (since the file is
+            # created by client.retrieve, so name generation and file
+            # creation won't be atomic). Instead we atomically create a
+            # subdirectory of the temporary directory for the single file.
+            subdir = tempfile.mkdtemp(dir=self._tempdir)
+            file_path = os.path.join(subdir, 'data')
+
+            # This call returns a Result object, which at present we make
+            # no use of.
+            client.retrieve(dataset_name, cds_api_params, file_path)
+        finally:
+            # The API doesn't close the session automatically, so we need to
+            # do it explicitly here to avoid leaving an open socket.
+            if client is not None:
+                client.session.close()
+
+        # TODO: Work out if/when/how to delete the file.
+        # The whole temporary parent directory will be deleted when the
+        # interpreter exits, but that could still allow a lot of files to
+        # build up. xarray may read data lazily from the file, so we can't
+        # just delete the file as soon as the handler reads it, and we don't
+        # have control of the DataSet's lifecycle once we've returned it.
+        # There is a close() method in DataSet which might come in handy here
+        # -- we could wrap the DataSet in a decorator subclass with a close()
+        # which carries out the deletion, or just monkeypatch the method in
+        # the instance returned by handler.read_file.
+
+        dataset = handler.read_file(dataset_name, cds_api_params, file_path)
+
+        return self._normalize_dataset(dataset)
+
+    def _normalize_dataset(self, dataset):
+        dataset = dataset.rename_dims({
+            'longitude': 'lon',
+            'latitude': 'lat'
+        })
+        dataset = dataset.rename_vars({'longitude': 'lon', 'latitude': 'lat'})
+        dataset.transpose('time', ..., 'lat', 'lon')
+        dataset.coords['time'].attrs['standard_name'] = 'time'
+        dataset.coords['lat'].attrs['standard_name'] = 'latitude'
+        dataset.coords['lon'].attrs['standard_name'] = 'longitude'
+
+        # Correct units not entirely clear: cubespec document says
+        # degrees_north / degrees_east for WGS84 Schema, but SH Plugin
+        # had decimal_degrees.
+        dataset.coords['lat'].attrs['units'] = 'degrees_north'
+        dataset.coords['lon'].attrs['units'] = 'degrees_east'
+
+        # TODO: Temporal coordinate variables MUST have units, standard_name,
+        # and any others. standard_name MUST be "time", units MUST have
+        # format "<deltatime> since <datetime>", where datetime must have
+        # ISO-format.
+
+        dataset = xcube.core.normalize.normalize_dataset(dataset)
+
+        if self._normalize_names:
+            rename_dict = {}
+            for name in dataset.data_vars.keys():
+                normalized_name = re.sub(r'\W|^(?=\d)', '_', name)
+                if name != normalized_name:
+                    rename_dict[name] = normalized_name
+            dataset_renamed = dataset.rename_vars(rename_dict)
+            return dataset_renamed
+        else:
+            return dataset
 
     def _validate_data_id(self, data_id, allow_none=False):
         if (data_id is None) and allow_none:
