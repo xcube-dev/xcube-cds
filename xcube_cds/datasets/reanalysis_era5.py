@@ -23,10 +23,8 @@
 import json
 import os
 import pathlib
-import re
 from typing import List, Optional
 import xarray as xr
-import xcube
 from xcube.core.store import DataDescriptor, DatasetDescriptor, \
     VariableDescriptor
 from xcube.util.jsonschema import JsonObjectSchema, JsonStringSchema, \
@@ -153,9 +151,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             'time_range',
         ]
         return JsonObjectSchema(
-            properties=dict(
-                **params,
-            ),
+            properties=params,
             required=required
         )
 
@@ -246,9 +242,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
 
         # Transform singleton list values into their single members, as
         # required by the CDS API.
-        desingletonned = {
-            k: (v[0] if isinstance(v, list) and len(v) == 1 else v)
-            for k, v in params_combined.items()}
+        desingletonned = self.unwrap_singleton_values(params_combined)
 
         return dataset_name, desingletonned
 
@@ -256,4 +250,3 @@ class ERA5DatasetHandler(CDSDatasetHandler):
 
         # decode_cf is the default, but it's clearer to make it explicit.
         return xr.open_dataset(file_path, decode_cf=True)
-

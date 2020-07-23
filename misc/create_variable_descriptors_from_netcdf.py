@@ -27,8 +27,13 @@ class VariableDescriptor:
     def constructor_string(self):
         output = []
         for arg, value in self.kwargs.items():
-            output.append(f"{arg}={value!r}")
-        return 'VariableDescriptor(\n    ' + ',\n    '.join(output) + '\n),\n'
+            output.append(f"{arg}={self._fmt(value)}")
+        return 'VariableDescriptor(\n    ' + ',\n    '.join(output) + '\n),'
+
+    @staticmethod
+    def _fmt(value):
+        return repr(value) if type(value) in (tuple, dict, list) \
+            else f"'{value}'"
 
 
 def output_variable(vname, vinfo):

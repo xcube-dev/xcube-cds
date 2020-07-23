@@ -40,7 +40,8 @@ from xcube.core.store import DataOpener
 from xcube.core.store import DataStore
 from xcube.core.store import DataStoreError
 from xcube.core.store import TYPE_ID_DATASET
-from xcube.util.jsonschema import JsonBooleanSchema
+from xcube.util.jsonschema import JsonBooleanSchema, JsonStringSchema, \
+    JsonArraySchema, JsonNumberSchema
 from xcube.util.jsonschema import JsonIntegerSchema
 from xcube.util.jsonschema import JsonObjectSchema
 
@@ -154,6 +155,21 @@ class CDSDatasetHandler(ABC):
                     days=days,
                     months=months, years=years)
 
+    @staticmethod
+    def unwrap_singleton_values(dictionary: dict) -> dict:
+        """Replace singleton values in a dictionary with their contents
+
+        This method is useful when preparing parameters for the CDS API,
+        which expects a bare value rather than a singleton list whenever
+        a single value is to be passed for a usually list-valued parameter.
+
+        :param dictionary: any dictionary
+        :return: the input dictionary with any singleton list values unwrapped
+        """
+        return {
+            k: (v[0] if isinstance(v, list) and len(v) == 1 else v)
+            for k, v in dictionary.items()}
+
 
 class CDSDataOpener(DataOpener):
     """A data opener for the Copernicus Climate Data Store"""
@@ -190,18 +206,43 @@ class CDSDataOpener(DataOpener):
 
     def get_open_data_params_schema(self, data_id: Optional[str] = None) -> \
             JsonObjectSchema:
-
         self._validate_data_id(data_id, allow_none=True)
+        return self._get_default_open_params_schema() \
+            if data_id is None \
+            else (self._handler_registry[data_id].
+                  get_open_data_params_schema(data_id))
 
-        # TODO: define a broad default schema here for the case where
-        # data_id==None. If data_id is supplied, its values can be
-        # overwritten.
-
-        if data_id is None:
-            raise NotImplementedError("data_id==None not implemented yet.")
-        else:
-            return self._handler_registry[data_id].\
-                get_open_data_params_schema(data_id)
+    def _get_default_open_params_schema(self) -> JsonObjectSchema:
+        params = dict(
+            dataset_name=JsonStringSchema(min_length=1,
+                                          enum=list(self._handler_registry.keys())),
+            variable_names=JsonArraySchema(
+                items=(JsonStringSchema(min_length=1)),
+                unique_items=True
+            ),
+            crs=JsonStringSchema(),
+            # W, S, E, N
+            bbox=JsonArraySchema(items=(
+                JsonNumberSchema(minimum=-180, maximum=180),
+                JsonNumberSchema(minimum=-90, maximum=90),
+                JsonNumberSchema(minimum=-180, maximum=180),
+                JsonNumberSchema(minimum=-90, maximum=90))),
+            spatial_res=JsonNumberSchema(),
+            time_range=JsonArraySchema(
+                items=[JsonStringSchema(format='date-time'),
+                       JsonStringSchema(format='date-time', nullable=True)]),
+            time_period=JsonStringSchema(),
+        )
+        required = [
+            'variable_names',
+            'bbox',
+            'spatial_res',
+            'time_range',
+        ]
+        return JsonObjectSchema(
+            properties=params,
+            required=required
+        )
 
     def open_data(self, data_id: str, **open_params) -> xr.Dataset:
         schema = self.get_open_data_params_schema(data_id)
