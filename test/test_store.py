@@ -160,10 +160,10 @@ class CDSStoreTest(unittest.TestCase):
             bbox=[-180, -90, 180, 90],
             spatial_res=0.25,
             time_period='1M',
-            time_range=['2015-01-01', '2015-01-31']
+            time_range=['2015-01-01', '2015-02-28']
         )
         self.assertTrue('sm' in dataset.variables)
-        self.assertEqual(1, len(dataset.variables['time']))
+        self.assertEqual(2, len(dataset.variables['time']))
 
 
 if __name__ == '__main__':

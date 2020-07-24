@@ -89,7 +89,13 @@ class SoilMoistureHandler(CDSDatasetHandler):
         paths = [os.path.join(temp_subdir, filename) for filename in
                  next(os.walk(temp_subdir))[2]]
 
-        return xr.open_dataset(paths[0])
+        # I'm not sure if xr.open_mfdataset calls through to
+        # netCDF4.MFDataset. If it does, note that the latter supports
+        # NetCDF4 Classic, but *not* full NetCDF4 -- however, in this case
+        # it's OK because the Product User Guide (C3S_312a_Lot7_EODC_2016SC1,
+        # §1, p. 12) states that the data are in Classic format,
+        # and inspection of some downloaded files confirms it.
+        return xr.open_mfdataset(paths, combine='by_coords')
 
     def __init__(self):
         self._data_id_map = {
@@ -108,6 +114,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
 
     def get_open_data_params_schema(self, data_id: Optional[str] = None) -> \
             JsonObjectSchema:
+        # TODO: Adapt the schema according to the dataset suffixes.
         params = dict(
             dataset_name=JsonStringSchema(min_length=1,
                                           enum=self.get_supported_data_ids()),
