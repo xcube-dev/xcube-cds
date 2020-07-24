@@ -152,6 +152,19 @@ class CDSStoreTest(unittest.TestCase):
         self.assertNotEqual(west, east)
         self.assertLessEqual(south, north)
 
+    def test_soil_moisture(self):
+        opener = CDSDataOpener()
+        dataset = opener.open_data(
+            'satellite-soil-moisture:volumetric:aggregated',
+            variable_names=['volumetric_surface_soil_moisture'],
+            bbox=[-180, -90, 180, 90],
+            spatial_res=0.25,
+            time_period='1M',
+            time_range=['2015-01-01', '2015-01-31']
+        )
+        self.assertTrue('sm' in dataset.variables)
+        self.assertEqual(1, len(dataset.variables['time']))
+
 
 if __name__ == '__main__':
     unittest.main()

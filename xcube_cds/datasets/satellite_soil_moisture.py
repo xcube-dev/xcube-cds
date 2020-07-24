@@ -19,8 +19,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from typing import List, Optional
-
+import os
+import tempfile
+import tarfile
+from typing import List, Optional, Dict, Tuple, Any
+import xarray as xr
 from xcube.core.store import DataDescriptor, DatasetDescriptor, \
     VariableDescriptor
 from xcube.util.jsonschema import JsonObjectSchema, JsonStringSchema, \
@@ -31,15 +34,74 @@ from xcube_cds.store import CDSDatasetHandler
 
 class SoilMoistureHandler(CDSDatasetHandler):
 
-    def transform_params(self, plugin_params, data_id: str):
-        raise NotImplementedError()
+    def transform_params(self, plugin_params, data_id: str) -> \
+            Tuple[str, Dict[str, Any]]:
 
-    def read_file(self, dataset_name, cds_api_params, file_path):
-        raise NotImplementedError()
+        # We don't need to check the argument format, since CDSDataStore does
+        # this for us. We can also ignore the dataset ID (constant) and
+        # aggregation type (only needed for describe_data).
+        _, variable_spec, _ = data_id.split(':')
+
+        variable = dict(
+            saturation='soil_moisture_saturation',
+            volumetric='volumetric_surface_soil_moisture')[variable_spec]
+
+        time_aggregation = {
+            '1D': 'day_average',
+            '10D': '10_day_average',
+            '1M': 'month_average'}[plugin_params['time_period']]
+
+        # TODO: Allow selection of passive sensor
+        # At the moment the sensor type is entirely determined by the variable,
+        # but in fact two possibilities are possible for 'volumetric':
+        # 'combined_passive_and_active' and 'passive'.
+        type_of_sensor = \
+            dict(saturation='active',
+                 volumetric='combined_passive_and_active')[variable_spec]
+
+        cds_params = dict(
+            variable=variable,
+            type_of_sensor=type_of_sensor,
+            time_aggregation=time_aggregation,
+            type_of_record='cdr',
+            version='v201912.0.0',
+            format='tgz'
+        )
+
+        time_selectors = self.transform_time_params(
+            self.convert_time_range(plugin_params['time_range']))
+
+        cds_params.update(time_selectors)
+        return 'satellite-soil-moisture', cds_params
+
+    def read_file(self, dataset_name: str, cds_api_params: Dict,
+                  file_path: str, temp_dir: str):
+        # Create another directory within the temporary directory to hold
+        # the contents of the .tar.gz file. Note that we don't delete this
+        # temporary directory ourselves, instead relying on the deletion of
+        # the parent temporary directory.
+        temp_subdir = tempfile.mkdtemp(dir=temp_dir)
+
+        # Unpack the .tar.gz into the temporary subdirectory.
+        with tarfile.open(file_path) as tgz_file:
+            tgz_file.extractall(path=temp_subdir)
+
+        paths = [os.path.join(temp_subdir, filename) for filename in
+                 next(os.walk(temp_subdir))[2]]
+
+        return xr.open_dataset(paths[0])
 
     def __init__(self):
-        self._data_id_map = \
-            {'satellite-soil-moisture': 'Satellite soil moisture'}
+        self._data_id_map = {
+            'satellite-soil-moisture:saturation:daily':
+                'Soil moisture (saturation, daily)',
+            'satellite-soil-moisture:saturation:aggregated':
+                'Soil moisture (saturation, aggregated)',
+            'satellite-soil-moisture:volumetric:daily':
+                'Soil moisture (volumetric, daily)',
+            'satellite-soil-moisture:volumetric:aggregated':
+                'Soil moisture (volumetric, aggregated)',
+        }
 
     def get_supported_data_ids(self) -> List[str]:
         return list(self._data_id_map)

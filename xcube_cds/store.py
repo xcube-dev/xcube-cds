@@ -27,7 +27,7 @@ import re
 import shutil
 import tempfile
 from abc import abstractmethod, ABC
-from typing import Iterator, Tuple, List, Optional, Dict
+from typing import Iterator, Tuple, List, Optional, Dict, Any, Union
 
 import cdsapi
 import dateutil.parser
@@ -61,7 +61,7 @@ class CDSDatasetHandler(ABC):
         pass
 
     @abstractmethod
-    def get_human_readable_data_id(self, data_id: str):
+    def get_human_readable_data_id(self, data_id: str) -> str:
         pass
 
     @abstractmethod
@@ -69,21 +69,38 @@ class CDSDatasetHandler(ABC):
         pass
 
     @abstractmethod
-    def transform_params(self, plugin_params, data_id: str):
+    def transform_params(self, plugin_params: Dict, data_id: str) -> \
+            Tuple[str, Dict[str, Any]]:
         pass
 
     @abstractmethod
-    def read_file(self, dataset_name, cds_api_params, file_path):
+    def read_file(self, dataset_name: str,
+                  cds_api_params: Dict[str, Union[str, List[str]]],
+                  file_path: str, temp_dir: str) -> xr.Dataset:
         pass
 
-    def transform_time_params(self, params: Dict):
+    def transform_time_params(self, params: Dict) -> Dict:
         return {
             k1: v1 for k1, v1 in [self.transform_time_param(k0, v0)
                                   for k0, v0 in params.items()]
             if k1 is not None}
 
     @staticmethod
-    def transform_time_param(key: str, value: int):
+    def transform_time_param(key: str, value: List[int]) -> \
+            Tuple[Optional[str], Optional[List[str]]]:
+        """Convert an hours/days/months/years time specifier to CDS form
+
+        This method renames the pluralized keys to singular (hours -> hour,
+        etc.) and converts the integer values to the string format expected
+        by CDS.
+
+        :param key: a time specifier key
+            ('hours', 'days', 'months', or 'years')
+        :param value: a list of integers corresponding to the time specifier
+        :return: a tuple of modified time specifier key and list of strings, or
+            (None, None) if the key was not recognized
+        """
+
         if key == 'hours':
             return 'time', list(map(lambda x: f'{x:02d}:00', value))
         if key == 'days':
@@ -110,11 +127,18 @@ class CDSDatasetHandler(ABC):
         to a request for all of 2000-2002, since every hour, day, and month
         must be selected.
 
+        Note that the output still requires further transformation before
+        being passed to the CDS API: the key names must be replaced, the
+        integers formatted into strings, and any singleton lists replaced
+        by their content.
+
         :param time_range: a length-2 list of ISO-8601 date/time strings
         :return: a dictionary with keys 'hours', 'days', 'months', and
             'years', and values which are lists of ints
         """
 
+        # Python type hints don't support list lengths, so we check this
+        # manually.
         if len(time_range) != 2:
             raise ValueError(f'time_range must have a length of 2, '
                              'not {len(time_range)}.')
@@ -180,19 +204,22 @@ class CDSDataOpener(DataOpener):
         self._handler_registry: Dict[str, CDSDatasetHandler] = {}
         from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
         self._register_dataset_handler(ERA5DatasetHandler())
+        from xcube_cds.datasets.satellite_soil_moisture \
+            import SoilMoistureHandler
+        self._register_dataset_handler(SoilMoistureHandler())
 
     def _register_dataset_handler(self, handler: CDSDatasetHandler):
         for data_id in handler.get_supported_data_ids():
             self._handler_registry[data_id] = handler
 
     def _create_temporary_directory(self):
-        # Create a temporary directory to hold downloaded NetCDF files and
-        # a hook to delete it when the interpreter exits. xarray.open reads
-        # data lazily so we can't just delete the file after returning the
-        # Dataset. We could also use weakref hooks to delete individual files
-        # when the corresponding object is garbage collected, but even then
-        # the directory is useful to group the files and offer an extra
-        # assurance that they will be deleted.
+        # Create a temporary directory to hold downloaded files and a hook to
+        # delete it when the interpreter exits. xarray.open reads data lazily
+        # so we can't just delete the file after returning the Dataset. We
+        # could also use weakref hooks to delete individual files when the
+        # corresponding object is garbage collected, but even then the
+        # directory is useful to group the files and offer an extra assurance
+        # that they will be deleted.
         tempdir = tempfile.mkdtemp()
 
         def delete_tempdir():
@@ -215,7 +242,8 @@ class CDSDataOpener(DataOpener):
     def _get_default_open_params_schema(self) -> JsonObjectSchema:
         params = dict(
             dataset_name=JsonStringSchema(min_length=1,
-                                          enum=list(self._handler_registry.keys())),
+                                          enum=list(
+                                              self._handler_registry.keys())),
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(min_length=1)),
                 unique_items=True
@@ -283,17 +311,23 @@ class CDSDataOpener(DataOpener):
         # which carries out the deletion, or just monkeypatch the method in
         # the instance returned by handler.read_file.
 
-        dataset = handler.read_file(dataset_name, cds_api_params, file_path)
+        dataset = handler.read_file(dataset_name, cds_api_params, file_path,
+                                    self._tempdir)
 
         return self._normalize_dataset(dataset)
 
     def _normalize_dataset(self, dataset):
-        dataset = dataset.rename_dims({
-            'longitude': 'lon',
-            'latitude': 'lat'
-        })
-        dataset = dataset.rename_vars({'longitude': 'lon', 'latitude': 'lat'})
-        dataset.transpose('time', ..., 'lat', 'lon')
+        dataset = xcube.core.normalize.normalize_dataset(dataset)
+
+        # These steps should be taken care of by the core normalizer now.
+        # TODO: check that they are.
+        # dataset = dataset.rename_dims({
+        #     'longitude': 'lon',
+        #     'latitude': 'lat'
+        # })
+        # dataset = dataset.rename_vars({'longitude': 'lon', 'latitude': 'lat'})
+        # dataset.transpose('time', ..., 'lat', 'lon')
+
         dataset.coords['time'].attrs['standard_name'] = 'time'
         dataset.coords['lat'].attrs['standard_name'] = 'latitude'
         dataset.coords['lon'].attrs['standard_name'] = 'longitude'
@@ -309,12 +343,10 @@ class CDSDataOpener(DataOpener):
         # format "<deltatime> since <datetime>", where datetime must have
         # ISO-format.
 
-        dataset = xcube.core.normalize.normalize_dataset(dataset)
-
         if self._normalize_names:
             rename_dict = {}
             for name in dataset.data_vars.keys():
-                normalized_name = re.sub(r'\W|^(?=\d)', '_', name)
+                normalized_name = re.sub(r'\W|^(?=\d)', '_', str(name))
                 if name != normalized_name:
                     rename_dict[name] = normalized_name
             dataset_renamed = dataset.rename_vars(rename_dict)
@@ -369,7 +401,7 @@ class CDSDataStore(CDSDataOpener, DataStore):
         self._assert_valid_type_id(type_id)
         return iter((data_id,
                      self._handler_registry[data_id].
-                     get_human_readable_data_id[data_id])
+                     get_human_readable_data_id(data_id))
                     for data_id in self._handler_registry)
 
     def has_data(self, data_id: str) -> bool:

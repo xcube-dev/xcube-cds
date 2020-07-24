@@ -23,7 +23,7 @@
 import json
 import os
 import pathlib
-from typing import List, Optional
+from typing import List, Optional, Dict, Tuple
 import xarray as xr
 from xcube.core.store import DataDescriptor, DatasetDescriptor, \
     VariableDescriptor
@@ -172,7 +172,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             open_params_schema=self.get_open_data_params_schema(data_id)
         )
 
-    def _create_variable_descriptors(self, data_id):
+    def _create_variable_descriptors(self, data_id: str):
         dataset_id, _ = data_id.split(':')
 
         return [
@@ -189,7 +189,8 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             in self._dataset_dicts[dataset_id]['variables']
         ]
 
-    def transform_params(self, plugin_params, data_id):
+    def transform_params(self, plugin_params: Dict, data_id: str) -> \
+            Tuple[str, Dict]:
         """Transform supplied parameters to CDS API format.
 
         :param plugin_params: parameters in form expected by this plugin
@@ -246,7 +247,8 @@ class ERA5DatasetHandler(CDSDatasetHandler):
 
         return dataset_name, desingletonned
 
-    def read_file(self, dataset_name, cds_api_params, file_path):
+    def read_file(self, dataset_name: str, cds_api_params: Dict,
+                  file_path: str, temp_dir: str):
 
         # decode_cf is the default, but it's clearer to make it explicit.
         return xr.open_dataset(file_path, decode_cf=True)
