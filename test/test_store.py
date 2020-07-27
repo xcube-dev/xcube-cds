@@ -164,6 +164,10 @@ class CDSStoreTest(unittest.TestCase):
         )
         self.assertTrue('sm' in dataset.variables)
         self.assertEqual(2, len(dataset.variables['time']))
+        self.assertEqual('2014-12-31T12:00:00Z',
+                         dataset.attrs['time_coverage_start'])
+        self.assertEqual('2015-02-28T12:00:00Z',
+                         dataset.attrs['time_coverage_end'])
 
 
 if __name__ == '__main__':

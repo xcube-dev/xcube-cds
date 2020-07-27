@@ -194,6 +194,37 @@ class CDSDatasetHandler(ABC):
             k: (v[0] if isinstance(v, list) and len(v) == 1 else v)
             for k, v in dictionary.items()}
 
+    @staticmethod
+    def combine_netcdf_time_limits(paths: List[str]) -> Dict[str, str]:
+        """Return the overall time limit attributes for a list of NetCDF files.
+
+        Take a list of paths to NetCDF files. Return a dictionary in which
+        the key 'time_coverage_start' has the value of the earliest
+        'time_coverage_start' global attribute value in the specified files,
+        and 'time_coverage_end' has the value of the latest
+        'time_coverage_end' global attribute value in the specified files.
+
+        Intended use: set correct values for the aforementioned attributes
+        when combining multiple NetCDF files into a single dataset.
+
+        :param paths: paths to NetCDF files
+        :return: dictionary with keys 'time_coverage_start' and
+                 'time_coverage_end'
+        """
+
+        start_key = 'time_coverage_start'
+        end_key = 'time_coverage_end'
+        starts, ends = [], []
+        for path in paths:
+            with xr.open_dataset(path) as ds:
+                starts.append(ds.attrs[start_key])
+                ends.append(ds.attrs[end_key])
+
+        # Since the time specifiers are in ISO-8601, we can find the minimum
+        # and maximum using the natural string ordering.
+        return {start_key: min(starts), end_key: max(ends)}
+
+
 
 class CDSDataOpener(DataOpener):
     """A data opener for the Copernicus Climate Data Store"""

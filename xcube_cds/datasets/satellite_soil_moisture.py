@@ -95,7 +95,9 @@ class SoilMoistureHandler(CDSDatasetHandler):
         # it's OK because the Product User Guide (C3S_312a_Lot7_EODC_2016SC1,
         # §1, p. 12) states that the data are in Classic format,
         # and inspection of some downloaded files confirms it.
-        return xr.open_mfdataset(paths, combine='by_coords')
+        ds = xr.open_mfdataset(paths, combine='by_coords')
+        ds.attrs.update(self.combine_netcdf_time_limits(paths))
+        return ds
 
     def __init__(self):
         self._data_id_map = {
