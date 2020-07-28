@@ -22,7 +22,7 @@
 import os
 import tempfile
 import tarfile
-from typing import List, Optional, Dict, Tuple, Any
+from typing import List, Dict, Tuple, Any
 import xarray as xr
 from xcube.core.store import DataDescriptor, DatasetDescriptor, \
     VariableDescriptor
@@ -38,22 +38,28 @@ class SoilMoistureHandler(CDSDatasetHandler):
         self._data_id_map = {
             'satellite-soil-moisture:saturation:daily':
                 'Soil moisture (saturation, daily)',
-            'satellite-soil-moisture:saturation:aggregated':
-                'Soil moisture (saturation, aggregated)',
+            'satellite-soil-moisture:saturation:10-day':
+                'Soil moisture (saturation, 10-day)',
+            'satellite-soil-moisture:saturation:monthly':
+                'Soil moisture (saturation, monthly)',
             'satellite-soil-moisture:volumetric:daily':
                 'Soil moisture (volumetric, daily)',
-            'satellite-soil-moisture:volumetric:aggregated':
-                'Soil moisture (volumetric, aggregated)',
+            'satellite-soil-moisture:volumetric:10-day':
+                'Soil moisture (volumetric, 10-day)',
+            'satellite-soil-moisture:volumetric:monthly':
+                'Soil moisture (volumetric, monthly)',
         }
         self._var_map = {
             'saturation': (['soil_moisture_saturation'], ['active']),
             'volumetric': (['volumetric_surface_soil_moisture'],
                            ['combined_passive_and_active', 'passive'])
         }
+        self._aggregation_map = {'daily': '1D',
+                                 '10-day': '10D',
+                                 'monthly': '1M'}
 
     def transform_params(self, opener_params, data_id: str) -> \
             Tuple[str, Dict[str, Any]]:
-
         # We don't need to check the argument format, since CDSDataStore does
         # this for us. We can also ignore the dataset ID (constant) and
         # aggregation type (only needed for describe_data).
@@ -75,13 +81,15 @@ class SoilMoistureHandler(CDSDatasetHandler):
             format='tgz'
         )
 
-        # TODO: check that this gets desingletonned before calling CDS
-
         time_selectors = self.transform_time_params(
             self.convert_time_range(opener_params['time_range']))
-
         cds_params.update(time_selectors)
-        return 'satellite-soil-moisture', cds_params
+
+        # Transform singleton list values into their single members, as
+        # required by the CDS API.
+        unwrapped = self.unwrap_singleton_values(cds_params)
+
+        return 'satellite-soil-moisture', unwrapped
 
     def read_file(self, dataset_name: str, cds_api_params: Dict,
                   file_path: str, temp_dir: str):
@@ -139,7 +147,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
             time_range=JsonArraySchema(
                 items=[JsonStringSchema(format='date-time'),
                        JsonStringSchema(format='date-time', nullable=True)]),
-            time_period=JsonStringSchema(enum=['1D', '10D', '1M']),
+            time_period=JsonStringSchema(enum=[self._aggregation_map[aggregation]]),
             # Non-standard parameters start here. There are complex
             # interdependencies between allowed values for these and for
             # the date specifiers, which can't be represented in JSON Schema.
@@ -171,40 +179,95 @@ class SoilMoistureHandler(CDSDatasetHandler):
         return self._data_id_map['data_id']
 
     def describe_data(self, data_id: str) -> DataDescriptor:
-        # TODO: Adapt output to data_if suffixes
+        # TODO: Adapt output to data_id suffixes
+        _, variable_spec, aggregation = data_id.split(':')
+
+        sm_attrs = dict(
+            saturation=('percent', 'Percent of Saturation Soil Moisture'),
+            volumetric=('m3 m-3', 'Volumetric Soil Moisture'))[variable_spec]
+
+        descriptors_common = [
+            VariableDescriptor(
+                name='sensor',
+                dtype='int16',
+                dims=('time', 'lat', 'lon'),
+                attrs={'long_name': 'Sensor'}
+            ),
+            VariableDescriptor(
+                name='freqbandID',
+                dtype='int16',
+                dims=('time', 'lat', 'lon'),
+                attrs={'long_name': 'Frequency Band Identification'}
+            ),
+            VariableDescriptor(
+                name='sm',
+                dtype='float32',
+                dims=('time', 'lat', 'lon'),
+                attrs={'units': sm_attrs[0],
+                       'long_name': sm_attrs[1]}
+            ),
+        ]
+
+        descriptors_daily = [
+            VariableDescriptor(
+                # The product user guide claims that sm_uncertainty is
+                # available for all three aggregation periods, but in practice
+                # it only seems to be present in the daily data.
+                name='sm_uncertainty',
+                dtype='float32',
+                dims=('time', 'lat', 'lon'),
+                attrs={'units': sm_attrs[0],
+                       'long_name': sm_attrs[1] + ' Uncertainty'}
+            ),
+            VariableDescriptor(
+                name='t0',
+                dtype='float64',
+                dims=('time', 'lat', 'lon'),
+                attrs={'units': 'days since 1970-01-01 00:00:00 UTC',
+                       'long_name': 'Observation Timestamp'}
+            ),
+            VariableDescriptor(
+                name='dnflag',
+                dtype='int8',
+                dims=('time', 'lat', 'lon'),
+                attrs={'long_name': 'Day / Night Flag'}
+            ),
+            VariableDescriptor(
+                name='flag',
+                dtype='int8',
+                dims=('time', 'lat', 'lon'),
+                attrs={'long_name': 'Flag'}
+            ),
+            VariableDescriptor(
+                name='mode',
+                dtype='int8',
+                dims=('time', 'lat', 'lon'),
+                # Note: the product user guide gives the long name as
+                # 'Satellite Mode' with one space, but the long name in the
+                # actual NetCDF files has two spaces.
+                attrs={'long_name': 'Satellite  Mode'}
+            ),
+
+        ]
+        descriptors_aggregated = [
+            VariableDescriptor(
+                name='nobs',
+                dtype='int16',
+                dims=('time', 'lat', 'lon'),
+                attrs={'long_name': 'Number of valid observation'}
+            ),
+
+        ]
+
         return DatasetDescriptor(
             data_id=data_id,
-            data_vars=[
-                VariableDescriptor(
-                    name='nobs',
-                    dtype='int16',
-                    dims=('time', 'lat', 'lon'),
-                    attrs={'long_name': 'Number of valid observation'}
-                ),
-                VariableDescriptor(
-                    name='sensor',
-                    dtype='int16',
-                    dims=('time', 'lat', 'lon'),
-                    attrs={'long_name': 'Sensor'}
-                ),
-                VariableDescriptor(
-                    name='freqbandID',
-                    dtype='int16',
-                    dims=('time', 'lat', 'lon'),
-                    attrs={'long_name': 'Frequency Band Identification'}
-                ),
-                VariableDescriptor(
-                    name='sm',
-                    dtype='float32',
-                    dims=('time', 'lat', 'lon'),
-                    attrs={'units': 'm3 m-3',
-                           'long_name': 'Volumetric Soil Moisture'}
-                )
-            ],
+            data_vars=(descriptors_common +
+                       (descriptors_daily if aggregation == 'daily'
+                        else descriptors_aggregated)),
             crs='WGS84',
             bbox=(-180, -90, 180, 90),
             spatial_res=0.25,
             time_range=('1978-11-01', None),
-            time_period='1M',
+            time_period=self._aggregation_map[aggregation],
             open_params_schema=self.get_open_data_params_schema(data_id)
         )
