@@ -47,6 +47,7 @@ from xcube.util.jsonschema import JsonObjectSchema
 
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.constants import DEFAULT_NUM_RETRIES
+from xcube.util.undefined import UNDEFINED
 
 
 class CDSDatasetHandler(ABC):
@@ -69,8 +70,20 @@ class CDSDatasetHandler(ABC):
         pass
 
     @abstractmethod
-    def transform_params(self, plugin_params: Dict, data_id: str) -> \
+    def transform_params(self, opener_params: Dict, data_id: str) -> \
             Tuple[str, Dict[str, Any]]:
+        """Transform opener parameters into CDS API parameters
+
+        The caller is responsible for ensuring that all required parameters
+        are present in opener_params; default values may be filled in from
+        those specified in the opener parameters schema.
+
+        :param opener_params: opener parameters conforming to the opener
+            parameter schema for the given data_id
+        :param data_id: a valid data identifier
+        :return: CDS API request parameters corresponding to the specified
+            opener parameters
+        """
         pass
 
     @abstractmethod
@@ -308,8 +321,12 @@ class CDSDataOpener(DataOpener):
         schema.validate_instance(open_params)
 
         handler = self._handler_registry[data_id]
+        props = self.get_open_data_params_schema(data_id).properties
+        all_open_params = {k: props[k].default for k in props
+                           if props[k].default is not UNDEFINED}
+        all_open_params.update(open_params)
         dataset_name, cds_api_params = \
-            handler.transform_params(open_params, data_id)
+            handler.transform_params(all_open_params, data_id)
 
         client = None
         try:

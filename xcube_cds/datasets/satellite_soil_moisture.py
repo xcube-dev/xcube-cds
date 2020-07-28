@@ -34,7 +34,24 @@ from xcube_cds.store import CDSDatasetHandler
 
 class SoilMoistureHandler(CDSDatasetHandler):
 
-    def transform_params(self, plugin_params, data_id: str) -> \
+    def __init__(self):
+        self._data_id_map = {
+            'satellite-soil-moisture:saturation:daily':
+                'Soil moisture (saturation, daily)',
+            'satellite-soil-moisture:saturation:aggregated':
+                'Soil moisture (saturation, aggregated)',
+            'satellite-soil-moisture:volumetric:daily':
+                'Soil moisture (volumetric, daily)',
+            'satellite-soil-moisture:volumetric:aggregated':
+                'Soil moisture (volumetric, aggregated)',
+        }
+        self._var_map = \
+            dict(
+                saturation=('soil_moisture_saturation', ['active']),
+                volumetric=('volumetric_surface_soil_moisture',
+                            ['combined_passive_and_active', 'passive']))
+
+    def transform_params(self, opener_params, data_id: str) -> \
             Tuple[str, Dict[str, Any]]:
 
         # We don't need to check the argument format, since CDSDataStore does
@@ -42,34 +59,34 @@ class SoilMoistureHandler(CDSDatasetHandler):
         # aggregation type (only needed for describe_data).
         _, variable_spec, _ = data_id.split(':')
 
-        variable = dict(
-            saturation='soil_moisture_saturation',
-            volumetric='volumetric_surface_soil_moisture')[variable_spec]
+        variables = opener_params['variable_names']
 
         time_aggregation = {
             '1D': 'day_average',
             '10D': '10_day_average',
-            '1M': 'month_average'}[plugin_params['time_period']]
+            '1M': 'month_average'}[opener_params['time_period']]
 
         # TODO: Allow selection of passive sensor
         # At the moment the sensor type is entirely determined by the variable,
         # but in fact two possibilities are possible for 'volumetric':
         # 'combined_passive_and_active' and 'passive'.
-        type_of_sensor = \
-            dict(saturation='active',
-                 volumetric='combined_passive_and_active')[variable_spec]
+        #type_of_sensor = \
+        #    dict(saturation='active',
+        #         volumetric='combined_passive_and_active')[variable_spec]
 
         cds_params = dict(
-            variable=variable,
-            type_of_sensor=type_of_sensor,
+            variable=variables,
+            type_of_sensor=opener_params['type_of_sensor'],
             time_aggregation=time_aggregation,
-            type_of_record='cdr',
-            version='v201912.0.0',
+            type_of_record=opener_params['type_of_record'],
+            version=opener_params['version'],
             format='tgz'
         )
 
+        # TODO: check that this gets desingletonned before calling CDS
+
         time_selectors = self.transform_time_params(
-            self.convert_time_range(plugin_params['time_range']))
+            self.convert_time_range(opener_params['time_range']))
 
         cds_params.update(time_selectors)
         return 'satellite-soil-moisture', cds_params
@@ -99,32 +116,25 @@ class SoilMoistureHandler(CDSDatasetHandler):
         ds.attrs.update(self.combine_netcdf_time_limits(paths))
         return ds
 
-    def __init__(self):
-        self._data_id_map = {
-            'satellite-soil-moisture:saturation:daily':
-                'Soil moisture (saturation, daily)',
-            'satellite-soil-moisture:saturation:aggregated':
-                'Soil moisture (saturation, aggregated)',
-            'satellite-soil-moisture:volumetric:daily':
-                'Soil moisture (volumetric, daily)',
-            'satellite-soil-moisture:volumetric:aggregated':
-                'Soil moisture (volumetric, aggregated)',
-        }
-
     def get_supported_data_ids(self) -> List[str]:
         return list(self._data_id_map)
 
     def get_open_data_params_schema(self, data_id: Optional[str] = None) -> \
             JsonObjectSchema:
-        # TODO: Adapt the schema according to the dataset suffixes.
+        _, variable_spec, aggregation = data_id.split(':')
+        variable = self._var_map[variable_spec][0]
+        sensors = self._var_map[variable_spec][1]
         params = dict(
             dataset_name=JsonStringSchema(min_length=1,
                                           enum=self.get_supported_data_ids()),
+            # The only allowed variable is already determined by the
+            # data_id, so this schema forces an array containing only that
+            # variable.
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
                     min_length=1,
-                    enum=['soil_moisture_saturation',
-                          'volumetric_surface_soil_moisture'])),
+                    enum=[variable],
+                    default=variable)),
                 unique_items=True
             ),
             # Source for CRS information: §6.5 of
@@ -144,6 +154,19 @@ class SoilMoistureHandler(CDSDatasetHandler):
                 items=[JsonStringSchema(format='date-time'),
                        JsonStringSchema(format='date-time', nullable=True)]),
             time_period=JsonStringSchema(enum=['1D', '10D', '1M']),
+            # Non-standard parameters start here. There are complex
+            # interdependencies between allowed values for these and for
+            # the date specifiers, which can't be represented in JSON Schema.
+            # The best we can do is to make them all available, set sensible
+            # defaults, and trust that the user knows what they're requesting.
+            type_of_sensor=JsonStringSchema(enum=sensors, default=sensors[0]),
+            type_of_record=JsonStringSchema(enum=['cdr', 'icdr'],
+                                              default='cdr'),
+            version=JsonStringSchema(
+                enum=['v201706.0.0', 'v201812.0.0', 'v201812.0.1',
+                      'v201912.0.0'],
+                default='v201912.0.0')
+
         )
         required = [
             'variable_names',
