@@ -45,11 +45,11 @@ class SoilMoistureHandler(CDSDatasetHandler):
             'satellite-soil-moisture:volumetric:aggregated':
                 'Soil moisture (volumetric, aggregated)',
         }
-        self._var_map = \
-            dict(
-                saturation=('soil_moisture_saturation', ['active']),
-                volumetric=('volumetric_surface_soil_moisture',
-                            ['combined_passive_and_active', 'passive']))
+        self._var_map = {
+            'saturation': (['soil_moisture_saturation'], ['active']),
+            'volumetric': (['volumetric_surface_soil_moisture'],
+                           ['combined_passive_and_active', 'passive'])
+        }
 
     def transform_params(self, opener_params, data_id: str) -> \
             Tuple[str, Dict[str, Any]]:
@@ -65,14 +65,6 @@ class SoilMoistureHandler(CDSDatasetHandler):
             '1D': 'day_average',
             '10D': '10_day_average',
             '1M': 'month_average'}[opener_params['time_period']]
-
-        # TODO: Allow selection of passive sensor
-        # At the moment the sensor type is entirely determined by the variable,
-        # but in fact two possibilities are possible for 'volumetric':
-        # 'combined_passive_and_active' and 'passive'.
-        #type_of_sensor = \
-        #    dict(saturation='active',
-        #         volumetric='combined_passive_and_active')[variable_spec]
 
         cds_params = dict(
             variable=variables,
@@ -93,18 +85,13 @@ class SoilMoistureHandler(CDSDatasetHandler):
 
     def read_file(self, dataset_name: str, cds_api_params: Dict,
                   file_path: str, temp_dir: str):
-        # Create another directory within the temporary directory to hold
-        # the contents of the .tar.gz file. Note that we don't delete this
-        # temporary directory ourselves, instead relying on the deletion of
-        # the parent temporary directory.
-        temp_subdir = tempfile.mkdtemp(dir=temp_dir)
 
-        # Unpack the .tar.gz into the temporary subdirectory.
+        # Unpack the .tar.gz into the temporary directory.
         with tarfile.open(file_path) as tgz_file:
-            tgz_file.extractall(path=temp_subdir)
+            tgz_file.extractall(path=temp_dir)
 
-        paths = [os.path.join(temp_subdir, filename) for filename in
-                 next(os.walk(temp_subdir))[2]]
+        paths = [os.path.join(temp_dir, filename) for filename in
+                 next(os.walk(temp_dir))[2]]
 
         # I'm not sure if xr.open_mfdataset calls through to
         # netCDF4.MFDataset. If it does, note that the latter supports
@@ -119,10 +106,9 @@ class SoilMoistureHandler(CDSDatasetHandler):
     def get_supported_data_ids(self) -> List[str]:
         return list(self._data_id_map)
 
-    def get_open_data_params_schema(self, data_id: Optional[str] = None) -> \
-            JsonObjectSchema:
+    def get_open_data_params_schema(self, data_id: str) -> JsonObjectSchema:
         _, variable_spec, aggregation = data_id.split(':')
-        variable = self._var_map[variable_spec][0]
+        variables = self._var_map[variable_spec][0]
         sensors = self._var_map[variable_spec][1]
         params = dict(
             dataset_name=JsonStringSchema(min_length=1,
@@ -133,8 +119,8 @@ class SoilMoistureHandler(CDSDatasetHandler):
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
                     min_length=1,
-                    enum=[variable],
-                    default=variable)),
+                    enum=variables,
+                    default=variables[0])),
                 unique_items=True
             ),
             # Source for CRS information: §6.5 of
@@ -161,7 +147,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
             # defaults, and trust that the user knows what they're requesting.
             type_of_sensor=JsonStringSchema(enum=sensors, default=sensors[0]),
             type_of_record=JsonStringSchema(enum=['cdr', 'icdr'],
-                                              default='cdr'),
+                                            default='cdr'),
             version=JsonStringSchema(
                 enum=['v201706.0.0', 'v201812.0.0', 'v201812.0.1',
                       'v201912.0.0'],
@@ -185,12 +171,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
         return self._data_id_map['data_id']
 
     def describe_data(self, data_id: str) -> DataDescriptor:
-        # TODO: Work out how to deal with different data formats.
-        # The output data format is dependent on the request parameters, so
-        # it is impossible to give a full and correct description from only
-        # the data_id. Without changing the xcube store API, the only way
-        # around this would be to encode the relevant parameters into the
-        # data_id itself.
+        # TODO: Adapt output to data_if suffixes
         return DatasetDescriptor(
             data_id=data_id,
             data_vars=[

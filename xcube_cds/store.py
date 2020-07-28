@@ -52,21 +52,56 @@ from xcube.util.undefined import UNDEFINED
 
 class CDSDatasetHandler(ABC):
 
+    """A handler for one or more CDS datasets
+
+    This class defines abstract methods which must be implemented by
+    dataset handler subclasses, and concrete utility methods for use by
+    those subclasses."""
+
     @abstractmethod
     def get_supported_data_ids(self) -> List[str]:
+        """Return the data IDs supported by a handler
+
+        There need not be a one-to-one mapping between data IDs and CDS
+        datasets. In particular, request parameters can be encoded within the
+        data ID itself so that a single CDS dataset is represented by
+        multiple data IDs.
+
+        :return: the data IDs supported by this handler
+        """
         pass
 
     @abstractmethod
-    def get_open_data_params_schema(self, data_id: Optional[str] = None) -> \
+    def get_open_data_params_schema(self, data_id: str) -> \
             JsonObjectSchema:
+        """Return the open parameters schema for a specified dataset.
+
+        Note that the data_id is not optional here: CDSDataOpener handles
+        the data_id == None case rather than passing it on to a handler.
+
+        :param data_id: a dataset identifier
+        :return: schema for open parameters for the dataset identified by
+            data_id
+        """
         pass
 
     @abstractmethod
     def get_human_readable_data_id(self, data_id: str) -> str:
+        """Return a human-readable identifier corresponding to a data ID
+
+        :param data_id: a data ID
+        :return: a corresponding human-readable representation, suitable for
+            display in a GUI
+        """
         pass
 
     @abstractmethod
     def describe_data(self, data_id: str) -> DataDescriptor:
+        """Return a data descriptor for a given data ID.
+
+        :param data_id: a data ID
+        :return: a corresponding descriptor
+        """
         pass
 
     @abstractmethod
@@ -90,9 +125,34 @@ class CDSDatasetHandler(ABC):
     def read_file(self, dataset_name: str,
                   cds_api_params: Dict[str, Union[str, List[str]]],
                   file_path: str, temp_dir: str) -> xr.Dataset:
+        """Read a file downloaded via the CDS API as into an xarray Dataset
+
+        :param dataset_name: the CDS name of the dataset (note that this
+            may not be the same as the data ID used by the xcube data store)
+        :param cds_api_params: the CDS API parameters which produced the
+            downloaded file
+        :param file_path: the path to the downloaded file
+        :param temp_dir: a temporary directory which the handler can use
+            as working space. The handler has exclusive use of the directory.
+            The directory is not deleted until the interpreter exits, so
+            the returned dataset can read from it lazily if required.
+        :return: a dataset corresponding to the specified file
+        """
         pass
 
-    def transform_time_params(self, params: Dict) -> Dict:
+    def transform_time_params(self, params: Dict[str, List[int]]) -> Dict:
+        """Convert a dictionary of time specifiers to CDS form.
+
+        This method renames the pluralized keys to singular (hours -> hour,
+        etc.) and converts the integer values to the string format expected
+        by CDS.
+
+        :param params: a dictionary containing time specifier keys
+            ('hours', 'days', 'months', or 'years') and list-of-integer values
+        :return: a dictionary with all time-specifier key-value pairs
+            converted to CDS API form (keys in singular, values as lists of
+            strings) and all other key-value pairs omitted
+        """
         return {
             k1: v1 for k1, v1 in [self.transform_time_param(k0, v0)
                                   for k0, v0 in params.items()]
@@ -238,7 +298,6 @@ class CDSDatasetHandler(ABC):
         return {start_key: min(starts), end_key: max(ends)}
 
 
-
 class CDSDataOpener(DataOpener):
     """A data opener for the Copernicus Climate Data Store"""
 
@@ -348,7 +407,7 @@ class CDSDataOpener(DataOpener):
             if client is not None:
                 client.session.close()
 
-        # TODO: Work out if/when/how to delete the file.
+        # TODO: Work out if/when/how to delete the subdirectory.
         # The whole temporary parent directory will be deleted when the
         # interpreter exits, but that could still allow a lot of files to
         # build up. xarray may read data lazily from the file, so we can't
@@ -359,9 +418,13 @@ class CDSDataOpener(DataOpener):
         # which carries out the deletion, or just monkeypatch the method in
         # the instance returned by handler.read_file.
 
+        # Create another directory within the temporary directory to hold
+        # the contents of the .tar.gz file. Note that we don't delete this
+        # temporary directory ourselves, instead relying on the deletion of
+        # the parent temporary directory.
+        temp_subdir = tempfile.mkdtemp(dir=self._tempdir)
         dataset = handler.read_file(dataset_name, cds_api_params, file_path,
-                                    self._tempdir)
-
+                                    temp_subdir)
         return self._normalize_dataset(dataset)
 
     def _normalize_dataset(self, dataset):
