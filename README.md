@@ -72,7 +72,7 @@ source code repository like this:
 $ conda activate xcube
 $ git clone https://github.com/dcs4cop/xcube-cds.git
 $ cd xcube-cds
-$ conda env update
+$ conda env update --name=xcube
 $ python setup.py develop
 ```
 

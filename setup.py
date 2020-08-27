@@ -28,7 +28,7 @@ requirements = [
     # Sync with ./environment.yml.
     'xcube>=0.5.0',
     'cdsapi>=0.2.7',
-    'dateutil>=2.8.1',
+    'python-dateutil>=2.8.1',
     'xarray>=0.14.1'
 ]
 
