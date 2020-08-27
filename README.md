@@ -23,8 +23,7 @@ steps are described in more detail below.
 
 ### Install xcube
 
-Starting with version 0.5.0, xcube is available on
-[conda-forge](https://conda-forge.org/),
+xcube is available on [conda-forge](https://conda-forge.org/),
 and can be installed using the
 [conda package manager](https://docs.conda.io/projects/conda/en/latest/),
 like this:
@@ -34,7 +33,8 @@ $ conda create --name xcube xcube>=0.5
 $ conda activate xcube
 ```
 
-The latesst version of xcube can be built from source like this:
+Alternatively, the latest version of xcube can be installed from the soure code
+repository like this:
 
 ```
 $ git clone https://github.com/dcs4cop/xcube.git
@@ -65,17 +65,16 @@ $ conda activate xcube
 $ conda install -c conda-forge xcube-cds
 ```
 
-Alternatively, the latest version of xcube_cds can be build from source
-like this:
+Alternatively, the latest version of xcube_cds can be installed from the
+source code repository like this:
 
 ```
 $ conda activate xcube
 $ git clone https://github.com/dcs4cop/xcube-cds.git
 $ cd xcube-cds
+$ conda env update
 $ python setup.py develop
 ```
-
-
 
 ### Obtain an API key
 
