@@ -6,7 +6,11 @@ which can generate data cubes from the
 
 Currently supported datasets:
 
- - [ERA5 monthly averaged data on single levels from 1979 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels-monthly-means?tab=overview).
+ - [ERA5 hourly data on single levels from 1979 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels)
+ - [ERA5-Land hourly data from 1981 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land)
+ - [ERA5 monthly averaged data on single levels from 1979 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels-monthly-means?tab=overview)
+ - [ERA5-Land monthly averaged data from 1981 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land-monthly-means)
+ - [Soil moisture gridded data from 1978 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-soil-moisture)
 
 ## Setup
 
@@ -19,7 +23,18 @@ steps are described in more detail below.
 
 ### Install xcube
 
-xcube 0.5 can be built from source, like this:
+Starting with version 0.5.0, xcube is available on
+[conda-forge](https://conda-forge.org/),
+and can be installed using the
+[conda package manager](https://docs.conda.io/projects/conda/en/latest/),
+like this:
+
+```
+$ conda create --name xcube xcube>=0.5
+$ conda activate xcube
+```
+
+The latesst version of xcube can be built from source like this:
 
 ```
 $ git clone https://github.com/dcs4cop/xcube.git
@@ -27,14 +42,6 @@ $ cd xcube
 $ conda env create
 $ conda activate xcube
 $ python setup.py develop
-```
-
-Once xcube 0.5 becomes available on [conda-forge](https://conda-forge.org/),
-it can be installed using the conda package manager, like this:
-
-```
-$ conda create --name xcube xcube>=0.5
-$ conda activate xcube
 ```
 
 ### Install cdsapi
@@ -51,8 +58,15 @@ $ conda install -c conda-forge cdsapi
 
 ### Install xcube_cds
 
-Currently, xcube_cds is not available via conda, so must be built from source
-after activating an xcube conda environment:
+xcube_cds is also available on conda-forge, and can be installed like this:
+
+```
+$ conda activate xcube
+$ conda install -c conda-forge xcube-cds
+```
+
+Alternatively, the latest version of xcube_cds can be build from source
+like this:
 
 ```
 $ conda activate xcube
@@ -61,13 +75,7 @@ $ cd xcube-cds
 $ python setup.py develop
 ```
 
-Once xcube_cds becomes available on conda-forge, it will be possible to install
-it like this:
 
-```
-$ conda activate xcube
-$ conda install -c conda-forge xcube_cds
-```
 
 ### Obtain an API key
 
