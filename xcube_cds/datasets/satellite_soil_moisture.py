@@ -176,7 +176,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
         )
 
     def get_human_readable_data_id(self, data_id: str):
-        return self._data_id_map['data_id']
+        return self._data_id_map[data_id]
 
     def describe_data(self, data_id: str) -> DataDescriptor:
         # TODO: Adapt output to data_id suffixes

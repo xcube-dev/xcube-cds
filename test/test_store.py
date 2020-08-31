@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 import unittest
+from collections import Iterator
 
 from jsonschema import ValidationError
 
@@ -172,6 +173,16 @@ class CDSStoreTest(unittest.TestCase):
         description = store.describe_data(data_id)
         self.assertEqual(sorted([dv.name for dv in description.data_vars]),
                          sorted(map(str, dataset.data_vars)))
+
+    def test_list_data_ids(self):
+        store = CDSDataStore()
+        data_ids = store.get_data_ids()
+        self.assertIsInstance(data_ids, Iterator)
+        for data_id in data_ids:
+            self.assertIsInstance(data_id, tuple)
+            self.assertTrue(1 <= len(data_id) <= 2)
+            for element in data_id:
+                self.assertIsInstance(element, str)
 
 
 if __name__ == '__main__':
