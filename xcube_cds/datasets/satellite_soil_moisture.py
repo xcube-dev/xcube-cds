@@ -126,7 +126,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
             # variable.
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
-                    min_length=1,
+                    min_length=0,
                     enum=variables,
                     default=variables[0])),
                 unique_items=True

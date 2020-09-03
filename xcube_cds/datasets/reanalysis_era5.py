@@ -118,31 +118,44 @@ class ERA5DatasetHandler(CDSDatasetHandler):
         bbox = ds_info['bbox']
 
         params = dict(
-            dataset_name=JsonStringSchema(min_length=1,
-                                          enum=list(self._valid_data_ids)),
+            dataset_name=JsonStringSchema(
+                min_length=1,
+                enum=list(self._valid_data_ids),
+                description='identifier of the requested dataset'),
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
-                    min_length=1,
+                    min_length=0,
                     enum=[cds_api_name
                           for cds_api_name, _, _, _ in variable_info_table]
                 )),
-                unique_items=True
+                unique_items=True,
+                nullable=True,
+                description='identifiers of the requested variables'
             ),
-            crs=JsonStringSchema(nullable=True, default=ds_info['crs'],
-                                 enum=[None, ds_info['crs']]),
+            crs=JsonStringSchema(
+                nullable=True,
+                default=ds_info['crs'],
+                enum=[None, ds_info['crs']],
+                description='co-ordinate reference system'),
             # W, S, E, N (will be converted to N, W, S, E)
             bbox=JsonArraySchema(items=(
-                JsonNumberSchema(minimum=bbox[1], maximum=bbox[3]),
-                JsonNumberSchema(minimum=bbox[2], maximum=bbox[0]),
-                JsonNumberSchema(minimum=bbox[1], maximum=bbox[3]),
-                JsonNumberSchema(minimum=bbox[2], maximum=bbox[0]))),
-            spatial_res=JsonNumberSchema(minimum=ds_info['spatial_res'],
-                                         maximum=10,
-                                         default=ds_info['spatial_res']),
+                    JsonNumberSchema(minimum=bbox[1], maximum=bbox[3]),
+                    JsonNumberSchema(minimum=bbox[2], maximum=bbox[0]),
+                    JsonNumberSchema(minimum=bbox[1], maximum=bbox[3]),
+                    JsonNumberSchema(minimum=bbox[2], maximum=bbox[0])),
+                description='bounding box (min_x, min_y, max_x, max_y)'),
+            spatial_res=JsonNumberSchema(
+                minimum=ds_info['spatial_res'],
+                maximum=10,
+                default=ds_info['spatial_res'],
+                description='spatial resolution'),
             time_range=JsonArraySchema(
                 items=[JsonStringSchema(format='date-time'),
-                       JsonStringSchema(format='date-time', nullable=True)]),
-            time_period=JsonStringSchema(const=ds_info['time_period']),
+                       JsonStringSchema(format='date-time', nullable=True)],
+                description='time range'),
+            time_period=JsonStringSchema(
+                const=ds_info['time_period'],
+                description='time aggregation period'),
         )
         required = [
             'variable_names',

@@ -184,6 +184,35 @@ class CDSStoreTest(unittest.TestCase):
             for element in data_id:
                 self.assertIsInstance(element, str)
 
+    def test_open_data_no_variables_1(self):
+        store = CDSDataStore()
+        dataset = store.open_data(
+            'satellite-soil-moisture:volumetric:monthly',
+            variable_names=[],
+            bbox=[-45, 0, 45, 60],
+            spatial_res=0.25,
+            time_period='1M',
+            time_range=['2015-01-01', '2016-12-31']
+        )
+        self.assertEqual(len(dataset.data_vars), 0)
+        self.assertEqual(24, len(dataset.variables['time']))
+        self.assertEquals(361, len(dataset.variables['lon']))
+
+    def test_open_data_no_variables_2(self):
+        store = CDSDataStore()
+        dataset = store.open_data(
+            'satellite-soil-moisture:volumetric:10-day',
+            variable_names=[],
+            bbox=[10.1, -14, 12.9, -4],
+            spatial_res=0.25,
+            time_period='10D',
+            time_range=['1981-06-14T11:39:21.666',
+                        '1982-02-13T09:32:34.321']
+        )
+        self.assertEqual(len(dataset.data_vars), 0)
+        self.assertEqual(26, len(dataset.variables['time']))
+        self.assertEquals(13, len(dataset.variables['lon']))
+
 
 if __name__ == '__main__':
     unittest.main()
