@@ -21,13 +21,14 @@
 # SOFTWARE.
 
 import unittest
-from collections import Iterator
+from collections.abc import Iterator
 
 from jsonschema import ValidationError
 
+import xcube
+import xcube.core
 from xcube_cds.store import CDSDataOpener
 from xcube_cds.store import CDSDataStore
-import xcube
 
 
 class CDSStoreTest(unittest.TestCase):
@@ -196,7 +197,7 @@ class CDSStoreTest(unittest.TestCase):
         )
         self.assertEqual(len(dataset.data_vars), 0)
         self.assertEqual(24, len(dataset.variables['time']))
-        self.assertEquals(361, len(dataset.variables['lon']))
+        self.assertEqual(361, len(dataset.variables['lon']))
 
     def test_open_data_no_variables_2(self):
         store = CDSDataStore()
@@ -211,7 +212,7 @@ class CDSStoreTest(unittest.TestCase):
         )
         self.assertEqual(len(dataset.data_vars), 0)
         self.assertEqual(26, len(dataset.variables['time']))
-        self.assertEquals(13, len(dataset.variables['lon']))
+        self.assertEqual(13, len(dataset.variables['lon']))
 
 
 if __name__ == '__main__':
