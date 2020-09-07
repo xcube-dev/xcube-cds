@@ -49,5 +49,11 @@ setup(
     license='MIT',
     author='xcube Development Team',
     packages=packages,
+    package_data={'xcube_cds.datasets': [
+        'reanalysis-era5-land.json',
+        'reanalysis-era5-land-monthly-means.json',
+        'reanalysis-era5-single-levels.json',
+        'reanalysis-era5-single-levels-monthly-means.json',
+    ]},
     install_requires=requirements,
 )
