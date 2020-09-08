@@ -20,11 +20,30 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""Unit tests for the xcube CDS store
+
+Most of the tests use a mocked CDS API client which matches exact requests
+and returns a saved result file originally downloaded from the real CDS API.
+To create a new unit test of this kind,
+
+1. Write a test which uses the real CDS API.
+2. Temporarily add the _save_request_to and _save_file_to arguments to
+   the open_data call.
+3. Create a new subdirectory of test/mock_results, and move the saved request
+   and results into it (as request.json and result, respectively). The name
+   of the subdirectory is arbitrary, but it is useful to give it the same
+   name as the unit test method.
+4. Remove the _save_request_to and _save_file_to arguments from the open_data
+   call, and add a 'client=CDSClientMock' argument to the CDSDataOpener
+   constructor.
+"""
+
 import unittest
 from collections import Iterator
 
 from jsonschema import ValidationError
 
+from test.mocks import CDSClientMock
 from xcube_cds.store import CDSDataOpener
 from xcube_cds.store import CDSDataStore
 import xcube
@@ -33,7 +52,7 @@ import xcube
 class CDSStoreTest(unittest.TestCase):
 
     def test_open(self):
-        opener = CDSDataOpener()
+        opener = CDSDataOpener(client=CDSClientMock)
         dataset = opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -41,7 +60,7 @@ class CDSStoreTest(unittest.TestCase):
             bbox=[-1, -1, 1, 1],
             spatial_res=0.25,
             time_period='1M',
-            time_range=['2015-10-15', '2016-02-02']
+            time_range=['2015-10-15', '2016-02-02'],
         )
         self.assertIsNotNone(dataset)
         # We expect the closest representable time selection corresponding
@@ -50,7 +69,7 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(10, len(dataset.variables['time']))
 
     def test_normalize_variable_names(self):
-        store = CDSDataStore(normalize_names=True)
+        store = CDSDataStore(client=CDSClientMock, normalize_names=True)
         dataset = store.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -58,7 +77,7 @@ class CDSStoreTest(unittest.TestCase):
             variable_names=['vertical_integral_of_temperature'],
             bbox=[-2, -2, 2, 2],
             spatial_res=1.0,
-            time_range=['2019-01-01', None]
+            time_range=['2019-01-01', None],
         )
         self.assertIsNotNone(dataset)
         self.assertTrue('p54_162' in dataset.variables)
@@ -86,7 +105,7 @@ class CDSStoreTest(unittest.TestCase):
             )
 
     def test_era5_land_monthly(self):
-        store = CDSDataStore()
+        store = CDSDataStore(client=CDSClientMock)
         dataset = store.open_data(
             'reanalysis-era5-land-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -94,14 +113,14 @@ class CDSStoreTest(unittest.TestCase):
             bbox=[9.5, 49.5, 10.5, 50.5],
             spatial_res=0.1,
             time_period='1M',
-            time_range=['2015-01-01', '2016-12-31']
+            time_range=['2015-01-01', '2016-12-31'],
         )
         self.assertIsNotNone(dataset)
         self.assertTrue('t2m' in dataset.variables)
         self.assertTrue('u10' in dataset.variables)
 
     def test_era5_single_levels_hourly(self):
-        store = CDSDataStore()
+        store = CDSDataStore(client=CDSClientMock)
         dataset = store.open_data(
             'reanalysis-era5-single-levels:'
             'reanalysis',
@@ -110,14 +129,14 @@ class CDSStoreTest(unittest.TestCase):
             spatial_res=0.25,
             time_period='1H',
             time_range=['2015-01-01 20:00',
-                        '2015-01-02 08:00']
+                        '2015-01-02 08:00'],
         )
         self.assertIsNotNone(dataset)
         self.assertTrue('t2m' in dataset.variables)
         self.assertEqual(26, len(dataset.variables['time']))
 
     def test_era5_land_hourly(self):
-        store = CDSDataStore()
+        store = CDSDataStore(client=CDSClientMock)
         dataset = store.open_data(
             'reanalysis-era5-land',
             variable_names=['2m_temperature'],
@@ -125,14 +144,14 @@ class CDSStoreTest(unittest.TestCase):
             spatial_res=0.1,
             time_period='1H',
             time_range=['2015-01-01 20:00',
-                        '2015-01-02 08:00']
+                        '2015-01-02 08:00'],
         )
         self.assertIsNotNone(dataset)
         self.assertTrue('t2m' in dataset.variables)
         self.assertEqual(26, len(dataset.variables['time']))
 
     def test_era5_bounds(self):
-        opener = CDSDataOpener()
+        opener = CDSDataOpener(client=CDSClientMock)
         dataset = opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -140,7 +159,7 @@ class CDSStoreTest(unittest.TestCase):
             bbox=[-180, -90, 180, 90],
             spatial_res=0.25,
             time_period='1M',
-            time_range=['2015-10-15', '2015-10-15']
+            time_range=['2015-10-15', '2015-10-15'],
         )
 
         self.assertIsNotNone(dataset)
@@ -154,7 +173,7 @@ class CDSStoreTest(unittest.TestCase):
         self.assertLessEqual(south, north)
 
     def test_soil_moisture(self):
-        store = CDSDataStore()
+        store = CDSDataStore(client=CDSClientMock)
         data_id = 'satellite-soil-moisture:volumetric:monthly'
         dataset = store.open_data(
             data_id,
@@ -162,7 +181,7 @@ class CDSStoreTest(unittest.TestCase):
             bbox=[-180, -90, 180, 90],
             spatial_res=0.25,
             time_period='1M',
-            time_range=['2015-01-01', '2015-02-28']
+            time_range=['2015-01-01', '2015-02-28'],
         )
         self.assertTrue('sm' in dataset.variables)
         self.assertEqual(2, len(dataset.variables['time']))
