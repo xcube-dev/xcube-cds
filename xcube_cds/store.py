@@ -29,6 +29,7 @@ import tempfile
 from abc import abstractmethod, ABC
 from typing import Iterator, Tuple, List, Optional, Dict, Any, Union
 
+import json
 import cdsapi
 import dateutil.parser
 import dateutil.relativedelta
@@ -302,7 +303,8 @@ class CDSDatasetHandler(ABC):
 class CDSDataOpener(DataOpener):
     """A data opener for the Copernicus Climate Data Store"""
 
-    def __init__(self, normalize_names: Optional[bool] = False):
+    def __init__(self, normalize_names: Optional[bool] = False,
+                 client = None):
         self._normalize_names = normalize_names
         self._create_temporary_directory()
         self._handler_registry: Dict[str, CDSDatasetHandler] = {}
@@ -311,6 +313,7 @@ class CDSDataOpener(DataOpener):
         from xcube_cds.datasets.satellite_soil_moisture \
             import SoilMoistureHandler
         self._register_dataset_handler(SoilMoistureHandler())
+        self._client = client or cdsapi.Client
 
     def _register_dataset_handler(self, handler: CDSDatasetHandler):
         for data_id in handler.get_supported_data_ids():
@@ -382,6 +385,7 @@ class CDSDataOpener(DataOpener):
         read_file_from = open_params.pop('_read_file_from', None)
         save_file_to = open_params.pop('_save_file_to', None)
         save_zarr_to = open_params.pop('_save_zarr_to', None)
+        save_request_to = open_params.pop('_save_request_to', None)
 
         schema = self.get_open_data_params_schema(data_id)
         schema.validate_instance(open_params)
@@ -403,6 +407,11 @@ class CDSDataOpener(DataOpener):
         else:
             dataset_name, cds_api_params = \
                 handler.transform_params(all_open_params, data_id)
+            if save_request_to:
+                with open(save_request_to, 'w') as fh:
+                    json.dump({**dict(_dataset_name=dataset_name),
+                               **cds_api_params},
+                              fh)
             dataset = self._open_data_with_handler(
                 handler, dataset_name, cds_api_params,
                 read_file_from, save_file_to)
@@ -522,7 +531,9 @@ class CDSDataOpener(DataOpener):
     def _fetch_file_via_cds_api(self, cds_api_params, dataset_name):
         client = None
         try:
-            client = cdsapi.Client()
+            # The client class is set in the constructor. Usually it will
+            # be cdsapi.Client, but may be mocked for unit testing.
+            client = self._client()
 
             # We can't generate a safe unique filename (since the file is
             # created by client.retrieve, so name generation and file
