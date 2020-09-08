@@ -377,6 +377,12 @@ class CDSDataOpener(DataOpener):
         )
 
     def open_data(self, data_id: str, **open_params) -> xr.Dataset:
+        # Unofficial parameters for testing, debugging, etc.
+        # They're not in the schema so we remove them before validating.
+        read_file_from = open_params.pop('_read_file_from', None)
+        save_file_to = open_params.pop('_save_file_to', None)
+        save_zarr_to = open_params.pop('_save_zarr_to', None)
+
         schema = self.get_open_data_params_schema(data_id)
         schema.validate_instance(open_params)
         handler = self._handler_registry[data_id]
@@ -393,12 +399,17 @@ class CDSDataOpener(DataOpener):
             # The CDS API requires at least one variable to be selected,
             # so in order to return an empty dataset we have to construct
             # it ourselves.
-            return self._create_empty_dataset(all_open_params)
+            dataset = self._create_empty_dataset(all_open_params)
         else:
             dataset_name, cds_api_params = \
                 handler.transform_params(all_open_params, data_id)
-            return self._open_data_with_handler(handler, dataset_name,
-                                                cds_api_params)
+            dataset = self._open_data_with_handler(
+                handler, dataset_name, cds_api_params,
+                read_file_from, save_file_to)
+
+        if save_zarr_to:
+            dataset.to_zarr(save_zarr_to)
+        return dataset
 
     def _create_empty_dataset(self, open_params: dict) -> xr.Dataset:
         """Make a dataset with space and time dimensions but no data variables
@@ -476,28 +487,13 @@ class CDSDataOpener(DataOpener):
         return dateutil.relativedelta.\
             relativedelta(**{conversion[unit]: number})
 
-    def _open_data_with_handler(self, handler, dataset_name, cds_api_params) \
+    def _open_data_with_handler(self, handler, dataset_name, cds_api_params,
+                                read_file_from, save_file_to) \
             -> xr.Dataset:
-
-        client = None
-        try:
-            client = cdsapi.Client()
-
-            # We can't generate a safe unique filename (since the file is
-            # created by client.retrieve, so name generation and file
-            # creation won't be atomic). Instead we atomically create a
-            # subdirectory of the temporary directory for the single file.
-            subdir = tempfile.mkdtemp(dir=self._tempdir)
-            file_path = os.path.join(subdir, 'data')
-
-            # This call returns a Result object, which at present we make
-            # no use of.
-            client.retrieve(dataset_name, cds_api_params, file_path)
-        finally:
-            # The API doesn't close the session automatically, so we need to
-            # do it explicitly here to avoid leaving an open socket.
-            if client is not None:
-                client.session.close()
+        file_path = read_file_from or \
+                    self._fetch_file_via_cds_api(cds_api_params, dataset_name)
+        if save_file_to:
+            shutil.copy2(file_path, save_file_to)
 
         # TODO: Work out if/when/how to delete the subdirectory.
         # The whole temporary parent directory will be deleted when the
@@ -522,6 +518,28 @@ class CDSDataOpener(DataOpener):
         dataset = handler.read_file(dataset_name, cds_api_params, file_path,
                                     temp_subdir)
         return self._normalize_dataset(dataset)
+
+    def _fetch_file_via_cds_api(self, cds_api_params, dataset_name):
+        client = None
+        try:
+            client = cdsapi.Client()
+
+            # We can't generate a safe unique filename (since the file is
+            # created by client.retrieve, so name generation and file
+            # creation won't be atomic). Instead we atomically create a
+            # subdirectory of the temporary directory for the single file.
+            subdir = tempfile.mkdtemp(dir=self._tempdir)
+            file_path = os.path.join(subdir, 'data')
+
+            # This call returns a Result object, which at present we make
+            # no use of.
+            client.retrieve(dataset_name, cds_api_params, file_path)
+        finally:
+            # The API doesn't close the session automatically, so we need to
+            # do it explicitly here to avoid leaving an open socket.
+            if client is not None:
+                client.session.close()
+        return file_path
 
     def _normalize_dataset(self, dataset):
         dataset = xcube.core.normalize.normalize_dataset(dataset)
