@@ -38,13 +38,18 @@ To create a new unit test of this kind,
    constructor.
 """
 
+import os
+import tempfile
 import unittest
 from collections import Iterator
 
 from jsonschema import ValidationError
+from xcube.core.store import VariableDescriptor, DataStoreError
+from xcube.core.store import TYPE_ID_DATASET
 
 from test.mocks import CDSClientMock
-from xcube_cds.store import CDSDataOpener
+from xcube_cds.constants import CDS_DATA_OPENER_ID
+from xcube_cds.store import CDSDataOpener, CDSDatasetHandler
 from xcube_cds.store import CDSDataStore
 import xcube
 
@@ -231,6 +236,116 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(len(dataset.data_vars), 0)
         self.assertEqual(26, len(dataset.variables['time']))
         self.assertEquals(13, len(dataset.variables['lon']))
+
+    def test_era5_describe_data(self):
+        store = CDSDataStore()
+        descriptor = store.describe_data(
+            'reanalysis-era5-single-levels-monthly-means:'
+            'monthly_averaged_ensemble_members_by_hour_of_day')
+        self.assertEqual(260, len(descriptor.data_vars))
+        self.assertEqual('WGS84', descriptor.crs)
+        self.assertTupleEqual((-180, -90, 180, 90), descriptor.bbox)
+        # We don't exhaustively check all 260 variables, but we check the
+        # first one and make sure that they all have correct type and
+        # dimensions.
+        expected_vd = VariableDescriptor(
+            name='u100',
+            dtype='float32',
+            dims=('time', 'latitude', 'longitude'),
+            attrs=dict(units='m s**-1', long_name='100 metre U wind component'))
+        self.assertDictEqual(expected_vd.__dict__,
+                             descriptor.data_vars[0].__dict__)
+        for vd in descriptor.data_vars:
+            self.assertEqual('float32', vd.dtype)
+            self.assertTupleEqual(('time', 'latitude', 'longitude'),
+                                  vd.dims)
+
+    def test_convert_invalid_time_range(self):
+        with self.assertRaises(ValueError):
+            CDSDatasetHandler.convert_time_range([])  # incorrect list length
+
+    def test_get_open_params_schema_without_data_id(self):
+        opener = CDSDataOpener()
+        schema = opener.get_open_data_params_schema()
+
+        actual = schema.to_dict()
+        self.assertCountEqual(['type', 'properties', 'required'], actual.keys())
+        self.assertEqual('object', actual['type'])
+        self.assertCountEqual(
+            ['bbox', 'spatial_res', 'variable_names', 'time_range'],
+            actual['required'])
+        self.assertCountEqual(
+            ['dataset_name', 'variable_names', 'crs', 'bbox', 'spatial_res',
+             'time_range', 'time_period'],
+            actual['properties'].keys()
+        )
+
+    def test_search_data_invalid_id(self):
+        store = CDSDataStore()
+        with self.assertRaises(DataStoreError):
+            store.search_data('This is an invalid ID.')
+
+    def test_search_data_valid_id(self):
+        store = CDSDataStore()
+        # The CDS API doesn't offer a search function, so "not implemented"
+        # is expected here.
+        with self.assertRaises(NotImplementedError):
+            store.search_data('dataset')
+
+    def test_copy_on_open(self):
+        store = CDSDataStore(client=CDSClientMock)
+        data_id = 'satellite-soil-moisture:volumetric:monthly'
+        with tempfile.TemporaryDirectory() as temp_dir:
+            request_path = os.path.join(temp_dir, 'request.json')
+            result_path = os.path.join(temp_dir, 'result')
+            zarr_path = os.path.join(temp_dir, 'result.zarr')
+            store.open_data(
+                data_id,
+                _save_request_to=request_path,
+                _save_file_to=result_path,
+                _save_zarr_to=zarr_path,
+                variable_names=['volumetric_surface_soil_moisture'],
+                bbox=[-180, -90, 180, 90],
+                spatial_res=0.25,
+                time_period='1M',
+                time_range=['2015-01-01', '2015-02-28'],
+            )
+            self.assertTrue(os.path.isfile(request_path))
+            self.assertTrue(os.path.isfile(result_path))
+            self.assertTrue(os.path.isdir(zarr_path))
+
+    def test_get_data_store_params_schema(self):
+        self.assertDictEqual({
+            'type': 'object',
+            'properties': {
+                'normalize_names': {'type': 'boolean', 'default': False},
+                'num_retries': {'type': 'integer', 'default': 200,
+                                'minimum': 0}},
+            'additionalProperties': False
+        }, CDSDataStore.get_data_store_params_schema().to_dict())
+
+    def test_get_type_ids(self):
+        self.assertTupleEqual((TYPE_ID_DATASET, ), CDSDataStore.get_type_ids())
+
+    def test_has_data_true(self):
+        self.assertTrue(CDSDataStore().has_data('reanalysis-era5-land'))
+
+    def test_has_data_false(self):
+        self.assertFalse(CDSDataStore().has_data('nonexistent data ID'))
+
+    def test_get_data_opener_ids_invalid_type_id(self):
+        with self.assertRaises(DataStoreError):
+            CDSDataStore().get_data_opener_ids(CDS_DATA_OPENER_ID,
+                                               'this is an invalid ID')
+
+    def test_get_data_opener_ids_invalid_opener_id(self):
+        with self.assertRaises(DataStoreError):
+            CDSDataStore().get_data_opener_ids('this is an invalid ID',
+                                               TYPE_ID_DATASET)
+
+    def test_get_data_opener_ids_with_default_arguments(self):
+        self.assertTupleEqual((CDS_DATA_OPENER_ID, ),
+                              CDSDataStore().get_data_opener_ids())
 
 
 if __name__ == '__main__':

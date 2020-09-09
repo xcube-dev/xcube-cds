@@ -71,7 +71,6 @@ class CDSDatasetHandler(ABC):
 
         :return: the data IDs supported by this handler
         """
-        pass
 
     @abstractmethod
     def get_open_data_params_schema(self, data_id: str) -> \
@@ -85,7 +84,6 @@ class CDSDatasetHandler(ABC):
         :return: schema for open parameters for the dataset identified by
             data_id
         """
-        pass
 
     @abstractmethod
     def get_human_readable_data_id(self, data_id: str) -> str:
@@ -95,7 +93,6 @@ class CDSDatasetHandler(ABC):
         :return: a corresponding human-readable representation, suitable for
             display in a GUI
         """
-        pass
 
     @abstractmethod
     def describe_data(self, data_id: str) -> DataDescriptor:
@@ -104,7 +101,6 @@ class CDSDatasetHandler(ABC):
         :param data_id: a data ID
         :return: a corresponding descriptor
         """
-        pass
 
     @abstractmethod
     def transform_params(self, opener_params: Dict, data_id: str) -> \
@@ -121,7 +117,6 @@ class CDSDatasetHandler(ABC):
         :return: CDS API request parameters corresponding to the specified
             opener parameters
         """
-        pass
 
     @abstractmethod
     def read_file(self, dataset_name: str,
@@ -140,7 +135,6 @@ class CDSDatasetHandler(ABC):
             the returned dataset can read from it lazily if required.
         :return: a dataset corresponding to the specified file
         """
-        pass
 
     def transform_time_params(self, params: Dict[str, List[int]]) -> Dict:
         """Convert a dictionary of time specifiers to CDS form.
@@ -304,7 +298,7 @@ class CDSDataOpener(DataOpener):
     """A data opener for the Copernicus Climate Data Store"""
 
     def __init__(self, normalize_names: Optional[bool] = False,
-                 client = None):
+                 client=None):
         self._normalize_names = normalize_names
         self._create_temporary_directory()
         self._handler_registry: Dict[str, CDSDatasetHandler] = {}
@@ -330,7 +324,9 @@ class CDSDataOpener(DataOpener):
         tempdir = tempfile.mkdtemp()
 
         def delete_tempdir():
-            shutil.rmtree(tempdir, ignore_errors=True)
+            # This method is hard to unit test, so we exclude it from test
+            # coverage reports.
+            shutil.rmtree(tempdir, ignore_errors=True)  # pragma: no cover
 
         atexit.register(delete_tempdir)
         self._tempdir = tempdir
