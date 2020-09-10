@@ -9,6 +9,7 @@
  - Improve code architecture to make it easier to support further datasets 
  - Add a demo notebook for the soil moisture dataset
  - ERA5 datasets: Adjust bounding box to match xcube semantics
+ - Several bug fixes
 
 ## Changes in 0.5.0
 
