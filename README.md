@@ -29,9 +29,11 @@ and can be installed using the
 like this:
 
 ```
-$ conda create --name xcube xcube>=0.5
+$ conda create -c conda-forge --name xcube xcube>=0.5
 $ conda activate xcube
 ```
+
+Note that this may take some time.
 
 Alternatively, the latest version of xcube can be installed from the soure code
 repository like this:
