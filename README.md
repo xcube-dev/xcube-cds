@@ -1,5 +1,7 @@
 # xcube-cds
 
+## Description
+
 An [xcube plugin](https://xcube.readthedocs.io/en/latest/plugins.html)
 which can generate data cubes from the
 [Copernicus Climate Data Store (CDS) API](https://cds.climate.copernicus.eu/api-how-to).
@@ -14,74 +16,17 @@ Currently supported datasets:
 
 ## Setup
 
-[xcube](https://github.com/dcs4cop/xcube) and cdsapi must be installed
-before the xcube_cds plugin.
-In order to use the xcube_cds plugin, you also need to obtain a CDS API key
-and write it to a configuration file. Additionally, you need to use the CDS
-website to agree to the terms of use for any datasets you acccess. These
-steps are described in more detail below.
+### Configuring access to the CDS API
 
-### Install xcube
+In order to use the CDS API via the xcube_cds plugin, you need to obtain a 
+CDS user ID (UID) and API key and write them to a configuration file.
+Additionally, you need to use the CDS website to agree in advance to the terms
+of use for any datasets you want to acccess.
 
-xcube is available on [conda-forge](https://conda-forge.org/),
-and can be installed using the
-[conda package manager](https://docs.conda.io/projects/conda/en/latest/),
-like this:
+#### Obtain a CDS API key
 
-```
-$ conda create -c conda-forge --name xcube xcube>=0.5
-$ conda activate xcube
-```
 
-Note that this may take some time.
-
-Alternatively, the latest version of xcube can be installed from the soure code
-repository like this:
-
-```
-$ git clone https://github.com/dcs4cop/xcube.git
-$ cd xcube
-$ conda env create
-$ conda activate xcube
-$ python setup.py develop
-```
-
-### Install cdsapi
-
-xcube_cds makes use of the
-[cdsapi Python library](https://github.com/ecmwf/cdsapi),
-which is available from conda-forge, to connect to the CDS API.
-You can install it into an xcube environment like this:
-
-```
-$ conda activate xcube
-$ conda install -c conda-forge cdsapi
-```
-
-### Install xcube_cds
-
-xcube_cds is also available on conda-forge, and can be installed like this:
-
-```
-$ conda activate xcube
-$ conda install -c conda-forge xcube-cds
-```
-
-Alternatively, the latest version of xcube_cds can be installed from the
-source code repository like this:
-
-```
-$ conda activate xcube
-$ git clone https://github.com/dcs4cop/xcube-cds.git
-$ cd xcube-cds
-$ conda env update --name=xcube
-$ python setup.py develop
-```
-
-### Obtain an API key
-
-In order to access the CDS API via the xcube_cds plugin, you need a CDS user
-ID (UID) and API key. You can obtain these as follows:
+You can obtain the UID and API key as follows:
 
 1. Create a user account on the
    [CDS Website](https://cds.climate.copernicus.eu/user/register).
@@ -89,7 +34,7 @@ ID (UID) and API key. You can obtain these as follows:
 3. Navigate to your [user page](https://cds.climate.copernicus.eu/user/)
    on the website. Your API key is shown at the bottom of the page.
 
-### Configure CDS API access
+#### Configure CDS API access
 
 Your CDS API key must be made available to the CDS API library. You can do
 this by creating a file named `.cdsapirc` in your home directory, with the
@@ -103,7 +48,7 @@ key: <UID>:<API-KEY>
 Replace `<UID>` with your UID and `<API-KEY>` with your API key, as obtained
 from the CDS website.
 
-### Agree to the terms of use for the datasets you require
+#### Agree to the terms of use for the datasets you require
 
 The datasets available through CDS have associated terms of use. Before
 accessing a dataset via the API, you must agree to its terms of use, which
@@ -122,12 +67,69 @@ can only be done via the CDS website, as follows:
 Once you have accepted the terms on the website, the dataset will also be
 made available to you (using the same user credentials) through the API.
 
-### Test xcube_cds
+### Installing the xcube-cds plugin
 
-You can run the unit tests for xcube_cds by executing
+#### Installation into a new environment with conda
+
+xcube-cds and all necessary dependencies (including xcube itself) are available
+on [conda-forge](https://conda-forge.org/), and can be installed using the
+[conda package manager](https://docs.conda.io/projects/conda/en/latest/).
+The conda package manager itself can be obtained in the [miniconda
+distribution](https://docs.conda.io/en/latest/miniconda.html). Once conda
+is installed, xcube-cds can be installed like this:
+
+```
+$ conda create --name xcube-cds-environment --channel conda-forge xcube-cds
+$ conda activate xcube-cds-environment
+```
+
+The name of the environment may be freely chosen.
+
+#### Installation into an existing environment with conda
+
+xcube-cds can also be installed into an existing conda environment.
+With the existing environment activated, execute this command:
+
+```
+$ conda install --channel conda-forge xcube-cds
+```
+
+Once again, xcube and any other necessary dependencies will be installed
+automatically if they are not already installed.
+
+#### Installation into an existing environment from the repository
+
+If you want to install xcube-cds directly from the git repository (for example
+if order to use an unreleased version or to modify the code), you can
+do so as follows:
+
+```
+$ conda create --name xcube-cds-environment --channel conda-forge --only-deps xcube-cds
+$ git clone https://github.com/dcs4cop/xcube-cds.git
+$ cd xcube-cds
+$ python setup.py develop
+```
+
+## Testing
+
+You can run the unit tests for xcube-cds by executing
 
 ```
 $ pytest
 ```
 
 in the `xcube-cds` repository.
+
+To create a test coverage report, you can use
+
+```
+coverage run --omit='test/*' --module pytest
+coverage html
+```
+
+This will write a coverage report to `htmlcov/index.html`.
+
+## Use
+
+Jupyter notebooks demonstrating the use of the xcube-cds plugin can be found
+in the `examples/notebooks/` subdirectory of the repository.
