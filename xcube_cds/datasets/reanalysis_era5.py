@@ -186,7 +186,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
         )
 
     def _create_variable_descriptors(self, data_id: str):
-        dataset_id, _ = data_id.split(':')
+        dataset_id = data_id.split(':')[0]
 
         return [
             VariableDescriptor(

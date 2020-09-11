@@ -44,7 +44,7 @@ import unittest
 from collections import Iterator
 
 from jsonschema import ValidationError
-from xcube.core.store import VariableDescriptor, DataStoreError
+from xcube.core.store import VariableDescriptor, DataStoreError, DataDescriptor
 from xcube.core.store import TYPE_ID_DATASET
 
 from test.mocks import CDSClientMock
@@ -198,7 +198,7 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(sorted([dv.name for dv in description.data_vars]),
                          sorted(map(str, dataset.data_vars)))
 
-    def test_list_data_ids(self):
+    def test_list_and_describe_data_ids(self):
         store = CDSDataStore()
         data_ids = store.get_data_ids()
         self.assertIsInstance(data_ids, Iterator)
@@ -207,6 +207,8 @@ class CDSStoreTest(unittest.TestCase):
             self.assertTrue(1 <= len(data_id) <= 2)
             for element in data_id:
                 self.assertIsInstance(element, str)
+            descriptor = store.describe_data(data_id[0])
+            self.assertIsInstance(descriptor, DataDescriptor)
 
     def test_open_data_no_variables_1(self):
         store = CDSDataStore()
