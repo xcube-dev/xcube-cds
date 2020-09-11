@@ -29,6 +29,7 @@ import tempfile
 from abc import abstractmethod, ABC
 from typing import Iterator, Tuple, List, Optional, Dict, Any, Union
 
+import json
 import cdsapi
 import dateutil.parser
 import dateutil.relativedelta
@@ -71,7 +72,6 @@ class CDSDatasetHandler(ABC):
 
         :return: the data IDs supported by this handler
         """
-        pass
 
     @abstractmethod
     def get_open_data_params_schema(self, data_id: str) -> \
@@ -85,7 +85,6 @@ class CDSDatasetHandler(ABC):
         :return: schema for open parameters for the dataset identified by
             data_id
         """
-        pass
 
     @abstractmethod
     def get_human_readable_data_id(self, data_id: str) -> str:
@@ -95,7 +94,6 @@ class CDSDatasetHandler(ABC):
         :return: a corresponding human-readable representation, suitable for
             display in a GUI
         """
-        pass
 
     @abstractmethod
     def describe_data(self, data_id: str) -> DataDescriptor:
@@ -104,7 +102,6 @@ class CDSDatasetHandler(ABC):
         :param data_id: a data ID
         :return: a corresponding descriptor
         """
-        pass
 
     @abstractmethod
     def transform_params(self, opener_params: Dict, data_id: str) -> \
@@ -121,7 +118,6 @@ class CDSDatasetHandler(ABC):
         :return: CDS API request parameters corresponding to the specified
             opener parameters
         """
-        pass
 
     @abstractmethod
     def read_file(self, dataset_name: str,
@@ -140,7 +136,6 @@ class CDSDatasetHandler(ABC):
             the returned dataset can read from it lazily if required.
         :return: a dataset corresponding to the specified file
         """
-        pass
 
     def transform_time_params(self, params: Dict[str, List[int]]) -> Dict:
         """Convert a dictionary of time specifiers to CDS form.
@@ -303,7 +298,8 @@ class CDSDatasetHandler(ABC):
 class CDSDataOpener(DataOpener):
     """A data opener for the Copernicus Climate Data Store"""
 
-    def __init__(self, normalize_names: Optional[bool] = False):
+    def __init__(self, normalize_names: Optional[bool] = False,
+                 client=None):
         self._normalize_names = normalize_names
         self._create_temporary_directory()
         self._handler_registry: Dict[str, CDSDatasetHandler] = {}
@@ -312,6 +308,7 @@ class CDSDataOpener(DataOpener):
         from xcube_cds.datasets.satellite_soil_moisture \
             import SoilMoistureHandler
         self._register_dataset_handler(SoilMoistureHandler())
+        self._client = client or cdsapi.Client
 
     def _register_dataset_handler(self, handler: CDSDatasetHandler):
         for data_id in handler.get_supported_data_ids():
@@ -328,7 +325,9 @@ class CDSDataOpener(DataOpener):
         tempdir = tempfile.mkdtemp()
 
         def delete_tempdir():
-            shutil.rmtree(tempdir, ignore_errors=True)
+            # This method is hard to unit test, so we exclude it from test
+            # coverage reports.
+            shutil.rmtree(tempdir, ignore_errors=True)  # pragma: no cover
 
         atexit.register(delete_tempdir)
         self._tempdir = tempdir
@@ -378,6 +377,13 @@ class CDSDataOpener(DataOpener):
         )
 
     def open_data(self, data_id: str, **open_params) -> xr.Dataset:
+        # Unofficial parameters for testing, debugging, etc.
+        # They're not in the schema so we remove them before validating.
+        read_file_from = open_params.pop('_read_file_from', None)
+        save_file_to = open_params.pop('_save_file_to', None)
+        save_zarr_to = open_params.pop('_save_zarr_to', None)
+        save_request_to = open_params.pop('_save_request_to', None)
+
         schema = self.get_open_data_params_schema(data_id)
         schema.validate_instance(open_params)
         handler = self._handler_registry[data_id]
@@ -394,12 +400,22 @@ class CDSDataOpener(DataOpener):
             # The CDS API requires at least one variable to be selected,
             # so in order to return an empty dataset we have to construct
             # it ourselves.
-            return self._create_empty_dataset(all_open_params)
+            dataset = self._create_empty_dataset(all_open_params)
         else:
             dataset_name, cds_api_params = \
                 handler.transform_params(all_open_params, data_id)
-            return self._open_data_with_handler(handler, dataset_name,
-                                                cds_api_params)
+            if save_request_to:
+                with open(save_request_to, 'w') as fh:
+                    json.dump({**dict(_dataset_name=dataset_name),
+                               **cds_api_params},
+                              fh)
+            dataset = self._open_data_with_handler(
+                handler, dataset_name, cds_api_params,
+                read_file_from, save_file_to)
+
+        if save_zarr_to:
+            dataset.to_zarr(save_zarr_to)
+        return dataset
 
     def _create_empty_dataset(self, open_params: dict) -> xr.Dataset:
         """Make a dataset with space and time dimensions but no data variables
@@ -477,28 +493,13 @@ class CDSDataOpener(DataOpener):
         return dateutil.relativedelta. \
             relativedelta(**{conversion[unit]: number})
 
-    def _open_data_with_handler(self, handler, dataset_name, cds_api_params) \
+    def _open_data_with_handler(self, handler, dataset_name, cds_api_params,
+                                read_file_from, save_file_to) \
             -> xr.Dataset:
-
-        client = None
-        try:
-            client = cdsapi.Client()
-
-            # We can't generate a safe unique filename (since the file is
-            # created by client.retrieve, so name generation and file
-            # creation won't be atomic). Instead we atomically create a
-            # subdirectory of the temporary directory for the single file.
-            subdir = tempfile.mkdtemp(dir=self._tempdir)
-            file_path = os.path.join(subdir, 'data')
-
-            # This call returns a Result object, which at present we make
-            # no use of.
-            client.retrieve(dataset_name, cds_api_params, file_path)
-        finally:
-            # The API doesn't close the session automatically, so we need to
-            # do it explicitly here to avoid leaving an open socket.
-            if client is not None:
-                client.session.close()
+        file_path = read_file_from or \
+                    self._fetch_file_via_cds_api(cds_api_params, dataset_name)
+        if save_file_to:
+            shutil.copy2(file_path, save_file_to)
 
         # TODO: Work out if/when/how to delete the subdirectory.
         # The whole temporary parent directory will be deleted when the
@@ -523,6 +524,30 @@ class CDSDataOpener(DataOpener):
         dataset = handler.read_file(dataset_name, cds_api_params, file_path,
                                     temp_subdir)
         return self._normalize_dataset(dataset)
+
+    def _fetch_file_via_cds_api(self, cds_api_params, dataset_name):
+        client = None
+        try:
+            # The client class is set in the constructor. Usually it will
+            # be cdsapi.Client, but may be mocked for unit testing.
+            client = self._client()
+
+            # We can't generate a safe unique filename (since the file is
+            # created by client.retrieve, so name generation and file
+            # creation won't be atomic). Instead we atomically create a
+            # subdirectory of the temporary directory for the single file.
+            subdir = tempfile.mkdtemp(dir=self._tempdir)
+            file_path = os.path.join(subdir, 'data')
+
+            # This call returns a Result object, which at present we make
+            # no use of.
+            client.retrieve(dataset_name, cds_api_params, file_path)
+        finally:
+            # The API doesn't close the session automatically, so we need to
+            # do it explicitly here to avoid leaving an open socket.
+            if client is not None:
+                client.session.close()
+        return file_path
 
     def _normalize_dataset(self, dataset):
         dataset = xcube.core.normalize.normalize_dataset(dataset)

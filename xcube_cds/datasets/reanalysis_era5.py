@@ -139,10 +139,10 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 description='co-ordinate reference system'),
             # W, S, E, N (will be converted to N, W, S, E)
             bbox=JsonArraySchema(items=(
+                    JsonNumberSchema(minimum=bbox[0], maximum=bbox[2]),
                     JsonNumberSchema(minimum=bbox[1], maximum=bbox[3]),
-                    JsonNumberSchema(minimum=bbox[2], maximum=bbox[0]),
-                    JsonNumberSchema(minimum=bbox[1], maximum=bbox[3]),
-                    JsonNumberSchema(minimum=bbox[2], maximum=bbox[0])),
+                    JsonNumberSchema(minimum=bbox[0], maximum=bbox[2]),
+                    JsonNumberSchema(minimum=bbox[1], maximum=bbox[3])),
                 description='bounding box (min_x, min_y, max_x, max_y)'),
             spatial_res=JsonNumberSchema(
                 minimum=ds_info['spatial_res'],
@@ -172,7 +172,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
         return self._data_id_to_human_readable[data_id]
 
     def describe_data(self, data_id: str) -> DataDescriptor:
-        ds_info = self._dataset_dicts[data_id]
+        ds_info = self._dataset_dicts[data_id.split(':')[0]]
 
         return DatasetDescriptor(
             data_id=data_id,
@@ -181,12 +181,12 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             bbox=tuple(ds_info['bbox']),
             spatial_res=ds_info['spatial_res'],
             time_range=tuple(ds_info['time_range']),
-            time_period=ds_info('time_period'),
+            time_period=ds_info['time_period'],
             open_params_schema=self.get_open_data_params_schema(data_id)
         )
 
     def _create_variable_descriptors(self, data_id: str):
-        dataset_id, _ = data_id.split(':')
+        dataset_id = data_id.split(':')[0]
 
         return [
             VariableDescriptor(
