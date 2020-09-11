@@ -41,17 +41,19 @@ To create a new unit test of this kind,
 import os
 import tempfile
 import unittest
-from collections import Iterator
+from collections.abc import Iterator
 
+import xcube
+import xcube.core
 from jsonschema import ValidationError
-from xcube.core.store import VariableDescriptor, DataStoreError, DataDescriptor
 from xcube.core.store import TYPE_ID_DATASET
+from xcube.core.store import VariableDescriptor, DataStoreError, DataDescriptor
 
 from test.mocks import CDSClientMock
 from xcube_cds.constants import CDS_DATA_OPENER_ID
-from xcube_cds.store import CDSDataOpener, CDSDatasetHandler
+from xcube_cds.store import CDSDataOpener
 from xcube_cds.store import CDSDataStore
-import xcube
+from xcube_cds.store import CDSDatasetHandler
 
 
 class CDSStoreTest(unittest.TestCase):
@@ -222,7 +224,7 @@ class CDSStoreTest(unittest.TestCase):
         )
         self.assertEqual(len(dataset.data_vars), 0)
         self.assertEqual(24, len(dataset.variables['time']))
-        self.assertEquals(361, len(dataset.variables['lon']))
+        self.assertEqual(361, len(dataset.variables['lon']))
 
     def test_open_data_no_variables_2(self):
         store = CDSDataStore()
@@ -237,7 +239,7 @@ class CDSStoreTest(unittest.TestCase):
         )
         self.assertEqual(len(dataset.data_vars), 0)
         self.assertEqual(26, len(dataset.variables['time']))
-        self.assertEquals(13, len(dataset.variables['lon']))
+        self.assertEqual(13, len(dataset.variables['lon']))
 
     def test_era5_describe_data(self):
         store = CDSDataStore()

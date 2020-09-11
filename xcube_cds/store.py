@@ -36,24 +36,25 @@ import dateutil.relativedelta
 import dateutil.rrule
 import numpy as np
 import xarray as xr
+
 import xcube.core.normalize
 from xcube.core.store import DataDescriptor
 from xcube.core.store import DataOpener
 from xcube.core.store import DataStore
 from xcube.core.store import DataStoreError
 from xcube.core.store import TYPE_ID_DATASET
-from xcube.util.jsonschema import JsonBooleanSchema, JsonStringSchema, \
-    JsonArraySchema, JsonNumberSchema
+from xcube.util.jsonschema import JsonArraySchema
+from xcube.util.jsonschema import JsonBooleanSchema
 from xcube.util.jsonschema import JsonIntegerSchema
+from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
-
+from xcube.util.jsonschema import JsonStringSchema
+from xcube.util.undefined import UNDEFINED
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.constants import DEFAULT_NUM_RETRIES
-from xcube.util.undefined import UNDEFINED
 
 
 class CDSDatasetHandler(ABC):
-
     """A handler for one or more CDS datasets
 
     This class defines abstract methods which must be implemented by
@@ -465,7 +466,7 @@ class CDSDataOpener(DataOpener):
         # period is in one of these units.
         if period_unit in 'MY':
             range_start = dt_start.strftime('%Y-%m')
-            range_end = (dt_end + relativedelta - one_microsecond).\
+            range_end = (dt_end + relativedelta - one_microsecond). \
                 strftime('%Y-%m')
         else:
             range_start = dt_start.isoformat()
@@ -489,7 +490,7 @@ class CDSDataOpener(DataOpener):
             -> dateutil.relativedelta:
         conversion = dict(Y='years', M='months', D='days', W='weeks',
                           h='hours', m='minutes', s='seconds')
-        return dateutil.relativedelta.\
+        return dateutil.relativedelta. \
             relativedelta(**{conversion[unit]: number})
 
     def _open_data_with_handler(self, handler, dataset_name, cds_api_params,
