@@ -135,12 +135,16 @@ class SoilMoistureHandler(CDSDatasetHandler):
             # https://www.esa-soilmoisture-cci.org/sites/default/files/documents/CCI2_Soil_Moisture_D3.3.1_Product_Users_Guide%201.2.pdf
             crs=JsonStringSchema(nullable=True, default='WGS84',
                                  enum=[None, 'WGS84']),
-            # W, S, E, N (will be converted to N, W, S, E)
+            # W, S, E, N (will be converted to N, W, S, E).
+            # For the soil moisture dataset, all data is global and no
+            # geographic subsetting is possible, so the values are fixed
+            # (i.e. minimum == maximum for every limit).
             bbox=JsonArraySchema(items=(
-                JsonNumberSchema(minimum=-180, maximum=180),
-                JsonNumberSchema(minimum=-90, maximum=90),
-                JsonNumberSchema(minimum=-180, maximum=180),
-                JsonNumberSchema(minimum=-90, maximum=90))),
+                JsonNumberSchema(minimum=-180, maximum=-180),
+                JsonNumberSchema(minimum=-90, maximum=-90),
+                JsonNumberSchema(minimum=180, maximum=180),
+                JsonNumberSchema(minimum=90, maximum=90))),
+            # Like the bounding box, the spatial resolution is fixed.
             spatial_res=JsonNumberSchema(minimum=0.25,
                                          maximum=0.25,
                                          default=0.25),

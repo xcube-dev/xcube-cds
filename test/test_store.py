@@ -215,7 +215,7 @@ class CDSStoreTest(unittest.TestCase):
     def test_open_data_no_variables_1(self):
         store = CDSDataStore()
         dataset = store.open_data(
-            'satellite-soil-moisture:volumetric:monthly',
+            'reanalysis-era5-land-monthly-means:monthly_averaged_reanalysis',
             variable_names=[],
             bbox=[-45, 0, 45, 60],
             spatial_res=0.25,
@@ -231,7 +231,7 @@ class CDSStoreTest(unittest.TestCase):
         dataset = store.open_data(
             'satellite-soil-moisture:volumetric:10-day',
             variable_names=[],
-            bbox=[10.1, -14, 12.9, -4],
+            bbox=[-180, -90, 180, 90],
             spatial_res=0.25,
             time_period='10D',
             time_range=['1981-06-14T11:39:21.666',
@@ -239,7 +239,7 @@ class CDSStoreTest(unittest.TestCase):
         )
         self.assertEqual(len(dataset.data_vars), 0)
         self.assertEqual(26, len(dataset.variables['time']))
-        self.assertEqual(13, len(dataset.variables['lon']))
+        self.assertEqual(1441, len(dataset.variables['lon']))
 
     def test_era5_describe_data(self):
         store = CDSDataStore()
