@@ -1,3 +1,8 @@
+## Changes in 0.5.2.dev
+
+ - Add release instructions to readme
+ - Various bug fixes
+
 ## Changes in 0.5.1
 
  - Add support for the following datasets:

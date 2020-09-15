@@ -165,7 +165,7 @@ associated asset, which will be needed to create the conda package.
 
 ### Updating the conda package
 
-These instructions are based on the documentation at.
+These instructions are based on the documentation at
 https://conda-forge.org/docs/maintainer/updating_pkgs.html .
 
 Conda-forge packages are produced from a github feedstock repository belonging
@@ -192,19 +192,31 @@ repository. dcs4cop's fork is at https://github.com/dcs4cop/xcube-cds-feedstock
    It's also possible to have the rendering done by a bot as part of the pull
    request, but this doesn't seem to work very reliably in practice.
 
-3. Clone the repository locally and create a new branch.
+3. Clone the repository locally and create a new branch. The name of the branch
+   is not strictly prescribed, but it's sensible to choose an informative
+   name like `update_0_5_3`.
 
-4. Update `recipe/meta.yaml` for the new
-   version. Mainly this will involve:
+4. Update `recipe/meta.yaml` for the new version. Mainly this will involve the 
+   following steps:
    
-   1. Update the value of the `version` variable.
+   1. Update the value of the `version` variable (or, if the version number
+      has not changed, increment the build number).
    
-   2. Update the sha256 hash of the source archive.
+   2. If the version number *has* changed, ensure that the build number is
+      set to 0.
    
-   3. If the dependencies have changes, update the list of dependencies in the
-      `-run` subsection to match those in the `environment.yml`.
+   3. Update the sha256 hash of the source archive prepared by GitHub.
+   
+   4. If the dependencies have changed, update the list of dependencies in the
+      `-run` subsection to match those in the `environment.yml` file.
 
-5. TODO
+   5. Commit the changes, push them to GitHub, and create a pull request at
+      https://github.com/dcs4cop/xcube-cds-feedstock .
+
+   6. Once conda-forge's automated checks have passed, merge the pull request.
+
+Once the pull request has been merged, the updated package should usually 
+become available from conda-forge within a couple of hours.
 
 
 ### Post-release tasks
