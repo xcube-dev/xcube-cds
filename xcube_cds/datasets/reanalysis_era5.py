@@ -220,8 +220,21 @@ class ERA5DatasetHandler(CDSDatasetHandler):
         # Translate our parameters (excluding time parameters) to the CDS API
         # scheme.
         resolution = plugin_params['spatial_res']
+
+        variable_names_param = plugin_params['variable_names']
+        # noinspection PySimplifyBooleanCheck
+        if variable_names_param == []:
+            # The "empty list of variables" case should be handled by the main
+            # store class; if an empty list gets this far, something's wrong.
+            raise ValueError('variable_names may not be an empty list.')
+        elif variable_names_param is None:
+            variable_table = self._dataset_dicts[dataset_name]['variables']
+            variable_names = [line[0] for line in variable_table]
+        else:
+            variable_names = variable_names_param
+
         params_combined = {
-            'variable': plugin_params['variable_names'],
+            'variable': variable_names,
             # For the ERA5 dataset, we need to crop the area by half a
             # cell-width. ERA5 data are points, but xcube treats them as
             # cell centres. The bounds of a grid of cells are half a cell-width

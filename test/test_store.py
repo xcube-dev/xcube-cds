@@ -212,7 +212,7 @@ class CDSStoreTest(unittest.TestCase):
             descriptor = store.describe_data(data_id[0])
             self.assertIsInstance(descriptor, DataDescriptor)
 
-    def test_open_data_no_variables_1(self):
+    def test_open_data_empty_variables_list_1(self):
         store = CDSDataStore()
         dataset = store.open_data(
             'reanalysis-era5-land-monthly-means:monthly_averaged_reanalysis',
@@ -226,7 +226,7 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(24, len(dataset.variables['time']))
         self.assertEqual(361, len(dataset.variables['lon']))
 
-    def test_open_data_no_variables_2(self):
+    def test_open_data_empty_variables_list_2(self):
         store = CDSDataStore()
         dataset = store.open_data(
             'satellite-soil-moisture:volumetric:10-day',
@@ -240,6 +240,22 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(len(dataset.data_vars), 0)
         self.assertEqual(26, len(dataset.variables['time']))
         self.assertEqual(1441, len(dataset.variables['lon']))
+
+    def test_open_data_null_variables_list(self):
+        store = CDSDataStore(client=CDSClientMock)
+        data_id = 'reanalysis-era5-single-levels-monthly-means:'\
+            'monthly_averaged_reanalysis'
+        schema = store.get_open_data_params_schema(data_id)
+        n_vars = len(schema.properties['variable_names'].items.enum)
+        dataset = store.open_data(
+            data_id,
+            variable_names=None,
+            bbox=[-1, -1, 1, 1],
+            spatial_res=0.25,
+            time_period='1M',
+            time_range=['2015-10-15', '2015-10-15']
+        )
+        self.assertEqual(n_vars, len(dataset.data_vars))
 
     def test_era5_describe_data(self):
         store = CDSDataStore()
