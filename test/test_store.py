@@ -367,6 +367,12 @@ class CDSStoreTest(unittest.TestCase):
         self.assertTupleEqual((CDS_DATA_OPENER_ID, ),
                               CDSDataStore().get_data_opener_ids())
 
+    def test_get_store_open_params_schema_without_data_id(self):
+        self.assertIsInstance(
+            CDSDataStore().get_open_data_params_schema(),
+            xcube.util.jsonschema.JsonObjectSchema
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

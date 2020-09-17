@@ -660,8 +660,10 @@ class CDSDataStore(CDSDataOpener, DataStore):
     def get_open_data_params_schema(self, data_id: Optional[str] = None,
                                     opener_id: Optional[str] = None) -> \
             JsonObjectSchema:
+        # At present, there's only one opener ID available, so we do nothing
+        # with it except to check that it was correct (or None).
         self._assert_valid_opener_id(opener_id)
-        self._validate_data_id(data_id)
+        self._validate_data_id(data_id, allow_none=True)
         return super().get_open_data_params_schema(data_id)
 
     def open_data(self, data_id: str, opener_id: Optional[str] = None,
