@@ -596,6 +596,53 @@ class CDSDataOpener(DataOpener):
 
 class CDSDataStore(CDSDataOpener, DataStore):
 
+    """An xcube data store which reads data from the Copernicus CDS.
+
+    CDSDataStore is a read-only xcube DataStore implementation which uses
+    the Copernicus Climate Data Store (CDS) API as a backend. The CDS
+    provides access to a heterogeneous selection of datasets, so the available
+    open parameters and their permitted values are heavily dependent on the
+    selected dataset. Details of the supported open parameters for a
+    particular dataset can be obtained by calling
+    get_open_data_params_schema(dataset_id) with the identifier string of the
+    relevant dataset. Common open parameters are as follows:
+
+    variable_names (list of strings):
+        A list of the names of the variables to be returned
+        from the dataset. The available variable names depend on the
+        selected dataset. Supplying an empty list will result in an xcube
+        with the requested spatial and temporal dimensions, but without
+        any data variables.
+    crs (string):
+        The co-ordinate reference system. Most usually "WGS84" is the
+        default, and only permitted, value, but some datasets may offer
+        other options.
+    bbox (array of 4 floats in order x0, y0, x1, y1):
+        The geographical bounding box from which to return data, in degrees.
+        Longitudes range from -180 to 180 and latitudes from -90 to 90.
+        Individual datasets may impose maximum or minimum restrictions on
+        these ranges (e.g. only allowing requests for the entire globe, or
+        restricting bounding box values to be within a particular area).
+    spatial_res (float):
+        The requested spatial resolution, in degrees. For many datasets, only
+        one value will be supported.
+    time_range (array of two nullable strings):
+        The time range for which data is requested, in the order [start,
+        end]. A None value for the start means from the beginning of the data
+        available in the dataset. A None value for the end means up to the
+        end of the data available in the dataset. If a time string is not
+        None, it must conform to either the date-time or date format of JSON
+        Schema, which are in turn defined, respectively, as the date-time and
+        full-date productions defined of RFC 3339 Section 5.6. Examples of
+        valid time strings are "1981-10-05", "1997-02-19T12:56:01Z",
+        and "2010-12-31T23:59:59+05:30".
+    time_period (string):
+        The temporal resolution expressed as a string. The string is a
+        combination of a number and a letter representing a time unit
+        (D, W, M, or Y for day, week, month, or year respectively).
+        Examples: "10D", "2M", "1Y".
+    """
+
     def __init__(self,
                  num_retries: Optional[int] = DEFAULT_NUM_RETRIES,
                  **kwargs):
