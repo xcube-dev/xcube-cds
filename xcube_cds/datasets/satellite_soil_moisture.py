@@ -151,20 +151,50 @@ class SoilMoistureHandler(CDSDatasetHandler):
             time_range=JsonArraySchema(
                 items=[JsonStringSchema(format='date-time'),
                        JsonStringSchema(format='date-time', nullable=True)]),
-            time_period=JsonStringSchema(enum=[self._aggregation_map[aggregation]]),
+            time_period=JsonStringSchema(
+                enum=[self._aggregation_map[aggregation]]),
             # Non-standard parameters start here. There are complex
             # interdependencies between allowed values for these and for
             # the date specifiers, which can't be represented in JSON Schema.
             # The best we can do is to make them all available, set sensible
             # defaults, and trust that the user knows what they're requesting.
-            type_of_sensor=JsonStringSchema(enum=sensors, default=sensors[0]),
-            type_of_record=JsonStringSchema(enum=['cdr', 'icdr'],
-                                            default='cdr'),
+            type_of_sensor=JsonStringSchema(
+                enum=sensors,
+                default=sensors[0],
+                title='Type of sensor',
+                description=(
+                    'Passive sensors measure reflected sunlight. '
+                    'Active sensors have their own source of illumination.'
+                )),
+            type_of_record=JsonStringSchema(
+                enum=['cdr', 'icdr'],
+                title='Type of record',
+                description=(
+                    'When dealing with satellite data it is common to '
+                    'encounter references to Climate Data Records (CDR) and '
+                    'interim-CDR (ICDR). For this dataset, both the ICDR and '
+                    'CDR parts of each product were generated using the same '
+                    'software and algorithms. The CDR is intended to have '
+                    'sufficient length, consistency, and continuity to detect '
+                    'climate variability and change. The ICDR provides a '
+                    'short-delay access to current data where consistency with '
+                    'the CDR baseline is expected but was not extensively '
+                    'checked.'),
+                default='cdr'),
             version=JsonStringSchema(
                 enum=['v201706.0.0', 'v201812.0.0', 'v201812.0.1',
                       'v201912.0.0'],
+                title='Data version',
+                description=(
+                    'Format: vMajor.Minor.Run, e.g. "v201706.0.0". The Major '
+                    'number usually represents the year (YYYY) and month (MM) '
+                    'of date. The initial value for Minor is zero, and will '
+                    'increment when updating the file. If there is a need – '
+                    'e.g. because of technical issues – to replace a file '
+                    'which has already been made public, the Run number of '
+                    'the replacement file shifts to the next increment. The '
+                    'initial Run number is zero.'),
                 default='v201912.0.0')
-
         )
         required = [
             'variable_names',
