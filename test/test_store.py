@@ -102,8 +102,7 @@ class CDSStoreTest(unittest.TestCase):
         store = CDSDataStore()
         with self.assertRaises(ValidationError):
             store.open_data(
-                'reanalysis-era5-single-levels-monthly-means:'
-                'monthly_averaged_reanalysis_by_hour_of_day',
+                'reanalysis-era5-single-levels:ensemble_mean',
                 variable_names=['2m_temperature'],
                 bbox=[-1, -1, 181, 1],
                 spatial_res=0.25,
@@ -260,9 +259,8 @@ class CDSStoreTest(unittest.TestCase):
     def test_era5_describe_data(self):
         store = CDSDataStore()
         descriptor = store.describe_data(
-            'reanalysis-era5-single-levels-monthly-means:'
-            'monthly_averaged_ensemble_members_by_hour_of_day')
-        self.assertEqual(260, len(descriptor.data_vars))
+            'reanalysis-era5-single-levels:reanalysis')
+        self.assertEqual(265, len(descriptor.data_vars))
         self.assertEqual('WGS84', descriptor.crs)
         self.assertTupleEqual((-180, -90, 180, 90), descriptor.bbox)
         # We don't exhaustively check all 260 variables, but we check the
