@@ -85,7 +85,18 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 _, leafname = os.path.split(pathname)
                 self._dataset_dicts[leafname[:-5]] = ds_dict
 
-        self._valid_data_ids = set()
+        # The CDS API delivers data from these datasets in an unhelpful format
+        # (issue #6) and sometimes with non-increasing time (issue #5), so
+        # for now they are blacklisted.
+        blacklist = frozenset([
+            'reanalysis-era5-land-monthly-means:monthly_averaged_reanalysis_by_hour_of_day',
+            'reanalysis-era5-single-levels-monthly-means:monthly_averaged_ensemble_members_by_hour_of_day',
+            'reanalysis-era5-single-levels-monthly-means:monthly_averaged_reanalysis_by_hour_of_day'
+        ])
+
+        # We use a list rather than a set, since we want to preserve ordering
+        # and the number of elements is small.
+        self._valid_data_ids = []
         self._data_id_to_human_readable = {}
         for ds_id, ds_dict in self._dataset_dicts.items():
             # product_type is actually a request parameter, but we implement
@@ -96,14 +107,17 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 # No product types defined (i.e. there is just a single,
                 # implicit product type), so we just use the dataset ID without
                 # a suffix.
-                self._valid_data_ids.add(ds_id)
-                self._data_id_to_human_readable[ds_id] = ds_dict['description']
+                if ds_id not in blacklist:
+                    self._valid_data_ids.append(ds_id)
+                    self._data_id_to_human_readable[ds_id] =\
+                        ds_dict['description']
             else:
                 for pt_id, pt_desc in product_types:
                     data_id = ds_id + ':' + pt_id
-                    self._valid_data_ids.add(data_id)
-                    self._data_id_to_human_readable[data_id] = \
-                        ds_dict['description'] + ' \N{EN DASH} ' + pt_desc
+                    if data_id not in blacklist:
+                        self._valid_data_ids.append(data_id)
+                        self._data_id_to_human_readable[data_id] = \
+                            ds_dict['description'] + ' \N{EN DASH} ' + pt_desc
 
     def get_supported_data_ids(self) -> List[str]:
         return list(self._valid_data_ids)
