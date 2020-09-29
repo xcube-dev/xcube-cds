@@ -31,6 +31,7 @@ install:
   - mamba env create --prefix $HOME/mamba-env --file environment.yml
   - mamba install --prefix $HOME/mamba-env pytest
   - mamba install --prefix $HOME/mamba-env geopandas
+  - mamba install --prefix $HOME/mamba-env jdcal
 
   - conda activate $HOME/mamba-env
   - conda list
