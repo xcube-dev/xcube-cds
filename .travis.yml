@@ -29,12 +29,12 @@ install:
   # Environments created by mamba can't be referenced by name from conda
   # (presumably a bug), so we use an explicit path instead.
   - mamba env create --prefix $HOME/mamba-env --file environment.yml
+  - mamba install --prefix $HOME/mamba-env pytest
+  - mamba install --prefix $HOME/mamba-env geopandas
+
   - conda activate $HOME/mamba-env
   - conda list
-  - conda install mamba=0.5.1 -c conda-forge
-  - mamba install pytest
-  - mamba install geopandas
-  - python setup.py install 
+  - python setup.py install
 
 script: pytest
 
