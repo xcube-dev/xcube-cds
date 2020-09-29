@@ -27,7 +27,7 @@ import xarray as xr
 from xcube.core.store import DataDescriptor, DatasetDescriptor, \
     VariableDescriptor
 from xcube.util.jsonschema import JsonObjectSchema, JsonStringSchema, \
-    JsonArraySchema, JsonNumberSchema
+    JsonArraySchema, JsonNumberSchema, JsonDatetimeSchema
 
 from xcube_cds.store import CDSDatasetHandler
 
@@ -148,9 +148,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
             spatial_res=JsonNumberSchema(minimum=0.25,
                                          maximum=0.25,
                                          default=0.25),
-            time_range=JsonArraySchema(
-                items=[JsonStringSchema(format='date-time'),
-                       JsonStringSchema(format='date-time', nullable=True)]),
+            time_range=JsonDatetimeSchema().new_datetime_range(),
             time_period=JsonStringSchema(
                 enum=[self._aggregation_map[aggregation]]),
             # Non-standard parameters start here. There are complex
@@ -199,7 +197,6 @@ class SoilMoistureHandler(CDSDatasetHandler):
         required = [
             'variable_names',
             'bbox',
-            'spatial_res',
             'time_range',
         ]
         return JsonObjectSchema(

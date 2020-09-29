@@ -28,7 +28,7 @@ import xarray as xr
 from xcube.core.store import DataDescriptor, DatasetDescriptor, \
     VariableDescriptor
 from xcube.util.jsonschema import JsonObjectSchema, JsonStringSchema, \
-    JsonArraySchema, JsonNumberSchema
+    JsonArraySchema, JsonNumberSchema, JsonDatetimeSchema
 
 from xcube_cds.store import CDSDatasetHandler
 
@@ -163,10 +163,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 maximum=10,
                 default=ds_info['spatial_res'],
                 description='spatial resolution'),
-            time_range=JsonArraySchema(
-                items=[JsonStringSchema(format='date-time'),
-                       JsonStringSchema(format='date-time', nullable=True)],
-                description='time range'),
+            time_range=JsonDatetimeSchema().new_datetime_range(),
             time_period=JsonStringSchema(
                 const=ds_info['time_period'],
                 description='time aggregation period'),

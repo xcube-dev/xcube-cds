@@ -49,6 +49,7 @@ from xcube.util.jsonschema import JsonIntegerSchema
 from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
+from xcube.util.jsonschema import JsonDatetimeSchema
 from xcube.util.undefined import UNDEFINED
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.constants import DEFAULT_NUM_RETRIES
@@ -360,9 +361,7 @@ class CDSDataOpener(DataOpener):
                 JsonNumberSchema(minimum=-180, maximum=180),
                 JsonNumberSchema(minimum=-90, maximum=90))),
             spatial_res=JsonNumberSchema(),
-            time_range=JsonArraySchema(
-                items=[JsonStringSchema(format='date-time'),
-                       JsonStringSchema(format='date-time', nullable=True)]),
+            time_range=JsonDatetimeSchema().new_datetime_range(),
             time_period=JsonStringSchema(),
         )
         required = [
