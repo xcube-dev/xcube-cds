@@ -36,7 +36,9 @@ install:
   - mamba env update --prefix $HOME/mamba-env --file $HOME/xcube/environment.yml
   - conda activate $HOME/mamba-env
   - conda list
-  - python $HOME/xcube/setup.py install
+  - cd $HOME/xcube
+  - python setup.py install
+  - cd -
   - python setup.py install
 
 script: pytest
