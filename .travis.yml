@@ -29,12 +29,14 @@ install:
   # Environments created by mamba can't be referenced by name from conda
   # (presumably a bug), so we use an explicit path instead.
   - mamba env create --prefix $HOME/mamba-env --file environment.yml
+  - git clone https://github.com/dcs4cop/xcube $HOME/xcube
   - mamba install --prefix $HOME/mamba-env pytest
   - mamba install --prefix $HOME/mamba-env geopandas
   - mamba install --prefix $HOME/mamba-env jdcal
-
+  - mamba env create --prefix $HOME/mamba-env --file $HOME/xcube/environment.yml
   - conda activate $HOME/mamba-env
   - conda list
+  - python setup.py $HOME/xcube/setup.py install
   - python setup.py install
 
 script: pytest
