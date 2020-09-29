@@ -2,6 +2,7 @@
 
  - Add release instructions to readme
  - Various bug fixes
+ - Update open parameters schemas to follow current xcube conventions
 
 ## Changes in 0.5.1
 
