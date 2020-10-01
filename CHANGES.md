@@ -4,7 +4,7 @@
  - Various bug fixes
  - Update open parameters schemas to follow current xcube conventions
  - Exclude ERA5 "monthly averages by hour of day" datasets
- 
+ - Add a Travis CI configuration for automated testing
 
 ## Changes in 0.5.1
 
