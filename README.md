@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/dcs4cop/xcube-cds.svg?branch=master)](https://travis-ci.com/dcs4cop/xcube-cds)
+
 # xcube-cds
 
 An [xcube plugin](https://xcube.readthedocs.io/en/latest/plugins.html)
@@ -122,7 +124,10 @@ You can run the unit tests for xcube-cds by executing
 $ pytest
 ```
 
-in the `xcube-cds` repository.
+in the `xcube-cds` repository. Note that, in order to successfully run the
+tests using the current repository version of xcube-cds, you may also need to
+install the repository version of xcube rather than its latest conda-forge
+release.
 
 To create a test coverage report, you can use
 

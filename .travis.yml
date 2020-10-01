@@ -33,9 +33,6 @@ install:
   - mamba env create --prefix $HOME/mamba-env --file environment.yml
   - mamba install --prefix $HOME/mamba-env pytest
 
-  # - mamba install --prefix $HOME/mamba-env geopandas
-  # - mamba install --prefix $HOME/mamba-env jdcal
-
   # Clone the xcube repository and install its dependencies using its conda
   # environment file
   - git clone https://github.com/dcs4cop/xcube $HOME/xcube
