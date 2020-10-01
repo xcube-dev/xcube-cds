@@ -34,6 +34,7 @@ install:
   - mamba install --prefix $HOME/mamba-env geopandas
   - mamba install --prefix $HOME/mamba-env jdcal
   - mamba env update --prefix $HOME/mamba-env --file $HOME/xcube/environment.yml
+  - mamba remove --prefix $HOME/mamba-env xcube
   - conda activate $HOME/mamba-env
   - conda list
   - cd $HOME/xcube
