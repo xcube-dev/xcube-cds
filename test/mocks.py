@@ -11,13 +11,20 @@ class CDSClientMock:
     the retrieve method is called, it checks if the request matches one of
     these known requests, and if so returns the associated result (also read
     from disk). If the request cannot be matched, an exception is raised.
+
+    This class implements a minimal subset of the functionality of the
+    actual cdsapi.Client class, just sufficient to allow the unit tests to run.
     """
 
-    def __init__(self):
+    def __init__(self, url=None, key=None):
         class Session:
             def close(self):
                 pass
         self.session = Session()
+
+        self.url = url
+        self.key = key
+
         resource_path = os.path.join(os.path.dirname(__file__),
                                      'mock_results')
         # request_map is a list because dicts can't be hashed in Python, and

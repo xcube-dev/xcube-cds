@@ -34,7 +34,7 @@ To create a new unit test of this kind,
    of the subdirectory is arbitrary, but it is useful to give it the same
    name as the unit test method.
 4. Remove the _save_request_to and _save_file_to arguments from the open_data
-   call, and add a 'client=CDSClientMock' argument to the CDSDataOpener
+   call, and add a 'client_class=CDSClientMock' argument to the CDSDataOpener
    constructor.
 """
 
@@ -59,7 +59,7 @@ from xcube_cds.store import CDSDatasetHandler
 class CDSStoreTest(unittest.TestCase):
 
     def test_open(self):
-        opener = CDSDataOpener(client=CDSClientMock)
+        opener = CDSDataOpener(client_class=CDSClientMock)
         dataset = opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -76,7 +76,7 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(10, len(dataset.variables['time']))
 
     def test_normalize_variable_names(self):
-        store = CDSDataStore(client=CDSClientMock, normalize_names=True)
+        store = CDSDataStore(client_class=CDSClientMock, normalize_names=True)
         dataset = store.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -111,7 +111,7 @@ class CDSStoreTest(unittest.TestCase):
             )
 
     def test_era5_land_monthly(self):
-        store = CDSDataStore(client=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock)
         dataset = store.open_data(
             'reanalysis-era5-land-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -126,7 +126,7 @@ class CDSStoreTest(unittest.TestCase):
         self.assertTrue('u10' in dataset.variables)
 
     def test_era5_single_levels_hourly(self):
-        store = CDSDataStore(client=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock)
         dataset = store.open_data(
             'reanalysis-era5-single-levels:'
             'reanalysis',
@@ -142,7 +142,7 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(26, len(dataset.variables['time']))
 
     def test_era5_land_hourly(self):
-        store = CDSDataStore(client=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock)
         dataset = store.open_data(
             'reanalysis-era5-land',
             variable_names=['2m_temperature'],
@@ -157,7 +157,7 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(26, len(dataset.variables['time']))
 
     def test_era5_bounds(self):
-        opener = CDSDataOpener(client=CDSClientMock)
+        opener = CDSDataOpener(client_class=CDSClientMock)
         dataset = opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -179,7 +179,7 @@ class CDSStoreTest(unittest.TestCase):
         self.assertLessEqual(south, north)
 
     def test_soil_moisture(self):
-        store = CDSDataStore(client=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock)
         data_id = 'satellite-soil-moisture:volumetric:monthly'
         dataset = store.open_data(
             data_id,
@@ -241,7 +241,7 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(1441, len(dataset.variables['lon']))
 
     def test_open_data_null_variables_list(self):
-        store = CDSDataStore(client=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock)
         data_id = 'reanalysis-era5-single-levels-monthly-means:'\
             'monthly_averaged_reanalysis'
         schema = store.get_open_data_params_schema(data_id)
@@ -311,7 +311,7 @@ class CDSStoreTest(unittest.TestCase):
             store.search_data('dataset')
 
     def test_copy_on_open(self):
-        store = CDSDataStore(client=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock)
         data_id = 'satellite-soil-moisture:volumetric:monthly'
         with tempfile.TemporaryDirectory() as temp_dir:
             request_path = os.path.join(temp_dir, 'request.json')
@@ -370,6 +370,25 @@ class CDSStoreTest(unittest.TestCase):
             CDSDataStore().get_open_data_params_schema(),
             xcube.util.jsonschema.JsonObjectSchema
         )
+
+    def test_client_url_and_key_parameters(self):
+        cds_api_url = 'https://example.com/'
+        cds_api_key = 'xyzzy'
+        opener = CDSDataOpener(client_class=CDSClientMock,
+                               cds_api_url=cds_api_url,
+                               cds_api_key=cds_api_key)
+        dataset = opener.open_data(
+            'reanalysis-era5-single-levels-monthly-means:'
+            'monthly_averaged_reanalysis',
+            variable_names=['2m_temperature'],
+            bbox=[-180, -90, 180, 90],
+            spatial_res=0.25,
+            time_period='1M',
+            time_range=['2015-10-15', '2015-10-15'],
+        )
+        client = opener.last_instantiated_client
+        self.assertEqual(cds_api_url, client.url)
+        self.assertEqual(cds_api_key, client.key)
 
 
 if __name__ == '__main__':
