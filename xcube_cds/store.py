@@ -314,6 +314,12 @@ class CDSDataOpener(DataOpener):
                another class implementing the same interface. In practice, this
                is expected to be either cdsapi.Client itself or a mock class for
                testing.
+        :param cds_api_url: CDS API URL. Will be passed to the CDS API client.
+               If omitted, the client will read the value from an environment
+               variable or configuration file.
+        :param cds_api_url: CDS API key. Will be passed to the CDS API client.
+               If omitted, the client will read the value from an environment
+               variable or configuration file.
         """
         self._normalize_names = normalize_names
         self._create_temporary_directory()

@@ -372,23 +372,97 @@ class CDSStoreTest(unittest.TestCase):
         )
 
     def test_client_url_and_key_parameters(self):
-        cds_api_url = 'https://example.com/'
-        cds_api_key = 'xyzzy'
-        opener = CDSDataOpener(client_class=CDSClientMock,
-                               cds_api_url=cds_api_url,
-                               cds_api_key=cds_api_key)
-        dataset = opener.open_data(
-            'reanalysis-era5-single-levels-monthly-means:'
-            'monthly_averaged_reanalysis',
-            variable_names=['2m_temperature'],
-            bbox=[-180, -90, 180, 90],
-            spatial_res=0.25,
-            time_period='1M',
-            time_range=['2015-10-15', '2015-10-15'],
-        )
-        client = opener.last_instantiated_client
-        self.assertEqual(cds_api_url, client.url)
-        self.assertEqual(cds_api_key, client.key)
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                self._set_up_api_configuration(
+                    temp_dir, 'wrong URL 1', 'wrong key 1',
+                    'wrong URL 2', 'wrong key 2')
+                cds_api_url = 'https://example.com/'
+                cds_api_key = 'xyzzy'
+                opener = CDSDataOpener(client_class=CDSClientMock,
+                                       cds_api_url=cds_api_url,
+                                       cds_api_key=cds_api_key)
+                opener.open_data(
+                    'reanalysis-era5-single-levels-monthly-means:'
+                    'monthly_averaged_reanalysis',
+                    variable_names=['2m_temperature'],
+                    bbox=[-180, -90, 180, 90],
+                    spatial_res=0.25,
+                    time_period='1M',
+                    time_range=['2015-10-15', '2015-10-15'],
+                )
+                client = opener.last_instantiated_client
+                self.assertEqual(cds_api_url, client.url)
+                self.assertEqual(cds_api_key, client.key)
+        finally:
+            self._erase_environment_variables()
+
+    def test_client_url_and_key_environment_variables(self):
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                cds_api_url = 'https://example.com/'
+                cds_api_key = 'xyzzy'
+                self._set_up_api_configuration(
+                    temp_dir, 'wrong URL 1', 'wrong key 1',
+                    cds_api_url, cds_api_key)
+                opener = CDSDataOpener(client_class=CDSClientMock)
+                opener.open_data(
+                    'reanalysis-era5-single-levels-monthly-means:'
+                    'monthly_averaged_reanalysis',
+                    variable_names=['2m_temperature'],
+                    bbox=[-180, -90, 180, 90],
+                    spatial_res=0.25,
+                    time_period='1M',
+                    time_range=['2015-10-15', '2015-10-15'],
+                )
+                client = opener.last_instantiated_client
+                self.assertEqual(cds_api_url, client.url)
+                self.assertEqual(cds_api_key, client.key)
+        finally:
+            self._erase_environment_variables()
+
+    def test_client_url_and_key_rc_file(self):
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                cds_api_url = 'https://example.com/'
+                cds_api_key = 'xyzzy'
+                self._set_up_api_configuration(temp_dir,
+                                               cds_api_url, cds_api_key)
+                opener = CDSDataOpener(client_class=CDSClientMock)
+                opener.open_data(
+                    'reanalysis-era5-single-levels-monthly-means:'
+                    'monthly_averaged_reanalysis',
+                    variable_names=['2m_temperature'],
+                    bbox=[-180, -90, 180, 90],
+                    spatial_res=0.25,
+                    time_period='1M',
+                    time_range=['2015-10-15', '2015-10-15'],
+                )
+                client = opener.last_instantiated_client
+                self.assertEqual(cds_api_url, client.url)
+                self.assertEqual(cds_api_key, client.key)
+        finally:
+            self._erase_environment_variables()
+
+    @staticmethod
+    def _set_up_api_configuration(temp_dir, url_rc, key_rc,
+                                  url_env=None, key_env=None):
+        rc_path = os.path.join(temp_dir, "cdsapi.rc")
+        with open(rc_path, 'w') as fh:
+            fh.write(f'url: {url_rc}\n')
+            fh.write(f'key: {key_rc}\n')
+        CDSStoreTest._erase_environment_variables()
+        os.environ['CDSAPI_RC'] = rc_path
+        if url_env is not None:
+            os.environ['CDSAPI_URL'] = url_env
+        if key_env is not None:
+            os.environ['CDSAPI_KEY'] = key_env
+
+    @staticmethod
+    def _erase_environment_variables():
+        for var in 'CDSAPI_URL', 'CDSAPI_KEY', 'CDSAPI_RC':
+            if var in os.environ:
+                del os.environ[var]
 
 
 if __name__ == '__main__':
