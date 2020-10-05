@@ -55,11 +55,15 @@ from xcube_cds.store import CDSDataOpener
 from xcube_cds.store import CDSDataStore
 from xcube_cds.store import CDSDatasetHandler
 
+_CDS_API_URL = 'dummy'
+_CDS_API_KEY = 'dummy'
 
 class CDSStoreTest(unittest.TestCase):
 
     def test_open(self):
-        opener = CDSDataOpener(client_class=CDSClientMock)
+        opener = CDSDataOpener(client_class=CDSClientMock,
+                               cds_api_url=_CDS_API_URL,
+                               cds_api_key=_CDS_API_KEY)
         dataset = opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -76,7 +80,9 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(10, len(dataset.variables['time']))
 
     def test_normalize_variable_names(self):
-        store = CDSDataStore(client_class=CDSClientMock, normalize_names=True)
+        store = CDSDataStore(client_class=CDSClientMock, normalize_names=True,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -90,7 +96,8 @@ class CDSStoreTest(unittest.TestCase):
         self.assertTrue('p54_162' in dataset.variables)
 
     def test_invalid_data_id(self):
-        store = CDSDataStore()
+        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         with self.assertRaises(ValueError):
             store.open_data(
                 'this-data-id-does-not-exist',
@@ -99,7 +106,8 @@ class CDSStoreTest(unittest.TestCase):
             )
 
     def test_request_parameter_out_of_range(self):
-        store = CDSDataStore()
+        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         with self.assertRaises(ValidationError):
             store.open_data(
                 'reanalysis-era5-single-levels:ensemble_mean',
@@ -111,7 +119,9 @@ class CDSStoreTest(unittest.TestCase):
             )
 
     def test_era5_land_monthly(self):
-        store = CDSDataStore(client_class=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             'reanalysis-era5-land-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -126,7 +136,9 @@ class CDSStoreTest(unittest.TestCase):
         self.assertTrue('u10' in dataset.variables)
 
     def test_era5_single_levels_hourly(self):
-        store = CDSDataStore(client_class=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             'reanalysis-era5-single-levels:'
             'reanalysis',
@@ -142,7 +154,9 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(26, len(dataset.variables['time']))
 
     def test_era5_land_hourly(self):
-        store = CDSDataStore(client_class=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             'reanalysis-era5-land',
             variable_names=['2m_temperature'],
@@ -157,7 +171,9 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(26, len(dataset.variables['time']))
 
     def test_era5_bounds(self):
-        opener = CDSDataOpener(client_class=CDSClientMock)
+        opener = CDSDataOpener(client_class=CDSClientMock,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         dataset = opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -179,7 +195,9 @@ class CDSStoreTest(unittest.TestCase):
         self.assertLessEqual(south, north)
 
     def test_soil_moisture(self):
-        store = CDSDataStore(client_class=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         data_id = 'satellite-soil-moisture:volumetric:monthly'
         dataset = store.open_data(
             data_id,
@@ -200,7 +218,8 @@ class CDSStoreTest(unittest.TestCase):
                          sorted(map(str, dataset.data_vars)))
 
     def test_list_and_describe_data_ids(self):
-        store = CDSDataStore()
+        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         data_ids = store.get_data_ids()
         self.assertIsInstance(data_ids, Iterator)
         for data_id in data_ids:
@@ -212,7 +231,8 @@ class CDSStoreTest(unittest.TestCase):
             self.assertIsInstance(descriptor, DataDescriptor)
 
     def test_open_data_empty_variables_list_1(self):
-        store = CDSDataStore()
+        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             'reanalysis-era5-land-monthly-means:monthly_averaged_reanalysis',
             variable_names=[],
@@ -226,7 +246,8 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(361, len(dataset.variables['lon']))
 
     def test_open_data_empty_variables_list_2(self):
-        store = CDSDataStore()
+        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             'satellite-soil-moisture:volumetric:10-day',
             variable_names=[],
@@ -241,7 +262,9 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(1441, len(dataset.variables['lon']))
 
     def test_open_data_null_variables_list(self):
-        store = CDSDataStore(client_class=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         data_id = 'reanalysis-era5-single-levels-monthly-means:'\
             'monthly_averaged_reanalysis'
         schema = store.get_open_data_params_schema(data_id)
@@ -257,7 +280,8 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(n_vars, len(dataset.data_vars))
 
     def test_era5_describe_data(self):
-        store = CDSDataStore()
+        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         descriptor = store.describe_data(
             'reanalysis-era5-single-levels:reanalysis')
         self.assertEqual(265, len(descriptor.data_vars))
@@ -283,7 +307,8 @@ class CDSStoreTest(unittest.TestCase):
             CDSDatasetHandler.convert_time_range([])  # incorrect list length
 
     def test_get_open_params_schema_without_data_id(self):
-        opener = CDSDataOpener()
+        opener = CDSDataOpener(cds_api_url=_CDS_API_URL,
+                               cds_api_key=_CDS_API_KEY)
         schema = opener.get_open_data_params_schema()
 
         actual = schema.to_dict()
@@ -299,19 +324,23 @@ class CDSStoreTest(unittest.TestCase):
         )
 
     def test_search_data_invalid_id(self):
-        store = CDSDataStore()
+        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         with self.assertRaises(DataStoreError):
             store.search_data('This is an invalid ID.')
 
     def test_search_data_valid_id(self):
-        store = CDSDataStore()
+        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         # The CDS API doesn't offer a search function, so "not implemented"
         # is expected here.
         with self.assertRaises(NotImplementedError):
             store.search_data('dataset')
 
     def test_copy_on_open(self):
-        store = CDSDataStore(client_class=CDSClientMock)
+        store = CDSDataStore(client_class=CDSClientMock,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
         data_id = 'satellite-soil-moisture:volumetric:monthly'
         with tempfile.TemporaryDirectory() as temp_dir:
             request_path = os.path.join(temp_dir, 'request.json')
