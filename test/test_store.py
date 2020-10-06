@@ -58,6 +58,7 @@ from xcube_cds.store import CDSDatasetHandler
 _CDS_API_URL = 'dummy'
 _CDS_API_KEY = 'dummy'
 
+
 class CDSStoreTest(unittest.TestCase):
 
     def test_open(self):
@@ -400,87 +401,124 @@ class CDSStoreTest(unittest.TestCase):
             xcube.util.jsonschema.JsonObjectSchema
         )
 
+
+class ClientUrlTest(unittest.TestCase):
+
+    """Tests connected with passing CDS API URL and key to opener or store."""
+
+    def setUp(self):
+        self.old_environment = dict(os.environ)
+        self.temp_dir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self.old_environment)
+        self.temp_dir.cleanup()
+
     def test_client_url_and_key_parameters(self):
-        try:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                self._set_up_api_configuration(
-                    temp_dir, 'wrong URL 1', 'wrong key 1',
-                    'wrong URL 2', 'wrong key 2')
-                cds_api_url = 'https://example.com/'
-                cds_api_key = 'xyzzy'
-                opener = CDSDataOpener(client_class=CDSClientMock,
-                                       cds_api_url=cds_api_url,
-                                       cds_api_key=cds_api_key)
-                opener.open_data(
-                    'reanalysis-era5-single-levels-monthly-means:'
-                    'monthly_averaged_reanalysis',
-                    variable_names=['2m_temperature'],
-                    bbox=[-180, -90, 180, 90],
-                    spatial_res=0.25,
-                    time_period='1M',
-                    time_range=['2015-10-15', '2015-10-15'],
-                )
-                client = opener.last_instantiated_client
-                self.assertEqual(cds_api_url, client.url)
-                self.assertEqual(cds_api_key, client.key)
-        finally:
-            self._erase_environment_variables()
+        """Test passing URL and key parameters to client constructor
+
+        This test verifies that the CDS API URL and key, when specified as
+        parameters to CDSDataOpener, are correctly passed to the CDS client,
+        overriding any configuration file or environment variable settings.
+        """
+
+        self._set_up_api_configuration('wrong URL 1', 'wrong key 1',
+                                       'wrong URL 2', 'wrong key 2')
+        cds_api_url = 'https://example.com/'
+        cds_api_key = 'xyzzy'
+        opener = CDSDataOpener(client_class=CDSClientMock,
+                               cds_api_url=cds_api_url,
+                               cds_api_key=cds_api_key)
+        opener.open_data(
+            'reanalysis-era5-single-levels-monthly-means:'
+            'monthly_averaged_reanalysis',
+            variable_names=['2m_temperature'],
+            bbox=[-180, -90, 180, 90],
+            spatial_res=0.25,
+            time_period='1M',
+            time_range=['2015-10-15', '2015-10-15'],
+        )
+        client = opener.last_instantiated_client
+        self.assertEqual(cds_api_url, client.url)
+        self.assertEqual(cds_api_key, client.key)
 
     def test_client_url_and_key_environment_variables(self):
-        try:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                cds_api_url = 'https://example.com/'
-                cds_api_key = 'xyzzy'
-                self._set_up_api_configuration(
-                    temp_dir, 'wrong URL 1', 'wrong key 1',
-                    cds_api_url, cds_api_key)
-                opener = CDSDataOpener(client_class=CDSClientMock)
-                opener.open_data(
-                    'reanalysis-era5-single-levels-monthly-means:'
-                    'monthly_averaged_reanalysis',
-                    variable_names=['2m_temperature'],
-                    bbox=[-180, -90, 180, 90],
-                    spatial_res=0.25,
-                    time_period='1M',
-                    time_range=['2015-10-15', '2015-10-15'],
-                )
-                client = opener.last_instantiated_client
-                self.assertEqual(cds_api_url, client.url)
-                self.assertEqual(cds_api_key, client.key)
-        finally:
-            self._erase_environment_variables()
+        """Test passing URL and key parameters via environment variables
+
+        This test verifies that the CDS API URL and key, when specified in
+        environment variables, are correctly passed to the CDS client,
+        overriding any configuration file settings.
+        """
+
+        cds_api_url = 'https://example.com/'
+        cds_api_key = 'xyzzy'
+        self._set_up_api_configuration('wrong URL 1', 'wrong key 1',
+                                       cds_api_url, cds_api_key)
+        client = self._get_client()
+        self.assertEqual(cds_api_url, client.url)
+        self.assertEqual(cds_api_key, client.key)
 
     def test_client_url_and_key_rc_file(self):
-        try:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                cds_api_url = 'https://example.com/'
-                cds_api_key = 'xyzzy'
-                self._set_up_api_configuration(temp_dir,
-                                               cds_api_url, cds_api_key)
-                opener = CDSDataOpener(client_class=CDSClientMock)
-                opener.open_data(
-                    'reanalysis-era5-single-levels-monthly-means:'
-                    'monthly_averaged_reanalysis',
-                    variable_names=['2m_temperature'],
-                    bbox=[-180, -90, 180, 90],
-                    spatial_res=0.25,
-                    time_period='1M',
-                    time_range=['2015-10-15', '2015-10-15'],
-                )
-                client = opener.last_instantiated_client
-                self.assertEqual(cds_api_url, client.url)
-                self.assertEqual(cds_api_key, client.key)
-        finally:
-            self._erase_environment_variables()
+        """Test passing URL and key parameters via environment variables
+
+        This test verifies that the CDS API URL and key, when specified in
+        a configuration file, are correctly passed to the CDS client.
+        """
+
+        cds_api_url = 'https://example.com/'
+        cds_api_key = 'xyzzy'
+        self._set_up_api_configuration(cds_api_url, cds_api_key)
+        opener = CDSDataOpener(client_class=CDSClientMock)
+        opener.open_data(
+            'reanalysis-era5-single-levels-monthly-means:'
+            'monthly_averaged_reanalysis',
+            variable_names=['2m_temperature'],
+            bbox=[-180, -90, 180, 90],
+            spatial_res=0.25,
+            time_period='1M',
+            time_range=['2015-10-15', '2015-10-15'],
+        )
+        client = opener.last_instantiated_client
+        self.assertEqual(cds_api_url, client.url)
+        self.assertEqual(cds_api_key, client.key)
 
     @staticmethod
-    def _set_up_api_configuration(temp_dir, url_rc, key_rc,
+    def _get_client(**opener_args):
+        """Return the client instantiated to open a dataset
+
+        Open a dataset and return the client that was instantiated to execute
+        the CDS API query.
+        """
+        opener = CDSDataOpener(client_class=CDSClientMock, **opener_args)
+        opener.open_data(
+            'reanalysis-era5-single-levels-monthly-means:'
+            'monthly_averaged_reanalysis',
+            variable_names=['2m_temperature'],
+            bbox=[-180, -90, 180, 90],
+            spatial_res=0.25,
+            time_period='1M',
+            time_range=['2015-10-15', '2015-10-15'],
+        )
+        return opener.last_instantiated_client
+
+    def _set_up_api_configuration(self, url_rc, key_rc,
                                   url_env=None, key_env=None):
-        rc_path = os.path.join(temp_dir, "cdsapi.rc")
+        """Set up a configuration file and, optionally, environment variables
+
+        The teardown function will take care of the clean-up.
+
+        :param url_rc: API URL to be written to configuration file
+        :param key_rc: API key to be written to configuration file
+        :param url_env: API URL to be written to environment variable
+        :param key_env: API key to be written to environment variable
+        :return: an instantiated CDS client object
+        """
+        rc_path = os.path.join(self.temp_dir.name, "cdsapi.rc")
         with open(rc_path, 'w') as fh:
             fh.write(f'url: {url_rc}\n')
             fh.write(f'key: {key_rc}\n')
-        CDSStoreTest._erase_environment_variables()
+        ClientUrlTest._erase_environment_variables()
         os.environ['CDSAPI_RC'] = rc_path
         if url_env is not None:
             os.environ['CDSAPI_URL'] = url_env
