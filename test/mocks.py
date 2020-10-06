@@ -2,6 +2,8 @@ import json
 import shutil
 import os
 
+import cdsapi
+
 
 class CDSClientMock:
 
@@ -11,13 +13,42 @@ class CDSClientMock:
     the retrieve method is called, it checks if the request matches one of
     these known requests, and if so returns the associated result (also read
     from disk). If the request cannot be matched, an exception is raised.
+
+    This class implements a minimal subset of the functionality of the
+    actual cdsapi.Client class, just sufficient to allow the unit tests to run.
+
+    The url and key arguments are not perfectly mocked: in the actual CDS API
+    client, the environment variables are read as part of the default
+    argument definitions. This is hard to test, since default arguments are
+    only evaluated once, when the method is defined. In the mock,
+    the parameters have None as a default, which is replaced (if possible) in
+    the method body with an environment variable read at runtime.
     """
 
-    def __init__(self):
+    def __init__(self, url=None, key=None):
         class Session:
             def close(self):
                 pass
         self.session = Session()
+
+        if url is None:
+            url = os.environ.get('CDSAPI_URL')
+        if key is None:
+            key = os.environ.get('CDSAPI_KEY')
+        dotrc = os.environ.get('CDSAPI_RC', os.path.expanduser('~/.cdsapirc'))
+        if url is None or key is None:
+            if os.path.exists(dotrc):
+                config = cdsapi.api.read_config(dotrc)
+                if key is None:
+                    key = config.get('key')
+                if url is None:
+                    url = config.get('url')
+        if url is None or key is None:
+            raise Exception(f'Missing/incomplete configuration file: {dotrc}')
+
+        self.url = url
+        self.key = key
+
         resource_path = os.path.join(os.path.dirname(__file__),
                                      'mock_results')
         # request_map is a list because dicts can't be hashed in Python, and

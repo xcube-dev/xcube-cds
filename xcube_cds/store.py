@@ -299,8 +299,28 @@ class CDSDatasetHandler(ABC):
 class CDSDataOpener(DataOpener):
     """A data opener for the Copernicus Climate Data Store"""
 
-    def __init__(self, normalize_names: Optional[bool] = False,
-                 client=None):
+    def __init__(self,
+                 normalize_names: Optional[bool] = False,
+                 client_class=cdsapi.Client,
+                 cds_api_url=None,
+                 cds_api_key=None
+                 ):
+        """Instantiate a CDS data opener.
+
+        :param normalize_names: if True, all variable names in the returned
+               data set will comply with CF Conventions; any non-compliant
+               names in dataset returned by the CDS API will be changed.
+        :param client_class: cdsapi.Client (the class, not an instance), or
+               another class implementing the same interface. In practice, this
+               is expected to be either cdsapi.Client itself or a mock class for
+               testing.
+        :param cds_api_url: CDS API URL. Will be passed to the CDS API client.
+               If omitted, the client will read the value from an environment
+               variable or configuration file.
+        :param cds_api_url: CDS API key. Will be passed to the CDS API client.
+               If omitted, the client will read the value from an environment
+               variable or configuration file.
+        """
         self._normalize_names = normalize_names
         self._create_temporary_directory()
         self._handler_registry: Dict[str, CDSDatasetHandler] = {}
@@ -309,7 +329,10 @@ class CDSDataOpener(DataOpener):
         from xcube_cds.datasets.satellite_soil_moisture \
             import SoilMoistureHandler
         self._register_dataset_handler(SoilMoistureHandler())
-        self._client = client or cdsapi.Client
+        self._client_class = client_class
+        self.cds_api_url = cds_api_url
+        self.cds_api_key = cds_api_key
+        self.last_instantiated_client = None  # for debugging and testing
 
     def _register_dataset_handler(self, handler: CDSDatasetHandler):
         for data_id in handler.get_supported_data_ids():
@@ -529,7 +552,12 @@ class CDSDataOpener(DataOpener):
         try:
             # The client class is set in the constructor. Usually it will
             # be cdsapi.Client, but may be mocked for unit testing.
-            client = self._client()
+            args = {}
+            if self.cds_api_url:
+                args['url'] = self.cds_api_url
+            if self.cds_api_key:
+                args['key'] = self.cds_api_key
+            self.last_instantiated_client = client = self._client_class(**args)
 
             # We can't generate a safe unique filename (since the file is
             # created by client.retrieve, so name generation and file

@@ -54,6 +54,13 @@ key: <UID>:<API-KEY>
 Replace `<UID>` with your UID and `<API-KEY>` with your API key, as obtained
 from the CDS website.
 
+You can specify an alternative location for the CDS API configuration file
+using the `CDSAPI_RC` environment variable, or provide the URL and key
+without a configuration file by setting the `CDSAPI_URL` and `CDSAPI_KEY`
+environment variables. You can also pass the URL and key directly to the
+`CDSDataOpener` and `CDSDataStore` constructors using the named parameters
+`cds_api_url` and `cds_api_key`.
+ 
 #### Agree to the terms of use for the datasets you require
 
 The datasets available through CDS have associated terms of use. Before

@@ -5,6 +5,8 @@
  - Update open parameters schemas to follow current xcube conventions
  - Exclude ERA5 "monthly averages by hour of day" datasets
  - Add a Travis CI configuration for automated testing
+ - Add the ability to specify the CDS API URL and key as parameters to the
+   data store and data opener constructors
 
 ## Changes in 0.5.1
 
