@@ -22,6 +22,7 @@
 
 import atexit
 import datetime
+import json
 import os
 import re
 import shutil
@@ -29,7 +30,6 @@ import tempfile
 from abc import abstractmethod, ABC
 from typing import Iterator, Tuple, List, Optional, Dict, Any, Union
 
-import json
 import cdsapi
 import dateutil.parser
 import dateutil.relativedelta
@@ -45,11 +45,11 @@ from xcube.core.store import DataStoreError
 from xcube.core.store import TYPE_ID_DATASET
 from xcube.util.jsonschema import JsonArraySchema
 from xcube.util.jsonschema import JsonBooleanSchema
+from xcube.util.jsonschema import JsonDateSchema
 from xcube.util.jsonschema import JsonIntegerSchema
 from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
-from xcube.util.jsonschema import JsonDatetimeSchema
 from xcube.util.undefined import UNDEFINED
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.constants import DEFAULT_NUM_RETRIES
@@ -384,7 +384,7 @@ class CDSDataOpener(DataOpener):
                 JsonNumberSchema(minimum=-180, maximum=180),
                 JsonNumberSchema(minimum=-90, maximum=90))),
             spatial_res=JsonNumberSchema(),
-            time_range=JsonDatetimeSchema().new_datetime_range(),
+            time_range=JsonDateSchema.new_range(),
             time_period=JsonStringSchema(),
         )
         required = [
@@ -622,7 +622,6 @@ class CDSDataOpener(DataOpener):
 
 
 class CDSDataStore(CDSDataOpener, DataStore):
-
     """An xcube data store which reads data from the Copernicus CDS.
 
     CDSDataStore is a read-only xcube DataStore implementation which uses

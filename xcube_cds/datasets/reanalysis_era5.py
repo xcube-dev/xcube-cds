@@ -24,12 +24,17 @@ import json
 import os
 import pathlib
 from typing import List, Optional, Dict, Tuple
-import xarray as xr
-from xcube.core.store import DataDescriptor, DatasetDescriptor, \
-    VariableDescriptor
-from xcube.util.jsonschema import JsonObjectSchema, JsonStringSchema, \
-    JsonArraySchema, JsonNumberSchema, JsonDatetimeSchema
 
+import xarray as xr
+
+from xcube.core.store import DataDescriptor
+from xcube.core.store import DatasetDescriptor
+from xcube.core.store import VariableDescriptor
+from xcube.util.jsonschema import JsonArraySchema
+from xcube.util.jsonschema import JsonDateSchema
+from xcube.util.jsonschema import JsonNumberSchema
+from xcube.util.jsonschema import JsonObjectSchema
+from xcube.util.jsonschema import JsonStringSchema
 from xcube_cds.store import CDSDatasetHandler
 
 
@@ -109,7 +114,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 # a suffix.
                 if ds_id not in blacklist:
                     self._valid_data_ids.append(ds_id)
-                    self._data_id_to_human_readable[ds_id] =\
+                    self._data_id_to_human_readable[ds_id] = \
                         ds_dict['description']
             else:
                 for pt_id, pt_desc in product_types:
@@ -153,17 +158,17 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 description='co-ordinate reference system'),
             # W, S, E, N (will be converted to N, W, S, E)
             bbox=JsonArraySchema(items=(
-                    JsonNumberSchema(minimum=bbox[0], maximum=bbox[2]),
-                    JsonNumberSchema(minimum=bbox[1], maximum=bbox[3]),
-                    JsonNumberSchema(minimum=bbox[0], maximum=bbox[2]),
-                    JsonNumberSchema(minimum=bbox[1], maximum=bbox[3])),
+                JsonNumberSchema(minimum=bbox[0], maximum=bbox[2]),
+                JsonNumberSchema(minimum=bbox[1], maximum=bbox[3]),
+                JsonNumberSchema(minimum=bbox[0], maximum=bbox[2]),
+                JsonNumberSchema(minimum=bbox[1], maximum=bbox[3])),
                 description='bounding box (min_x, min_y, max_x, max_y)'),
             spatial_res=JsonNumberSchema(
                 minimum=ds_info['spatial_res'],
                 maximum=10,
                 default=ds_info['spatial_res'],
                 description='spatial resolution'),
-            time_range=JsonDatetimeSchema().new_datetime_range(),
+            time_range=JsonDateSchema.new_range(),
             time_period=JsonStringSchema(
                 const=ds_info['time_period'],
                 description='time aggregation period'),

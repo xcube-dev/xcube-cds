@@ -23,12 +23,17 @@
 import os
 import tarfile
 from typing import List, Dict, Tuple, Any
-import xarray as xr
-from xcube.core.store import DataDescriptor, DatasetDescriptor, \
-    VariableDescriptor
-from xcube.util.jsonschema import JsonObjectSchema, JsonStringSchema, \
-    JsonArraySchema, JsonNumberSchema, JsonDatetimeSchema
 
+import xarray as xr
+
+from xcube.core.store import DataDescriptor
+from xcube.core.store import DatasetDescriptor
+from xcube.core.store import VariableDescriptor
+from xcube.util.jsonschema import JsonArraySchema
+from xcube.util.jsonschema import JsonDateSchema
+from xcube.util.jsonschema import JsonNumberSchema
+from xcube.util.jsonschema import JsonObjectSchema
+from xcube.util.jsonschema import JsonStringSchema
 from xcube_cds.store import CDSDatasetHandler
 
 
@@ -93,7 +98,6 @@ class SoilMoistureHandler(CDSDatasetHandler):
 
     def read_file(self, dataset_name: str, cds_api_params: Dict,
                   file_path: str, temp_dir: str):
-
         # Unpack the .tar.gz into the temporary directory.
         with tarfile.open(file_path) as tgz_file:
             tgz_file.extractall(path=temp_dir)
@@ -148,7 +152,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
             spatial_res=JsonNumberSchema(minimum=0.25,
                                          maximum=0.25,
                                          default=0.25),
-            time_range=JsonDatetimeSchema().new_datetime_range(),
+            time_range=JsonDateSchema.new_range(),
             time_period=JsonStringSchema(
                 enum=[self._aggregation_map[aggregation]]),
             # Non-standard parameters start here. There are complex
