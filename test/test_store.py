@@ -91,7 +91,7 @@ class CDSStoreTest(unittest.TestCase):
             variable_names=['vertical_integral_of_temperature'],
             bbox=[-2, -2, 2, 2],
             spatial_res=1.0,
-            time_range=['2019-01-01', None],
+            time_range=['2019-01-01', '2020-12-31'],
         )
         self.assertIsNotNone(dataset)
         self.assertTrue('p54_162' in dataset.variables)
@@ -147,12 +147,12 @@ class CDSStoreTest(unittest.TestCase):
             bbox=[9, 49, 11, 51],
             spatial_res=0.25,
             time_period='1H',
-            time_range=['2015-01-01 20:00',
-                        '2015-01-02 08:00'],
+            time_range=['2015-01-01',
+                        '2015-01-02'],
         )
         self.assertIsNotNone(dataset)
         self.assertTrue('t2m' in dataset.variables)
-        self.assertEqual(26, len(dataset.variables['time']))
+        self.assertEqual(48, len(dataset.variables['time']))
 
     def test_era5_land_hourly(self):
         store = CDSDataStore(client_class=CDSClientMock,
@@ -164,17 +164,17 @@ class CDSStoreTest(unittest.TestCase):
             bbox=[9.5, 49.5, 10.5, 50.5],
             spatial_res=0.1,
             time_period='1H',
-            time_range=['2015-01-01 20:00',
-                        '2015-01-02 08:00'],
+            time_range=['2015-01-01',
+                        '2015-01-02'],
         )
         self.assertIsNotNone(dataset)
         self.assertTrue('t2m' in dataset.variables)
-        self.assertEqual(26, len(dataset.variables['time']))
+        self.assertEqual(48, len(dataset.variables['time']))
 
     def test_era5_bounds(self):
         opener = CDSDataOpener(client_class=CDSClientMock,
-                             cds_api_url=_CDS_API_URL,
-                             cds_api_key=_CDS_API_KEY)
+                               cds_api_url=_CDS_API_URL,
+                               cds_api_key=_CDS_API_KEY)
         dataset = opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -255,8 +255,8 @@ class CDSStoreTest(unittest.TestCase):
             bbox=[-180, -90, 180, 90],
             spatial_res=0.25,
             time_period='10D',
-            time_range=['1981-06-14T11:39:21.666',
-                        '1982-02-13T09:32:34.321']
+            time_range=['1981-06-14',
+                        '1982-02-13']
         )
         self.assertEqual(len(dataset.data_vars), 0)
         self.assertEqual(26, len(dataset.variables['time']))
