@@ -66,21 +66,24 @@ class SoilMoistureHandler(CDSDatasetHandler):
     def transform_params(self, opener_params, data_id: str) -> \
             Tuple[str, Dict[str, Any]]:
         # We don't need to check the argument format, since CDSDataStore does
-        # this for us. We can also ignore the dataset ID (constant) and
-        # aggregation type (only needed for describe_data).
-        _, variable_spec, _ = data_id.split(':')
+        # this for us. We can also ignore the dataset ID (constant).
+        _, variable_spec, aggregation = data_id.split(':')
 
         variables = opener_params['variable_names']
 
-        time_aggregation = {
-            '1D': 'day_average',
-            '10D': '10_day_average',
-            '1M': 'month_average'}[opener_params['time_period']]
+        # We ignore any aggregation period passed in the opener parameters
+        # (since it's in any case optional and limited to a single possible
+        # value), and instead take it directly from the third part of the
+        # data_id.
+        cds_aggregation_specifier = {
+            'daily': 'day_average',
+            '1-day': '10_day_average',
+            'monthly': 'month_average'}[aggregation]
 
         cds_params = dict(
             variable=variables,
             type_of_sensor=opener_params['type_of_sensor'],
-            time_aggregation=time_aggregation,
+            time_aggregation=cds_aggregation_specifier,
             type_of_record=opener_params['type_of_record'],
             version=opener_params['version'],
             format='tgz'
@@ -200,7 +203,6 @@ class SoilMoistureHandler(CDSDatasetHandler):
         )
         required = [
             'variable_names',
-            'bbox',
             'time_range',
         ]
         return JsonObjectSchema(
