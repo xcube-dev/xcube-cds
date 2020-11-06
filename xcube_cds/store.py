@@ -42,7 +42,7 @@ from xcube.core.store import DataDescriptor
 from xcube.core.store import DataOpener
 from xcube.core.store import DataStore
 from xcube.core.store import DataStoreError
-from xcube.core.store import TYPE_ID_DATASET
+from xcube.core.store import TYPE_SPECIFIER_DATASET
 from xcube.util.jsonschema import JsonArraySchema
 from xcube.util.jsonschema import JsonBooleanSchema
 from xcube.util.jsonschema import JsonDateSchema
@@ -478,7 +478,8 @@ class CDSDataOpener(DataOpener):
         dt_start = dateutil.parser.isoparse(t_start)
         dt_end = datetime.datetime.now() if t_end is None \
             else dateutil.parser.isoparse(t_end)
-        period_number, period_unit = CDSDataOpener._parse_time_period(t_interval)
+        period_number, period_unit = \
+            CDSDataOpener._parse_time_period(t_interval)
         timedelta = np.timedelta64(period_number, period_unit)
         relativedelta = CDSDataOpener._period_to_relativedelta(period_number,
                                                                period_unit)
@@ -699,34 +700,44 @@ class CDSDataStore(CDSDataOpener, DataStore):
         )
 
     @classmethod
-    def get_type_ids(cls) -> Tuple[str, ...]:
-        return TYPE_ID_DATASET,
+    def get_type_specifiers(cls) -> Tuple[str, ...]:
+        return TYPE_SPECIFIER_DATASET,  # TODO or cube?
 
-    def get_data_ids(self, type_id: Optional[str] = None) -> \
+    def get_type_specifiers_for_data(self, data_id: str) -> Tuple[str, ...]:
+        self._validate_data_id(data_id)
+        return TYPE_SPECIFIER_DATASET,  # TODO or cube?
+
+    def get_data_ids(self, type_specifier: Optional[str] = None,
+                     include_titles: bool = True) -> \
             Iterator[Tuple[str, Optional[str]]]:
-        self._assert_valid_type_id(type_id)
-        return iter((data_id,
-                     self._handler_registry[data_id].
-                     get_human_readable_data_id(data_id))
-                    for data_id in self._handler_registry)
+        self._assert_valid_type_specifier(type_specifier)
+        return iter(
+            (data_id,
+             self._handler_registry[data_id].
+                get_human_readable_data_id(data_id) if include_titles else None)
+            for data_id in self._handler_registry
+        )
 
-    def has_data(self, data_id: str) -> bool:
+    def has_data(self, data_id: str, type_specifier: Optional[str] = None)\
+            -> bool:
         return data_id in self._handler_registry
 
-    def describe_data(self, data_id: str) -> DataDescriptor:
+    def describe_data(self, data_id: str, type_specifier: Optional[str] = None)\
+            -> DataDescriptor:
         self._validate_data_id(data_id)
+        self._assert_valid_type_specifier(type_specifier)
         return self._handler_registry[data_id].describe_data(data_id)
 
     # noinspection PyTypeChecker
     def search_data(self, type_id: Optional[str] = None, **search_params) -> \
             Iterator[DataDescriptor]:
-        self._assert_valid_type_id(type_id)
+        self._assert_valid_type_specifier(type_id)
         raise NotImplementedError()
 
     def get_data_opener_ids(self, data_id: Optional[str] = None,
                             type_id: Optional[str] = None) -> \
             Tuple[str, ...]:
-        self._assert_valid_type_id(type_id)
+        self._assert_valid_type_specifier(type_id)
         self._assert_valid_opener_id(data_id)
         return CDS_DATA_OPENER_ID,
 
@@ -749,10 +760,10 @@ class CDSDataStore(CDSDataOpener, DataStore):
     # Implementation helpers
 
     @staticmethod
-    def _assert_valid_type_id(type_id):
-        if type_id is not None and type_id != TYPE_ID_DATASET:
+    def _assert_valid_type_specifier(type_id):
+        if type_id is not None and type_id != TYPE_SPECIFIER_DATASET:
             raise DataStoreError(
-                f'Data type identifier must be "{TYPE_ID_DATASET}", '
+                f'Data type identifier must be "{TYPE_SPECIFIER_DATASET}", '
                 f'but got "{type_id}"')
 
     @staticmethod

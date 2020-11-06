@@ -216,7 +216,6 @@ class SoilMoistureHandler(CDSDatasetHandler):
         return self._data_id_map[data_id]
 
     def describe_data(self, data_id: str) -> DataDescriptor:
-        # TODO: Adapt output to data_id suffixes
         _, variable_spec, aggregation = data_id.split(':')
 
         sm_attrs = dict(

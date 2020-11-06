@@ -46,7 +46,7 @@ from collections.abc import Iterator
 import xcube
 import xcube.core
 from jsonschema import ValidationError
-from xcube.core.store import TYPE_ID_DATASET
+from xcube.core.store import TYPE_SPECIFIER_DATASET
 from xcube.core.store import VariableDescriptor, DataStoreError, DataDescriptor
 
 from test.mocks import CDSClientMock
@@ -392,8 +392,9 @@ class CDSStoreTest(unittest.TestCase):
             'additionalProperties': False
         }, CDSDataStore.get_data_store_params_schema().to_dict())
 
-    def test_get_type_ids(self):
-        self.assertTupleEqual((TYPE_ID_DATASET, ), CDSDataStore.get_type_ids())
+    def test_get_type_specifiers(self):
+        self.assertTupleEqual((TYPE_SPECIFIER_DATASET, ),
+                              CDSDataStore.get_type_specifiers())
 
     def test_has_data_true(self):
         self.assertTrue(CDSDataStore().has_data('reanalysis-era5-land'))
@@ -409,7 +410,7 @@ class CDSStoreTest(unittest.TestCase):
     def test_get_data_opener_ids_invalid_opener_id(self):
         with self.assertRaises(DataStoreError):
             CDSDataStore().get_data_opener_ids('this is an invalid ID',
-                                               TYPE_ID_DATASET)
+                                               TYPE_SPECIFIER_DATASET)
 
     def test_get_data_opener_ids_with_default_arguments(self):
         self.assertTupleEqual((CDS_DATA_OPENER_ID, ),
