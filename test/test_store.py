@@ -46,7 +46,7 @@ from collections.abc import Iterator
 import xcube
 import xcube.core
 from jsonschema import ValidationError
-from xcube.core.store import TYPE_SPECIFIER_DATASET
+from xcube.core.store import TYPE_SPECIFIER_DATASET, TYPE_SPECIFIER_CUBE
 from xcube.core.store import VariableDescriptor, DataStoreError, DataDescriptor
 
 from test.mocks import CDSClientMock
@@ -393,8 +393,15 @@ class CDSStoreTest(unittest.TestCase):
         }, CDSDataStore.get_data_store_params_schema().to_dict())
 
     def test_get_type_specifiers(self):
-        self.assertTupleEqual((TYPE_SPECIFIER_DATASET, ),
+        self.assertTupleEqual((TYPE_SPECIFIER_CUBE, ),
                               CDSDataStore.get_type_specifiers())
+
+    def test_get_type_specifiers_for_data(self):
+        store = CDSDataStore()
+        self.assertEqual(
+            (TYPE_SPECIFIER_CUBE, ),
+            store.get_type_specifiers_for_data('reanalysis-era5-land')
+        )
 
     def test_has_data_true(self):
         self.assertTrue(CDSDataStore().has_data('reanalysis-era5-land'))
@@ -421,6 +428,24 @@ class CDSStoreTest(unittest.TestCase):
             CDSDataStore().get_open_data_params_schema(),
             xcube.util.jsonschema.JsonObjectSchema
         )
+
+    def test_get_data_ids(self):
+        store = CDSDataStore(client_class=CDSClientMock,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
+        self.assertEqual([], list(store.get_data_ids('unsupported_type_spec')))
+        self.assertEqual([],
+                         list(store.get_data_ids('dataset[unsupported_flag]')))
+
+        # The number of available datasets is expected to increase over time,
+        # so to avoid overfitting the test we just check that more than a few
+        # datasets and/or cubes are available. "a few" is semi-arbitrarily
+        # defined to be 5.
+        minimum_expected_datasets = 5
+        self.assertGreater(len(list(store.get_data_ids('dataset'))),
+                           minimum_expected_datasets)
+        self.assertGreater(len(list(store.get_data_ids('dataset[cube]'))),
+                           minimum_expected_datasets)
 
 
 class ClientUrlTest(unittest.TestCase):
