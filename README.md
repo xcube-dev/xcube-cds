@@ -139,7 +139,7 @@ release.
 To create a test coverage report, you can use
 
 ```
-coverage run --omit='test/*' --module pytest
+coverage run --include='xcube_cds/**' --module pytest
 coverage html
 ```
 

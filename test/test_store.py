@@ -51,6 +51,7 @@ from xcube.core.store import VariableDescriptor, DataStoreError, DataDescriptor
 
 from test.mocks import CDSClientMock
 from xcube_cds.constants import CDS_DATA_OPENER_ID
+from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
 from xcube_cds.store import CDSDataOpener
 from xcube_cds.store import CDSDataStore
 from xcube_cds.store import CDSDatasetHandler
@@ -446,6 +447,14 @@ class CDSStoreTest(unittest.TestCase):
                            minimum_expected_datasets)
         self.assertGreater(len(list(store.get_data_ids('dataset[cube]'))),
                            minimum_expected_datasets)
+
+    def test_era5_transform_params_empty_variable_list(self):
+        handler = ERA5DatasetHandler()
+        with self.assertRaises(ValueError):
+            handler.transform_params(
+                dict(bbox=[0, 0, 10, 10], spatial_res=0.5, variable_names=[]),
+                'reanalysis-era5-land'
+            )
 
 
 class ClientUrlTest(unittest.TestCase):
