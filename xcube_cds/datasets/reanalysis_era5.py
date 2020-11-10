@@ -23,10 +23,12 @@
 import json
 import os
 import pathlib
-from typing import List, Optional, Dict, Tuple
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import xarray as xr
-
 from xcube.core.store import DataDescriptor
 from xcube.core.store import DatasetDescriptor
 from xcube.core.store import VariableDescriptor
@@ -35,6 +37,7 @@ from xcube.util.jsonschema import JsonDateSchema
 from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
+
 from xcube_cds.store import CDSDatasetHandler
 
 

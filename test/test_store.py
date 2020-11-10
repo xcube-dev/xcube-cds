@@ -46,8 +46,11 @@ from collections.abc import Iterator
 import xcube
 import xcube.core
 from jsonschema import ValidationError
-from xcube.core.store import TYPE_SPECIFIER_DATASET, TYPE_SPECIFIER_CUBE
-from xcube.core.store import VariableDescriptor, DataStoreError, DataDescriptor
+from xcube.core.store import DataDescriptor
+from xcube.core.store import DataStoreError
+from xcube.core.store import TYPE_SPECIFIER_CUBE
+from xcube.core.store import TYPE_SPECIFIER_DATASET
+from xcube.core.store import VariableDescriptor
 
 from test.mocks import CDSClientMock
 from xcube_cds.constants import CDS_DATA_OPENER_ID
@@ -416,7 +419,7 @@ class CDSStoreTest(unittest.TestCase):
                                                'this is an invalid ID')
 
     def test_get_data_opener_ids_invalid_opener_id(self):
-        with self.assertRaises(DataStoreError):
+        with self.assertRaises(ValueError):
             CDSDataStore().get_data_opener_ids('this is an invalid ID',
                                                TYPE_SPECIFIER_DATASET)
 

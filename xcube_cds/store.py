@@ -27,8 +27,15 @@ import os
 import re
 import shutil
 import tempfile
-from abc import abstractmethod, ABC
-from typing import Iterator, Tuple, List, Optional, Dict, Any, Union
+from abc import ABC
+from abc import abstractmethod
+from typing import Any
+from typing import Dict
+from typing import Iterator
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import cdsapi
 import dateutil.parser
@@ -36,13 +43,13 @@ import dateutil.relativedelta
 import dateutil.rrule
 import numpy as np
 import xarray as xr
-
 import xcube.core.normalize
-from xcube.core.store import DataDescriptor, TypeSpecifier
+from xcube.core.store import DataDescriptor
 from xcube.core.store import DataOpener
 from xcube.core.store import DataStore
 from xcube.core.store import DataStoreError
 from xcube.core.store import TYPE_SPECIFIER_CUBE
+from xcube.core.store import TypeSpecifier
 from xcube.util.jsonschema import JsonArraySchema
 from xcube.util.jsonschema import JsonBooleanSchema
 from xcube.util.jsonschema import JsonDateSchema
@@ -51,6 +58,7 @@ from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
 from xcube.util.undefined import UNDEFINED
+
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.constants import DEFAULT_NUM_RETRIES
 
@@ -710,7 +718,7 @@ class CDSDataStore(CDSDataOpener, DataStore):
     def get_data_ids(self, type_specifier: Optional[str] = None,
                      include_titles: bool = True)\
             -> Iterator[Tuple[str, Optional[str]]]:
-        if not self._is_type_specifier_compatible(type_specifier):
+        if not self._is_type_specifier_satisfied(type_specifier):
             # If the type specifier isn't compatible, return an empty iterator.
             return iter(())
         return iter(
@@ -722,8 +730,8 @@ class CDSDataStore(CDSDataOpener, DataStore):
 
     def has_data(self, data_id: str, type_specifier: Optional[str] = None)\
             -> bool:
-        return self._is_type_specifier_compatible(type_specifier) and\
-            data_id in self._handler_registry
+        return self._is_type_specifier_satisfied(type_specifier) and \
+               data_id in self._handler_registry
 
     def describe_data(self, data_id: str, type_specifier: Optional[str] = None)\
             -> DataDescriptor:
@@ -742,7 +750,7 @@ class CDSDataStore(CDSDataOpener, DataStore):
                             type_specifier: Optional[str] = None)\
             -> Tuple[str, ...]:
         self._validate_type_specifier(type_specifier)
-        self._assert_valid_opener_id(data_id)
+        self._validate_data_id(data_id, allow_none=True)
         return CDS_DATA_OPENER_ID,
 
     def get_open_data_params_schema(self, data_id: Optional[str] = None,
@@ -765,14 +773,14 @@ class CDSDataStore(CDSDataOpener, DataStore):
 
     @staticmethod
     def _validate_type_specifier(type_specifier: Union[str, TypeSpecifier]):
-        if not CDSDataStore._is_type_specifier_compatible(type_specifier):
+        if not CDSDataStore._is_type_specifier_satisfied(type_specifier):
             raise DataStoreError(
                 f'Supplied type specifier "{type_specifier}" is not compatible '
                 f'with "{TYPE_SPECIFIER_CUBE}."'
             )
 
     @staticmethod
-    def _is_type_specifier_compatible(
+    def _is_type_specifier_satisfied(
             type_specifier: Union[str, TypeSpecifier]
             ) -> bool:
         # At present, all datasets are available as cubes, so we simply check
