@@ -781,8 +781,7 @@ class CDSDataStore(CDSDataOpener, DataStore):
 
     @staticmethod
     def _is_type_specifier_satisfied(
-            type_specifier: Union[str, TypeSpecifier]
-            ) -> bool:
+            type_specifier: Union[str, TypeSpecifier]) -> bool:
         # At present, all datasets are available as cubes, so we simply check
         # against TYPE_SPECIFIER_CUBE. If more (non-cube) datasets are added,
         # the logic will have to be delegated to CDSDatasetHandler
