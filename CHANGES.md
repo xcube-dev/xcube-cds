@@ -8,7 +8,7 @@
    data store and data opener constructors
  - Update and improve the Jupyter demo notebooks
  - Various bug fixes
- - Use the new xcube 0.5.2 data type specifier system
+ - Use the new xcube 0.6 data type specifier system
  - Use new xcube date and date-time schemas
  - Make the "period" and "bbox" parameters optional for the soil moisture
    dataset

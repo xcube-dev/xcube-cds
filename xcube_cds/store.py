@@ -789,9 +789,7 @@ class CDSDataStore(CDSDataOpener, DataStore):
         # implementations.
         if type_specifier is None:
             return True
-        else:
-            type_specifier_cds = TypeSpecifier.normalize(TYPE_SPECIFIER_CUBE)
-            return type_specifier_cds.satisfies(type_specifier)
+        return TYPE_SPECIFIER_CUBE.satisfies(type_specifier)
 
     @staticmethod
     def _assert_valid_opener_id(opener_id):

@@ -9,4 +9,4 @@ dependencies:
   - numpy >=1.17
   - python-dateutil >=2.8.1
   - xarray >=0.14.1
-  - xcube >=0.5.1  # TODO: update to xcube 0.5.2 as soon as it's available
+  - xcube >=0.5.1  # TODO: update to xcube 0.6 as soon as it's available
