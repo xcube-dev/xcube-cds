@@ -23,8 +23,9 @@
 from xcube.constants import EXTENSION_POINT_DATA_OPENERS
 from xcube.constants import EXTENSION_POINT_DATA_STORES
 from xcube.util import extension
-from xcube_cds.constants import CDS_DATA_STORE_ID
+
 from xcube_cds.constants import CDS_DATA_OPENER_ID
+from xcube_cds.constants import CDS_DATA_STORE_ID
 
 
 def init_plugin(ext_registry: extension.ExtensionRegistry):

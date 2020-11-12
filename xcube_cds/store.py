@@ -27,8 +27,15 @@ import os
 import re
 import shutil
 import tempfile
-from abc import abstractmethod, ABC
-from typing import Iterator, Tuple, List, Optional, Dict, Any, Union
+from abc import ABC
+from abc import abstractmethod
+from typing import Any
+from typing import Dict
+from typing import Iterator
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import cdsapi
 import dateutil.parser
@@ -36,13 +43,13 @@ import dateutil.relativedelta
 import dateutil.rrule
 import numpy as np
 import xarray as xr
-
 import xcube.core.normalize
 from xcube.core.store import DataDescriptor
 from xcube.core.store import DataOpener
 from xcube.core.store import DataStore
 from xcube.core.store import DataStoreError
-from xcube.core.store import TYPE_ID_DATASET
+from xcube.core.store import TYPE_SPECIFIER_CUBE
+from xcube.core.store import TypeSpecifier
 from xcube.util.jsonschema import JsonArraySchema
 from xcube.util.jsonschema import JsonBooleanSchema
 from xcube.util.jsonschema import JsonDateSchema
@@ -51,6 +58,7 @@ from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
 from xcube.util.undefined import UNDEFINED
+
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.constants import DEFAULT_NUM_RETRIES
 
@@ -478,7 +486,8 @@ class CDSDataOpener(DataOpener):
         dt_start = dateutil.parser.isoparse(t_start)
         dt_end = datetime.datetime.now() if t_end is None \
             else dateutil.parser.isoparse(t_end)
-        period_number, period_unit = CDSDataOpener._parse_time_period(t_interval)
+        period_number, period_unit = \
+            CDSDataOpener._parse_time_period(t_interval)
         timedelta = np.timedelta64(period_number, period_unit)
         relativedelta = CDSDataOpener._period_to_relativedelta(period_number,
                                                                period_unit)
@@ -699,40 +708,54 @@ class CDSDataStore(CDSDataOpener, DataStore):
         )
 
     @classmethod
-    def get_type_ids(cls) -> Tuple[str, ...]:
-        return TYPE_ID_DATASET,
+    def get_type_specifiers(cls) -> Tuple[str, ...]:
+        return TYPE_SPECIFIER_CUBE,
 
-    def get_data_ids(self, type_id: Optional[str] = None) -> \
-            Iterator[Tuple[str, Optional[str]]]:
-        self._assert_valid_type_id(type_id)
-        return iter((data_id,
-                     self._handler_registry[data_id].
-                     get_human_readable_data_id(data_id))
-                    for data_id in self._handler_registry)
-
-    def has_data(self, data_id: str) -> bool:
-        return data_id in self._handler_registry
-
-    def describe_data(self, data_id: str) -> DataDescriptor:
+    def get_type_specifiers_for_data(self, data_id: str) -> Tuple[str, ...]:
         self._validate_data_id(data_id)
+        return TYPE_SPECIFIER_CUBE,
+
+    def get_data_ids(self, type_specifier: Optional[str] = None,
+                     include_titles: bool = True)\
+            -> Iterator[Tuple[str, Optional[str]]]:
+        if not self._is_type_specifier_satisfied(type_specifier):
+            # If the type specifier isn't compatible, return an empty iterator.
+            return iter(())
+        return iter(
+            (data_id,
+             self._handler_registry[data_id].
+                get_human_readable_data_id(data_id) if include_titles else None)
+            for data_id in self._handler_registry
+        )
+
+    def has_data(self, data_id: str, type_specifier: Optional[str] = None)\
+            -> bool:
+        return self._is_type_specifier_satisfied(type_specifier) and \
+               data_id in self._handler_registry
+
+    def describe_data(self, data_id: str, type_specifier: Optional[str] = None)\
+            -> DataDescriptor:
+        self._validate_data_id(data_id)
+        self._validate_type_specifier(type_specifier)
         return self._handler_registry[data_id].describe_data(data_id)
 
     # noinspection PyTypeChecker
-    def search_data(self, type_id: Optional[str] = None, **search_params) -> \
-            Iterator[DataDescriptor]:
-        self._assert_valid_type_id(type_id)
+    def search_data(self, type_specifier: Optional[str] = None,
+                    **search_params)\
+            -> Iterator[DataDescriptor]:
+        self._validate_type_specifier(type_specifier)
         raise NotImplementedError()
 
     def get_data_opener_ids(self, data_id: Optional[str] = None,
-                            type_id: Optional[str] = None) -> \
-            Tuple[str, ...]:
-        self._assert_valid_type_id(type_id)
-        self._assert_valid_opener_id(data_id)
+                            type_specifier: Optional[str] = None)\
+            -> Tuple[str, ...]:
+        self._validate_type_specifier(type_specifier)
+        self._validate_data_id(data_id, allow_none=True)
         return CDS_DATA_OPENER_ID,
 
     def get_open_data_params_schema(self, data_id: Optional[str] = None,
-                                    opener_id: Optional[str] = None) -> \
-            JsonObjectSchema:
+                                    opener_id: Optional[str] = None)\
+            -> JsonObjectSchema:
         # At present, there's only one opener ID available, so we do nothing
         # with it except to check that it was correct (or None).
         self._assert_valid_opener_id(opener_id)
@@ -749,11 +772,23 @@ class CDSDataStore(CDSDataOpener, DataStore):
     # Implementation helpers
 
     @staticmethod
-    def _assert_valid_type_id(type_id):
-        if type_id is not None and type_id != TYPE_ID_DATASET:
+    def _validate_type_specifier(type_specifier: Union[str, TypeSpecifier]):
+        if not CDSDataStore._is_type_specifier_satisfied(type_specifier):
             raise DataStoreError(
-                f'Data type identifier must be "{TYPE_ID_DATASET}", '
-                f'but got "{type_id}"')
+                f'Supplied type specifier "{type_specifier}" is not compatible '
+                f'with "{TYPE_SPECIFIER_CUBE}."'
+            )
+
+    @staticmethod
+    def _is_type_specifier_satisfied(
+            type_specifier: Union[str, TypeSpecifier]) -> bool:
+        # At present, all datasets are available as cubes, so we simply check
+        # against TYPE_SPECIFIER_CUBE. If more (non-cube) datasets are added,
+        # the logic will have to be delegated to CDSDatasetHandler
+        # implementations.
+        if type_specifier is None:
+            return True
+        return TYPE_SPECIFIER_CUBE.satisfies(type_specifier)
 
     @staticmethod
     def _assert_valid_opener_id(opener_id):

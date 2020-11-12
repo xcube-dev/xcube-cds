@@ -46,11 +46,15 @@ from collections.abc import Iterator
 import xcube
 import xcube.core
 from jsonschema import ValidationError
-from xcube.core.store import TYPE_ID_DATASET
-from xcube.core.store import VariableDescriptor, DataStoreError, DataDescriptor
+from xcube.core.store import DataDescriptor
+from xcube.core.store import DataStoreError
+from xcube.core.store import TYPE_SPECIFIER_CUBE
+from xcube.core.store import TYPE_SPECIFIER_DATASET
+from xcube.core.store import VariableDescriptor
 
 from test.mocks import CDSClientMock
 from xcube_cds.constants import CDS_DATA_OPENER_ID
+from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
 from xcube_cds.store import CDSDataOpener
 from xcube_cds.store import CDSDataStore
 from xcube_cds.store import CDSDatasetHandler
@@ -392,8 +396,16 @@ class CDSStoreTest(unittest.TestCase):
             'additionalProperties': False
         }, CDSDataStore.get_data_store_params_schema().to_dict())
 
-    def test_get_type_ids(self):
-        self.assertTupleEqual((TYPE_ID_DATASET, ), CDSDataStore.get_type_ids())
+    def test_get_type_specifiers(self):
+        self.assertTupleEqual((TYPE_SPECIFIER_CUBE, ),
+                              CDSDataStore.get_type_specifiers())
+
+    def test_get_type_specifiers_for_data(self):
+        store = CDSDataStore()
+        self.assertEqual(
+            (TYPE_SPECIFIER_CUBE, ),
+            store.get_type_specifiers_for_data('reanalysis-era5-land')
+        )
 
     def test_has_data_true(self):
         self.assertTrue(CDSDataStore().has_data('reanalysis-era5-land'))
@@ -407,9 +419,9 @@ class CDSStoreTest(unittest.TestCase):
                                                'this is an invalid ID')
 
     def test_get_data_opener_ids_invalid_opener_id(self):
-        with self.assertRaises(DataStoreError):
+        with self.assertRaises(ValueError):
             CDSDataStore().get_data_opener_ids('this is an invalid ID',
-                                               TYPE_ID_DATASET)
+                                               TYPE_SPECIFIER_DATASET)
 
     def test_get_data_opener_ids_with_default_arguments(self):
         self.assertTupleEqual((CDS_DATA_OPENER_ID, ),
@@ -420,6 +432,32 @@ class CDSStoreTest(unittest.TestCase):
             CDSDataStore().get_open_data_params_schema(),
             xcube.util.jsonschema.JsonObjectSchema
         )
+
+    def test_get_data_ids(self):
+        store = CDSDataStore(client_class=CDSClientMock,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
+        self.assertEqual([], list(store.get_data_ids('unsupported_type_spec')))
+        self.assertEqual([],
+                         list(store.get_data_ids('dataset[unsupported_flag]')))
+
+        # The number of available datasets is expected to increase over time,
+        # so to avoid overfitting the test we just check that more than a few
+        # datasets and/or cubes are available. "a few" is semi-arbitrarily
+        # defined to be 5.
+        minimum_expected_datasets = 5
+        self.assertGreater(len(list(store.get_data_ids('dataset'))),
+                           minimum_expected_datasets)
+        self.assertGreater(len(list(store.get_data_ids('dataset[cube]'))),
+                           minimum_expected_datasets)
+
+    def test_era5_transform_params_empty_variable_list(self):
+        handler = ERA5DatasetHandler()
+        with self.assertRaises(ValueError):
+            handler.transform_params(
+                dict(bbox=[0, 0, 10, 10], spatial_res=0.5, variable_names=[]),
+                'reanalysis-era5-land'
+            )
 
 
 class ClientUrlTest(unittest.TestCase):

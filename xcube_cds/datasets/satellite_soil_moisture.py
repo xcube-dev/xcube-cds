@@ -22,10 +22,12 @@
 
 import os
 import tarfile
-from typing import List, Dict, Tuple, Any
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Tuple
 
 import xarray as xr
-
 from xcube.core.store import DataDescriptor
 from xcube.core.store import DatasetDescriptor
 from xcube.core.store import VariableDescriptor
@@ -34,6 +36,7 @@ from xcube.util.jsonschema import JsonDateSchema
 from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
+
 from xcube_cds.store import CDSDatasetHandler
 
 
@@ -216,7 +219,6 @@ class SoilMoistureHandler(CDSDatasetHandler):
         return self._data_id_map[data_id]
 
     def describe_data(self, data_id: str) -> DataDescriptor:
-        # TODO: Adapt output to data_id suffixes
         _, variable_spec, aggregation = data_id.split(':')
 
         sm_attrs = dict(
