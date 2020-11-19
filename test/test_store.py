@@ -357,10 +357,8 @@ class CDSStoreTest(unittest.TestCase):
     def test_search_data_valid_id(self):
         store = CDSDataStore(cds_api_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
-        # The CDS API doesn't offer a search function, so "not implemented"
-        # is expected here.
-        with self.assertRaises(NotImplementedError):
-            store.search_data('dataset')
+        result = list(store.search_data('dataset'))
+        self.assertTrue(len(result) > 0)
 
     def test_copy_on_open(self):
         store = CDSDataStore(client_class=CDSClientMock,
