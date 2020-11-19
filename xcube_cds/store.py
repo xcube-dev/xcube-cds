@@ -43,11 +43,13 @@ import dateutil.relativedelta
 import dateutil.rrule
 import numpy as np
 import xarray as xr
+
 import xcube.core.normalize
 from xcube.core.store import DataDescriptor
 from xcube.core.store import DataOpener
 from xcube.core.store import DataStore
 from xcube.core.store import DataStoreError
+from xcube.core.store import DefaultSearchMixin
 from xcube.core.store import TYPE_SPECIFIER_CUBE
 from xcube.core.store import TypeSpecifier
 from xcube.util.jsonschema import JsonArraySchema
@@ -58,7 +60,6 @@ from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
 from xcube.util.undefined import UNDEFINED
-
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.constants import DEFAULT_NUM_RETRIES
 
@@ -630,7 +631,7 @@ class CDSDataOpener(DataOpener):
             raise ValueError(f'Unknown data id "{data_id}"')
 
 
-class CDSDataStore(CDSDataOpener, DataStore):
+class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
     """An xcube data store which reads data from the Copernicus CDS.
 
     CDSDataStore is a read-only xcube DataStore implementation which uses
@@ -716,7 +717,7 @@ class CDSDataStore(CDSDataOpener, DataStore):
         return TYPE_SPECIFIER_CUBE,
 
     def get_data_ids(self, type_specifier: Optional[str] = None,
-                     include_titles: bool = True)\
+                     include_titles: bool = True) \
             -> Iterator[Tuple[str, Optional[str]]]:
         if not self._is_type_specifier_satisfied(type_specifier):
             # If the type specifier isn't compatible, return an empty iterator.
@@ -724,16 +725,16 @@ class CDSDataStore(CDSDataOpener, DataStore):
         return iter(
             (data_id,
              self._handler_registry[data_id].
-                get_human_readable_data_id(data_id) if include_titles else None)
+             get_human_readable_data_id(data_id) if include_titles else None)
             for data_id in self._handler_registry
         )
 
-    def has_data(self, data_id: str, type_specifier: Optional[str] = None)\
+    def has_data(self, data_id: str, type_specifier: Optional[str] = None) \
             -> bool:
         return self._is_type_specifier_satisfied(type_specifier) and \
                data_id in self._handler_registry
 
-    def describe_data(self, data_id: str, type_specifier: Optional[str] = None)\
+    def describe_data(self, data_id: str, type_specifier: Optional[str] = None) \
             -> DataDescriptor:
         self._validate_data_id(data_id)
         self._validate_type_specifier(type_specifier)
@@ -741,20 +742,20 @@ class CDSDataStore(CDSDataOpener, DataStore):
 
     # noinspection PyTypeChecker
     def search_data(self, type_specifier: Optional[str] = None,
-                    **search_params)\
+                    **search_params) \
             -> Iterator[DataDescriptor]:
         self._validate_type_specifier(type_specifier)
-        raise NotImplementedError()
+        return super().search_data(type_specifier=type_specifier, **search_params)
 
     def get_data_opener_ids(self, data_id: Optional[str] = None,
-                            type_specifier: Optional[str] = None)\
+                            type_specifier: Optional[str] = None) \
             -> Tuple[str, ...]:
         self._validate_type_specifier(type_specifier)
         self._validate_data_id(data_id, allow_none=True)
         return CDS_DATA_OPENER_ID,
 
     def get_open_data_params_schema(self, data_id: Optional[str] = None,
-                                    opener_id: Optional[str] = None)\
+                                    opener_id: Optional[str] = None) \
             -> JsonObjectSchema:
         # At present, there's only one opener ID available, so we do nothing
         # with it except to check that it was correct (or None).
