@@ -1,4 +1,4 @@
-## Changes in 0.5.2.dev
+## Changes in 0.6.0
 
  - Add release instructions to readme
  - Update open parameters schemas to follow current xcube conventions
