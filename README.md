@@ -239,3 +239,7 @@ become available from conda-forge within a couple of hours.
    number should be set to 0.5.2.dev0.
 
  - Add a new first section to the changelog with the new version number.
+
+ - Merge the changes from https://github.com/conda-forge/xcube-cds-feedstock
+   back to the master branch of https://github.com/dcs4cop/xcube-cds-feedstock,
+   so that it's ready to serve as a base for the next update branch.
