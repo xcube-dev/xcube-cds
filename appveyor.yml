@@ -38,7 +38,7 @@ build_script:
   # Install mamba as a dramatically faster conda replacement. Specifying a
   # fixed version makes the installation of mamba itself much faster, and
   # avoids potential breakage due to changes in mamba behaviour.
-  - conda install mamba=0.5.1 -c conda-forge
+  - conda install mamba=0.7.3 -c conda-forge
 
   # Environments created by mamba can't be referenced by name from conda
   # (presumably a bug), so we use an explicit path instead.
@@ -67,7 +67,7 @@ build_script:
   - python setup.py install
 
   # Install xcube-cds from its repository using setuptools.
-  - cd -
+  - cd $APPVEYOR_BUILD_FOLDER
   - python setup.py install
 
   # Run the test suite.
