@@ -1,16 +1,31 @@
-language: generic
+version: '{build}'
 
-os:
-  - linux
-  - osx
+image:
+  - macos
+  - Ubuntu2004
 
-install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
-    else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    fi
-  - bash miniconda.sh -b -p $HOME/miniconda
+configuration: Release
+
+platform:
+  - x64
+
+for:
+-
+  matrix:
+    only:
+      - image: macos
+  install:
+    - curl -L https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh > miniconda.sh
+    - bash miniconda.sh -b -p $HOME/miniconda
+-
+  matrix:
+    only:
+      - image: Ubuntu2004
+  install:
+    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+    - bash miniconda.sh -b -p $HOME/miniconda
+
+build_script:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
@@ -23,7 +38,7 @@ install:
   # Install mamba as a dramatically faster conda replacement. Specifying a
   # fixed version makes the installation of mamba itself much faster, and
   # avoids potential breakage due to changes in mamba behaviour.
-  - conda install mamba=0.5.1 -c conda-forge
+  - conda install mamba=0.7.3 -c conda-forge
 
   # Environments created by mamba can't be referenced by name from conda
   # (presumably a bug), so we use an explicit path instead.
@@ -52,11 +67,9 @@ install:
   - python setup.py install
 
   # Install xcube-cds from its repository using setuptools.
-  - cd -
+  - cd $APPVEYOR_BUILD_FOLDER
   - python setup.py install
 
-script: pytest
+  # Run the test suite.
+  - pytest
 
-after_success:
-  - pip install codecov
-  - codecov --env TRAVIS_PYTHON_VERSION
