@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/dcs4cop/xcube-cds.svg?branch=master)](https://travis-ci.com/dcs4cop/xcube-cds)
+[![Build Status](https://ci.appveyor.com/api/projects/status/urs0anenn7rujy1v/branch/master?svg=true)](https://ci.appveyor.com/project/bcdev/xcube-cds)
 
 # xcube-cds
 
