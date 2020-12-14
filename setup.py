@@ -25,13 +25,10 @@
 from setuptools import setup, find_packages
 
 requirements = [
-    # Sync with ./environment.yml.
-    'xcube>=0.5.0',
-    'cdsapi>=0.2.7',
-    'python-dateutil>=2.8.1',
-    'xarray>=0.14.1',
-    'numpy>=1.17.0'
-    'jsonschema>=3.2.0'
+    # Requirements are listed in ./environment.yml.
+    # Since xcube is a requirement, and since xcube is not currently being
+    # released on PyPI, the requirements list is omitted here. It is expected
+    # that dependencies will be managed by conda.
 ]
 
 packages = find_packages(exclude=["test", "test.*"])

@@ -1,5 +1,8 @@
 ## Changes in 0.6.1.dev0
 
+ - Remove dependency list from setup.py (closes #29)
+ - Replace Travis CI with AppVeyor for CI (closes #25)
+
 ## Changes in 0.6.0
 
  - Add release instructions to readme
