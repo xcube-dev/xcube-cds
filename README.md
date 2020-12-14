@@ -186,13 +186,30 @@ https://github.com/conda-forge/xcube-cds-feedstock . The package is updated
 by forking this repository, creating a new branch for the changes, and
 creating a pull request to merge this branch into conda-forge's feedstock
 repository. dcs4cop's fork is at https://github.com/dcs4cop/xcube-cds-feedstock
-. In detail, the steps are as follows.
+.
+
+The instructions below describe the manual procedure of creating branch and
+pull request yourself. conda-forge also has a bot called
+`regro-cf-autokick-bot` which should automatically create a pull request for
+each new GitHub release, within about an hour or two of the release appearing
+on GitHub. If you prefer to base the release on the automatically created
+pull request, skip the "create a new branch" and "create a pull request"
+steps below, and instead make the necessary changes (if any) on the branch
+created by the bot. If a release is made using a manually created branch,
+the bot will remove its own branch and pull request. (Sometimes it's necessary
+to apply the `bot-rerun` label to the pull request to make this happen.)
+
+In detail, the steps are as follows.
 
 1. Update the [dcs4cop fork](https://github.com/dcs4cop/xcube-cds-feedstock)
    of the feedstock repository, if it's not already up to date with
    conda-forge's upstream repository.
 
-2. Rerender the feedstock using `conda-smithy`. This updates common conda-forge
+2. Clone the repository locally and create a new branch. The name of the branch
+   is not strictly prescribed, but it's sensible to choose an informative
+   name like `update_0_5_3`.
+
+3. Rerender the feedstock using `conda-smithy`. This updates common conda-forge
    feedstock files. It's probably easiest to install `conda-smithy` in a fresh
    environment for this.
    
@@ -202,11 +219,7 @@ repository. dcs4cop's fork is at https://github.com/dcs4cop/xcube-cds-feedstock
    ```
    
    It's also possible to have the rendering done by a bot as part of the pull
-   request, but this doesn't seem to work very reliably in practice.
-
-3. Clone the repository locally and create a new branch. The name of the branch
-   is not strictly prescribed, but it's sensible to choose an informative
-   name like `update_0_5_3`.
+   request, but this may fail if it doesn't have the necessary permissions.
 
 4. Update `recipe/meta.yaml` for the new version. Mainly this will involve the 
    following steps:
@@ -222,7 +235,7 @@ repository. dcs4cop's fork is at https://github.com/dcs4cop/xcube-cds-feedstock
    4. If the dependencies have changed, update the list of dependencies in the
       `-run` subsection to match those in the `environment.yml` file.
 
-   5. Commit the changes, push them to GitHub, and create a pull request at
+   5. Commit the changes and push them to GitHub, then create a pull request at
       https://github.com/dcs4cop/xcube-cds-feedstock .
 
    6. Once conda-forge's automated checks have passed, merge the pull request.
