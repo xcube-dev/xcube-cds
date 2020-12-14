@@ -635,13 +635,47 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
     """An xcube data store which reads data from the Copernicus CDS.
 
     CDSDataStore is a read-only xcube DataStore implementation which uses
-    the Copernicus Climate Data Store (CDS) API as a backend. The CDS
-    provides access to a heterogeneous selection of datasets, so the available
-    open parameters and their permitted values are heavily dependent on the
-    selected dataset. Details of the supported open parameters for a
-    particular dataset can be obtained by calling
-    get_open_data_params_schema(dataset_id) with the identifier string of the
-    relevant dataset. Common open parameters are as follows:
+    the Copernicus Climate Data Store (CDS) API as a backend.
+
+    In order to use the CDS API via the xcube_cds plugin, you need to obtain
+    a CDS user ID (UID) and API key and write them to a configuration file.
+    Additionally, you need to use the CDS website to agree in advance to the
+    terms of use for any datasets you want to acccess.
+
+    You can obtain the UID and API key as follows:
+
+    1. Create a user account on the `CDS
+       Website <https://cds.climate.copernicus.eu/user/register>`__.
+    2. Log in to the website with your user name and password.
+    3. Navigate to your `user
+       page <https://cds.climate.copernicus.eu/user/>`__ on the website.
+       Your API key is shown at the bottom of the page.
+
+    Your CDS API key must be made available to the CDS API library. You can
+    do this by creating a file named ``.cdsapirc`` in your home directory,
+    with the following format:
+
+    .. code-block: text
+
+       url: https://cds.climate.copernicus.eu/api/v2
+       key: <UID>:<API-KEY>
+
+    Replace ``<UID>`` with your UID and ``<API-KEY>`` with your API key, as
+    obtained from the CDS website.
+
+    You can specify an alternative location for the CDS API configuration
+    file using the ``CDSAPI_RC`` environment variable, or provide the URL
+    and key without a configuration file by setting the ``CDSAPI_URL`` and
+    ``CDSAPI_KEY`` environment variables. You can also pass the URL and key
+    directly to the ``CDSDataOpener`` and ``CDSDataStore`` constructors
+    using the named parameters ``cds_api_url`` and ``cds_api_key``.
+
+    The CDS provides access to a heterogeneous selection of datasets, so the
+    available open parameters and their permitted values are heavily
+    dependent on the selected dataset. Details of the supported open
+    parameters for a particular dataset can be obtained by calling
+    ``get_open_data_params_schema(dataset_id)`` with the identifier string of
+    the relevant dataset. Common open parameters are as follows:
 
     variable_names (list of strings):
         A list of the names of the variables to be returned
