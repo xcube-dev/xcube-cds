@@ -149,11 +149,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
             # For the soil moisture dataset, all data is global and no
             # geographic subsetting is possible, so the values are fixed
             # (i.e. minimum == maximum for every limit).
-            bbox=JsonArraySchema(items=(
-                JsonNumberSchema(minimum=-180, maximum=-180),
-                JsonNumberSchema(minimum=-90, maximum=-90),
-                JsonNumberSchema(minimum=180, maximum=180),
-                JsonNumberSchema(minimum=90, maximum=90))),
+            bbox=JsonArraySchema(const=[-180, -90, 180, 90]),
             # Like the bounding box, the spatial resolution is fixed.
             spatial_res=JsonNumberSchema(minimum=0.25,
                                          maximum=0.25,
