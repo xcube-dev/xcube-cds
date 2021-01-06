@@ -292,8 +292,8 @@ class ERA5DatasetHandler(CDSDatasetHandler):
 
         return dataset_name, desingletonned
 
-    def read_file(self, dataset_name: str, cds_api_params: Dict,
-                  file_path: str, temp_dir: str):
+    def read_file(self, dataset_name: str, open_params: Dict,
+                  cds_api_params: Dict, file_path: str, temp_dir: str):
 
         # decode_cf is the default, but it's clearer to make it explicit.
         return xr.open_dataset(file_path, decode_cf=True)
