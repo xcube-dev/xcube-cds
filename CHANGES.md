@@ -2,6 +2,9 @@
 
  - Remove dependency list from setup.py (closes #29)
  - Replace Travis CI with AppVeyor for CI (closes #25)
+ - Document CDS API key usage in store docstring (closes #26)
+ - Remove redundant requirements list from setup.py (closes #29)
+ - Implement geographic subsetting for soil moisture data (closes #28)
 
 ## Changes in 0.6.0
 
