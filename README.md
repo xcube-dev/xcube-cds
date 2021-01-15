@@ -82,7 +82,19 @@ made available to you (using the same user credentials) through the API.
 
 ### Installing the xcube-cds plugin
 
+This section describes three alternative methods you can use to install the
+xcube-cds plugin.
+
+conda can sometimes be inconveniently slow when resolving an environment.
+If this causes problems, consider using
+[mamba](https://github.com/mamba-org/mamba) as a much faster drop-in
+alternative to conda.
+
 #### Installation into a new environment with conda
+
+This method creates a new conda environment and installs the latest conda-forge
+release of xcube-cds, along with all its required dependencies, into the
+newly created environment.
 
 xcube-cds and all necessary dependencies (including xcube itself) are available
 on [conda-forge](https://conda-forge.org/), and can be installed using the
@@ -99,6 +111,9 @@ $ conda activate xcube-cds-environment
 The name of the environment may be freely chosen.
 
 #### Installation into an existing environment with conda
+
+This method assumes that you have an existing conda environment and you want
+to install xcube-cds into it.
 
 xcube-cds can also be installed into an existing conda environment.
 With the existing environment activated, execute this command:
@@ -118,10 +133,13 @@ do so as follows:
 
 ```
 $ conda create --name xcube-cds-environment --channel conda-forge --only-deps xcube-cds
+$ conda activate xcube-cds-environment
 $ git clone https://github.com/dcs4cop/xcube-cds.git
-$ cd xcube-cds
-$ python setup.py develop
+$ python -m pip install --no-deps --editable xcube-cds/
 ```
+
+This installs all the dependencies of xcube-cds into a fresh conda environment,
+then installs xcube-cds into this environment from the repository.
 
 ## Testing
 
