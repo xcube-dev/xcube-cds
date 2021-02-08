@@ -28,6 +28,7 @@ from typing import List
 from typing import Tuple
 
 import xarray as xr
+import xcube.core.select
 from xcube.core.store import DataDescriptor
 from xcube.core.store import DatasetDescriptor
 from xcube.core.store import VariableDescriptor
@@ -117,7 +118,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
         # it's OK because the Product User Guide (C3S_312a_Lot7_EODC_2016SC1,
         # §1, p. 12) states that the data are in Classic format,
         # and inspection of some downloaded files confirms it.
-        ds = xr.open_mfdataset(paths, combine='by_coords')
+        ds = xr.open_mfdataset(paths, combine="by_coords")
         ds.attrs.update(self.combine_netcdf_time_limits(paths))
 
         # Subsetting is not supported by the soil moisture dataset, so we
@@ -125,7 +126,12 @@ class SoilMoistureHandler(CDSDatasetHandler):
         if "bbox" in open_params and \
                 open_params["bbox"] != [-180, -90, 180, 90]:
             xmin, ymin, xmax, ymax = open_params["bbox"]
-            ds = ds.sel(lon=slice(xmin, xmax), lat=slice(ymax, ymin))
+            if xmin <= xmax:
+                ds = ds.sel(lon=slice(xmin, xmax), lat=slice(ymax, ymin))
+            else:
+                ds1 = ds.sel(lon=slice(-180, xmax), lat=slice(ymax, ymin))
+                ds2 = ds.sel(lon=slice(xmin, 180), lat=slice(ymax, ymin))
+                ds = xr.concat([ds1, ds2], dim="x")
 
         return ds
 
