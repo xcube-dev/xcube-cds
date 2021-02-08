@@ -28,6 +28,7 @@ from typing import List
 from typing import Tuple
 
 import xarray as xr
+import xcube.core.select
 from xcube.core.store import DataDescriptor
 from xcube.core.store import DatasetDescriptor
 from xcube.core.store import VariableDescriptor
@@ -102,8 +103,8 @@ class SoilMoistureHandler(CDSDatasetHandler):
 
         return 'satellite-soil-moisture', unwrapped
 
-    def read_file(self, dataset_name: str, cds_api_params: Dict,
-                  file_path: str, temp_dir: str):
+    def read_file(self, dataset_name: str, open_params: Dict,
+                  cds_api_params: Dict, file_path: str, temp_dir: str):
         # Unpack the .tar.gz into the temporary directory.
         with tarfile.open(file_path) as tgz_file:
             tgz_file.extractall(path=temp_dir)
@@ -117,8 +118,21 @@ class SoilMoistureHandler(CDSDatasetHandler):
         # it's OK because the Product User Guide (C3S_312a_Lot7_EODC_2016SC1,
         # §1, p. 12) states that the data are in Classic format,
         # and inspection of some downloaded files confirms it.
-        ds = xr.open_mfdataset(paths, combine='by_coords')
+        ds = xr.open_mfdataset(paths, combine="by_coords")
         ds.attrs.update(self.combine_netcdf_time_limits(paths))
+
+        # Subsetting is not supported by the soil moisture dataset, so we
+        # handle it here instead.
+        if "bbox" in open_params and \
+                open_params["bbox"] != [-180, -90, 180, 90]:
+            xmin, ymin, xmax, ymax = open_params["bbox"]
+            if xmin <= xmax:
+                ds = ds.sel(lon=slice(xmin, xmax), lat=slice(ymax, ymin))
+            else:
+                ds1 = ds.sel(lon=slice(-180, xmax), lat=slice(ymax, ymin))
+                ds2 = ds.sel(lon=slice(xmin, 180), lat=slice(ymax, ymin))
+                ds = xr.concat([ds1, ds2], dim="x")
+
         return ds
 
     def get_supported_data_ids(self) -> List[str]:
@@ -146,18 +160,13 @@ class SoilMoistureHandler(CDSDatasetHandler):
             crs=JsonStringSchema(nullable=True, default='WGS84',
                                  enum=[None, 'WGS84']),
             # W, S, E, N (will be converted to N, W, S, E).
-            # For the soil moisture dataset, all data is global and no
-            # geographic subsetting is possible, so the values are fixed
-            # (i.e. minimum == maximum for every limit).
             bbox=JsonArraySchema(items=(
-                JsonNumberSchema(minimum=-180, maximum=-180),
-                JsonNumberSchema(minimum=-90, maximum=-90),
-                JsonNumberSchema(minimum=180, maximum=180),
-                JsonNumberSchema(minimum=90, maximum=90))),
+                JsonNumberSchema(minimum=-180, maximum=180),
+                JsonNumberSchema(minimum=-90, maximum=90),
+                JsonNumberSchema(minimum=-180, maximum=180),
+                JsonNumberSchema(minimum=-90, maximum=90))),
             # Like the bounding box, the spatial resolution is fixed.
-            spatial_res=JsonNumberSchema(minimum=0.25,
-                                         maximum=0.25,
-                                         default=0.25),
+            spatial_res=JsonNumberSchema(const=0.25),
             time_range=JsonDateSchema.new_range(),
             time_period=JsonStringSchema(
                 enum=[self._aggregation_map[aggregation]]),

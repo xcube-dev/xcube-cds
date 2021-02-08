@@ -131,12 +131,15 @@ class CDSDatasetHandler(ABC):
 
     @abstractmethod
     def read_file(self, dataset_name: str,
+                  open_params: Dict,
                   cds_api_params: Dict[str, Union[str, List[str]]],
                   file_path: str, temp_dir: str) -> xr.Dataset:
         """Read a file downloaded via the CDS API as into an xarray Dataset
 
         :param dataset_name: the CDS name of the dataset (note that this
             may not be the same as the data ID used by the xcube data store)
+        :param open_params: the opener parameters which produced the
+            downloaded file
         :param cds_api_params: the CDS API parameters which produced the
             downloaded file
         :param file_path: the path to the downloaded file
@@ -441,7 +444,7 @@ class CDSDataOpener(DataOpener):
                                **cds_api_params},
                               fh)
             dataset = self._open_data_with_handler(
-                handler, dataset_name, cds_api_params,
+                handler, dataset_name, open_params, cds_api_params,
                 read_file_from, save_file_to)
 
         if save_zarr_to:
@@ -525,8 +528,8 @@ class CDSDataOpener(DataOpener):
         return dateutil.relativedelta. \
             relativedelta(**{conversion[unit]: number})
 
-    def _open_data_with_handler(self, handler, dataset_name, cds_api_params,
-                                read_file_from, save_file_to) \
+    def _open_data_with_handler(self, handler, dataset_name, open_params,
+                                cds_api_params, read_file_from, save_file_to) \
             -> xr.Dataset:
         file_path = read_file_from or \
                     self._fetch_file_via_cds_api(cds_api_params, dataset_name)
@@ -553,8 +556,8 @@ class CDSDataOpener(DataOpener):
         # deletion of the parent temporary directory.
         temp_subdir = tempfile.mkdtemp(dir=self._tempdir)
 
-        dataset = handler.read_file(dataset_name, cds_api_params, file_path,
-                                    temp_subdir)
+        dataset = handler.read_file(dataset_name, open_params,
+                                    cds_api_params, file_path, temp_subdir)
         return self._normalize_dataset(dataset)
 
     def _fetch_file_via_cds_api(self, cds_api_params, dataset_name):

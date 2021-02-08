@@ -242,6 +242,58 @@ class CDSStoreTest(unittest.TestCase):
         self.assertEqual(sorted([dv.name for dv in description.data_vars]),
                          sorted(map(str, dataset.data_vars)))
 
+    def test_soil_moisture_subset(self):
+        store = CDSDataStore(client_class=CDSClientMock,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
+        data_id = 'satellite-soil-moisture:volumetric:monthly'
+        dataset = store.open_data(
+            data_id,
+            variable_names=['volumetric_surface_soil_moisture'],
+            bbox=[-30, -20, 35, 25],
+            spatial_res=0.25,
+            time_period='1M',
+            time_range=['2015-01-01', '2015-02-28'],
+        )
+        self.assertTrue('sm' in dataset.variables)
+        self.assertEqual(2, len(dataset.variables['time']))
+        self.assertEqual('2014-12-31T12:00:00Z',
+                         dataset.attrs['time_coverage_start'])
+        self.assertEqual('2015-02-28T12:00:00Z',
+                         dataset.attrs['time_coverage_end'])
+        self.assertEqual(260, len(dataset.variables['lon']))
+        self.assertEqual(180, len(dataset.variables['lat']))
+        description = store.describe_data(data_id)
+        self.assertEqual(sorted([dv.name for dv in description.data_vars]),
+                         sorted(map(str, dataset.data_vars)))
+
+    def test_soil_moisture_subset_crossing_antimeridian(self):
+        store = CDSDataStore(client_class=CDSClientMock,
+                             cds_api_url=_CDS_API_URL,
+                             cds_api_key=_CDS_API_KEY)
+        data_id = 'satellite-soil-moisture:volumetric:monthly'
+        dataset = store.open_data(
+            data_id,
+            variable_names=['volumetric_surface_soil_moisture'],
+            bbox=[170, -20, -170, 25],
+            spatial_res=0.25,
+            time_period='1M',
+            time_range=['2015-01-01', '2015-02-28'],
+        )
+        self.assertTrue('sm' in dataset.variables)
+        self.assertEqual(2, len(dataset.variables['time']))
+        self.assertEqual('2014-12-31T12:00:00Z',
+                         dataset.attrs['time_coverage_start'])
+        self.assertEqual('2015-02-28T12:00:00Z',
+                         dataset.attrs['time_coverage_end'])
+        self.assertEqual(80, len(dataset.variables['lon']))
+        self.assertEqual(180, len(dataset.variables['lat']))
+        description = store.describe_data(data_id)
+        self.assertEqual(sorted([dv.name for dv in description.data_vars]),
+                         sorted(map(str, dataset.data_vars)))
+
+
+
     def test_list_and_describe_data_ids(self):
         store = CDSDataStore(cds_api_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)

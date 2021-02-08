@@ -19,6 +19,9 @@ Currently supported datasets:
  - [ERA5 monthly averaged data on single levels from 1979 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels-monthly-means?tab=overview)
  - [ERA5-Land monthly averaged data from 1981 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land-monthly-means)
  - [Soil moisture gridded data from 1978 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-soil-moisture)
+   (Note that geographic subsetting for this dataset is implemented within the
+   CDS Store, so even for small bounding boxes the full global data must be
+   fetched from the CDS API.)
 
 ## Setup
 
