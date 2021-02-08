@@ -2,6 +2,7 @@
 
  - Remove dependency list from setup.py (closes #29)
  - Replace Travis CI with AppVeyor for CI (closes #25)
+ - Update demo notebooks to remove dependency on cartopy
 
 ## Changes in 0.6.0
 
