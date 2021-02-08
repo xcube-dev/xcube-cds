@@ -161,14 +161,12 @@ class SoilMoistureHandler(CDSDatasetHandler):
                                  enum=[None, 'WGS84']),
             # W, S, E, N (will be converted to N, W, S, E).
             bbox=JsonArraySchema(items=(
-                JsonNumberSchema(minimum=-180, maximum=180, multiple_of=0.25),
-                JsonNumberSchema(minimum=-90, maximum=90, multiple_of=0.25),
-                JsonNumberSchema(minimum=-180, maximum=180, multiple_of=0.25),
-                JsonNumberSchema(minimum=-90, maximum=90, multiple_of=0.25))),
+                JsonNumberSchema(minimum=-180, maximum=180),
+                JsonNumberSchema(minimum=-90, maximum=90),
+                JsonNumberSchema(minimum=-180, maximum=180),
+                JsonNumberSchema(minimum=-90, maximum=90))),
             # Like the bounding box, the spatial resolution is fixed.
-            spatial_res=JsonNumberSchema(minimum=0.25,
-                                         maximum=0.25,
-                                         default=0.25),
+            spatial_res=JsonNumberSchema(const=0.25),
             time_range=JsonDateSchema.new_range(),
             time_period=JsonStringSchema(
                 enum=[self._aggregation_map[aggregation]]),
