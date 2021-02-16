@@ -1,6 +1,5 @@
 ## Changes in 0.6.1.dev0
 
- - Remove dependency list from setup.py (closes #29)
  - Replace Travis CI with AppVeyor for CI (closes #25)
  - Update demo notebooks to remove dependency on cartopy
  - Document CDS API key usage in store docstring (closes #26)
