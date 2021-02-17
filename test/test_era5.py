@@ -20,6 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+""" Unit tests for ERA5 dataset in the CDS Store
+
+See test_store.py for further documentation.
+"""
+
 import unittest
 
 import xcube

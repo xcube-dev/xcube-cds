@@ -22,6 +22,10 @@
 
 """Unit tests for the xcube CDS store
 
+The CDSStoreTest class in this module contains only "general" tests, i.e.
+those not related to a particular dataset. Each supported dataset has its
+own test module containing tests specific to that dataset.
+
 Most of the tests use a mocked CDS API client which matches exact requests
 and returns a saved result file originally downloaded from the real CDS API.
 To create a new unit test of this kind,

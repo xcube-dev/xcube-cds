@@ -20,6 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+""" Unit tests for soil moisture dataset in the CDS Store
+
+See test_store.py for further documentation.
+"""
+
 import os
 import tempfile
 import unittest
