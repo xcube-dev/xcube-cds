@@ -140,10 +140,6 @@ class ERA5DatasetHandler(CDSDatasetHandler):
         bbox = ds_info['bbox']
 
         params = dict(
-            dataset_name=JsonStringSchema(
-                min_length=1,
-                enum=list(self._valid_data_ids),
-                description='identifier of the requested dataset'),
             variable_names=JsonArraySchema(
                 items=(JsonStringSchema(
                     min_length=0,
@@ -154,11 +150,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 nullable=True,
                 description='identifiers of the requested variables'
             ),
-            crs=JsonStringSchema(
-                nullable=True,
-                default=ds_info['crs'],
-                enum=[None, ds_info['crs']],
-                description='co-ordinate reference system'),
+            # crs omitted, since it's constant.
             # W, S, E, N (will be converted to N, W, S, E)
             bbox=JsonArraySchema(items=(
                 JsonNumberSchema(minimum=bbox[0], maximum=bbox[2]),
@@ -166,15 +158,18 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 JsonNumberSchema(minimum=bbox[0], maximum=bbox[2]),
                 JsonNumberSchema(minimum=bbox[1], maximum=bbox[3])),
                 description='bounding box (min_x, min_y, max_x, max_y)'),
+            # spatial_res in the ds_info dictionary gives the minimum
+            # resolution, but the ERA5 backend can resample, so we
+            # also set a maximum. The choice of 10° as maximum is fairly
+            # arbitrary but seems reasonable.
             spatial_res=JsonNumberSchema(
                 minimum=ds_info['spatial_res'],
                 maximum=10,
                 default=ds_info['spatial_res'],
                 description='spatial resolution'),
             time_range=JsonDateSchema.new_range(),
-            time_period=JsonStringSchema(
-                const=ds_info['time_period'],
-                description='time aggregation period'),
+            # time_period (time aggregation period) omitted, since it is
+            # constant.
         )
         required = [
             'variable_names',

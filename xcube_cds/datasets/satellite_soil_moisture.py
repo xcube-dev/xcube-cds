@@ -28,13 +28,11 @@ from typing import List
 from typing import Tuple
 
 import xarray as xr
-import xcube.core.select
 from xcube.core.store import DataDescriptor
 from xcube.core.store import DatasetDescriptor
 from xcube.core.store import VariableDescriptor
 from xcube.util.jsonschema import JsonArraySchema
 from xcube.util.jsonschema import JsonDateSchema
-from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
 
@@ -43,29 +41,27 @@ from xcube_cds.store import CDSDatasetHandler
 
 class SoilMoistureHandler(CDSDatasetHandler):
 
-    def __init__(self):
-        self._data_id_map = {
-            'satellite-soil-moisture:saturation:daily':
-                'Soil moisture (saturation, daily)',
-            'satellite-soil-moisture:saturation:10-day':
-                'Soil moisture (saturation, 10-day)',
-            'satellite-soil-moisture:saturation:monthly':
-                'Soil moisture (saturation, monthly)',
-            'satellite-soil-moisture:volumetric:daily':
-                'Soil moisture (volumetric, daily)',
-            'satellite-soil-moisture:volumetric:10-day':
-                'Soil moisture (volumetric, 10-day)',
-            'satellite-soil-moisture:volumetric:monthly':
-                'Soil moisture (volumetric, monthly)',
-        }
-        self._var_map = {
-            'saturation': (['soil_moisture_saturation'], ['active']),
-            'volumetric': (['volumetric_surface_soil_moisture'],
-                           ['combined_passive_and_active', 'passive'])
-        }
-        self._aggregation_map = {'daily': '1D',
-                                 '10-day': '10D',
-                                 'monthly': '1M'}
+    _data_id_map = {
+        'satellite-soil-moisture:saturation:daily':
+            'Soil moisture (saturation, daily)',
+        'satellite-soil-moisture:saturation:10-day':
+            'Soil moisture (saturation, 10-day)',
+        'satellite-soil-moisture:saturation:monthly':
+            'Soil moisture (saturation, monthly)',
+        'satellite-soil-moisture:volumetric:daily':
+            'Soil moisture (volumetric, daily)',
+        'satellite-soil-moisture:volumetric:10-day':
+            'Soil moisture (volumetric, 10-day)',
+        'satellite-soil-moisture:volumetric:monthly':
+            'Soil moisture (volumetric, monthly)',
+    }
+
+    _var_map = {
+        'saturation': (['soil_moisture_saturation'], ['active']),
+        'volumetric': (['volumetric_surface_soil_moisture'],
+                       ['combined_passive_and_active', 'passive'])
+    }
+    _aggregation_map = {'daily': '1D', '10-day': '10D', 'monthly': '1M'}
 
     def transform_params(self, opener_params, data_id: str) -> \
             Tuple[str, Dict[str, Any]]:
@@ -73,19 +69,23 @@ class SoilMoistureHandler(CDSDatasetHandler):
         # this for us. We can also ignore the dataset ID (constant).
         _, variable_spec, aggregation = data_id.split(':')
 
-        variables = opener_params['variable_names']
+        # Each dataset only provides one variable, so we don't have an opener
+        # parameter to select variables -- we just determine the variable
+        # name directly from the data_id.
+        variables = self._var_map[variable_spec][0]
+        assert len(variables) == 1,\
+               'Each data_id should provide precisely one variable.'
+        variable = variables[0]
 
-        # We ignore any aggregation period passed in the opener parameters
-        # (since it's in any case optional and limited to a single possible
-        # value), and instead take it directly from the third part of the
-        # data_id.
+        # Aggregation period is not an opener parameter, since it's already
+        # specified as part of the data_id.
         cds_aggregation_specifier = {
             'daily': 'day_average',
-            '1-day': '10_day_average',
+            '10-day': '10_day_average',
             'monthly': 'month_average'}[aggregation]
 
         cds_params = dict(
-            variable=variables,
+            variable=variable,
             type_of_sensor=opener_params['type_of_sensor'],
             time_aggregation=cds_aggregation_specifier,
             type_of_record=opener_params['type_of_record'],
@@ -131,37 +131,22 @@ class SoilMoistureHandler(CDSDatasetHandler):
 
     def get_open_data_params_schema(self, data_id: str) -> JsonObjectSchema:
         _, variable_spec, aggregation = data_id.split(':')
-        variables = self._var_map[variable_spec][0]
         sensors = self._var_map[variable_spec][1]
         params = dict(
-            dataset_name=JsonStringSchema(min_length=1,
-                                          enum=self.get_supported_data_ids()),
-            # The only allowed variable is already determined by the
-            # data_id, so this schema forces an array containing only that
-            # variable.
-            variable_names=JsonArraySchema(
-                items=(JsonStringSchema(
-                    min_length=0,
-                    enum=variables,
-                    default=variables[0])),
-                unique_items=True
-            ),
-            # Source for CRS information: §6.5 of
-            # https://www.esa-soilmoisture-cci.org/sites/default/files/documents/CCI2_Soil_Moisture_D3.3.1_Product_Users_Guide%201.2.pdf
-            crs=JsonStringSchema(nullable=True, default='WGS84',
-                                 enum=[None, 'WGS84']),
-            # W, S, E, N (will be converted to N, W, S, E).
-            bbox=JsonArraySchema(const=[-180, -90, 180, 90]),
-            # Like the bounding box, the spatial resolution is fixed.
-            spatial_res=JsonNumberSchema(const=0.25),
             time_range=JsonDateSchema.new_range(),
-            time_period=JsonStringSchema(
-                enum=[self._aggregation_map[aggregation]]),
+            # crs omitted, since it's constant.
+            # bbox omitted, since it's constant.
+            # spatial_res omitted, since it's constant.
+            # time_period omitted, since (although the store as a whole offers
+            # three aggregation periods) it's constant for a given data-id.
+
             # Non-standard parameters start here. There are complex
             # interdependencies between allowed values for these and for
             # the date specifiers, which can't be represented in JSON Schema.
             # The best we can do is to make them all available, set sensible
             # defaults, and trust that the user knows what they're requesting.
+
+            # TODO: only include the sensor parameter if >1 type available
             type_of_sensor=JsonStringSchema(
                 enum=sensors,
                 default=sensors[0],
@@ -201,7 +186,6 @@ class SoilMoistureHandler(CDSDatasetHandler):
                 default='v201912.0.0')
         )
         required = [
-            'variable_names',
             'time_range',
         ]
         return JsonObjectSchema(
