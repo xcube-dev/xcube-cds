@@ -121,17 +121,8 @@ class SoilMoistureHandler(CDSDatasetHandler):
         ds = xr.open_mfdataset(paths, combine="by_coords")
         ds.attrs.update(self.combine_netcdf_time_limits(paths))
 
-        # Subsetting is not supported by the soil moisture dataset, so we
-        # handle it here instead.
-        if "bbox" in open_params and \
-                open_params["bbox"] != [-180, -90, 180, 90]:
-            xmin, ymin, xmax, ymax = open_params["bbox"]
-            if xmin <= xmax:
-                ds = ds.sel(lon=slice(xmin, xmax), lat=slice(ymax, ymin))
-            else:
-                ds1 = ds.sel(lon=slice(-180, xmax), lat=slice(ymax, ymin))
-                ds2 = ds.sel(lon=slice(xmin, 180), lat=slice(ymax, ymin))
-                ds = xr.concat([ds1, ds2], dim="x")
+        # Subsetting is no longer implemented by the plugin (see Issue
+        # #35) -- we expect this to be done by the gen2 feature.
 
         return ds
 
@@ -160,11 +151,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
             crs=JsonStringSchema(nullable=True, default='WGS84',
                                  enum=[None, 'WGS84']),
             # W, S, E, N (will be converted to N, W, S, E).
-            bbox=JsonArraySchema(items=(
-                JsonNumberSchema(minimum=-180, maximum=180),
-                JsonNumberSchema(minimum=-90, maximum=90),
-                JsonNumberSchema(minimum=-180, maximum=180),
-                JsonNumberSchema(minimum=-90, maximum=90))),
+            bbox=JsonArraySchema(const=[-180, -90, 180, 90]),
             # Like the bounding box, the spatial resolution is fixed.
             spatial_res=JsonNumberSchema(const=0.25),
             time_range=JsonDateSchema.new_range(),
