@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - cartopy >=0.17  # only required for demo notebooks
   - cdsapi >=0.2.7
   - jsonschema >=3.2.0
   - numpy >=1.17
