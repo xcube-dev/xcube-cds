@@ -221,7 +221,6 @@ class ClientUrlTest(unittest.TestCase):
             variable_names=['2m_temperature'],
             bbox=[-180, -90, 180, 90],
             spatial_res=0.25,
-            time_period='1M',
             time_range=['2015-10-15', '2015-10-15'],
         )
         client = opener.last_instantiated_client
@@ -261,7 +260,6 @@ class ClientUrlTest(unittest.TestCase):
             variable_names=['2m_temperature'],
             bbox=[-180, -90, 180, 90],
             spatial_res=0.25,
-            time_period='1M',
             time_range=['2015-10-15', '2015-10-15'],
         )
         client = opener.last_instantiated_client
@@ -282,7 +280,6 @@ class ClientUrlTest(unittest.TestCase):
             variable_names=['2m_temperature'],
             bbox=[-180, -90, 180, 90],
             spatial_res=0.25,
-            time_period='1M',
             time_range=['2015-10-15', '2015-10-15'],
         )
         return opener.last_instantiated_client

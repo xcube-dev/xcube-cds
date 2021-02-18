@@ -169,7 +169,6 @@ class CDSEra5Test(unittest.TestCase):
             variable_names=[],
             bbox=[-45, 0, 45, 60],
             spatial_res=0.25,
-            time_period='1M',
             time_range=['2015-01-01', '2016-12-31']
         )
         self.assertEqual(len(dataset.data_vars), 0)
@@ -189,7 +188,6 @@ class CDSEra5Test(unittest.TestCase):
             variable_names=None,
             bbox=[-1, -1, 1, 1],
             spatial_res=0.25,
-            time_period='1M',
             time_range=['2015-10-15', '2015-10-15']
         )
         self.assertEqual(n_vars, len(dataset.data_vars))

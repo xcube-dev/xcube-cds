@@ -29,7 +29,6 @@ from typing import List
 from typing import Tuple
 
 import xarray as xr
-from xcube.core.store import DataDescriptor
 from xcube.core.store import DatasetDescriptor
 from xcube.core.store import VariableDescriptor
 from xcube.util.jsonschema import JsonArraySchema

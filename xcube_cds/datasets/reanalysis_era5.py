@@ -179,7 +179,8 @@ class ERA5DatasetHandler(CDSDatasetHandler):
         ]
         return JsonObjectSchema(
             properties=params,
-            required=required
+            required=required,
+            additional_properties=False
         )
 
     def get_human_readable_data_id(self, data_id: str):
