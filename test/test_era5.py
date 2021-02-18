@@ -161,7 +161,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertNotEqual(west, east)
         self.assertLessEqual(south, north)
 
-    def test_open_data_empty_variables_list_1(self):
+    def test_era5_open_data_empty_variables_list(self):
         store = CDSDataStore(cds_api_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(

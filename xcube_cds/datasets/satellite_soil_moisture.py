@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import collections
 import os
 import tarfile
 from typing import Any
@@ -37,6 +38,11 @@ from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
 
 from xcube_cds.store import CDSDatasetHandler
+
+VariableProperties = collections.namedtuple(
+    'VariableProperties',
+    ['variables', 'sensor_types']
+)
 
 
 class SoilMoistureHandler(CDSDatasetHandler):
@@ -56,11 +62,17 @@ class SoilMoistureHandler(CDSDatasetHandler):
             'Soil moisture (volumetric, monthly)',
     }
 
+    # Map second component of data ID to variable and sensor type information
     _var_map = {
-        'saturation': (['soil_moisture_saturation'], ['active']),
-        'volumetric': (['volumetric_surface_soil_moisture'],
-                       ['combined_passive_and_active', 'passive'])
+        'saturation':
+            VariableProperties(['soil_moisture_saturation'], ['active']),
+        'volumetric':
+            VariableProperties(
+                ['volumetric_surface_soil_moisture'],
+                ['combined_passive_and_active', 'passive'])
     }
+
+    # Map third component of data ID to time period in CDS API format
     _aggregation_map = {'daily': '1D', '10-day': '10D', 'monthly': '1M'}
 
     def transform_params(self, opener_params, data_id: str) -> \
@@ -68,11 +80,12 @@ class SoilMoistureHandler(CDSDatasetHandler):
         # We don't need to check the argument format, since CDSDataStore does
         # this for us. We can also ignore the dataset ID (constant).
         _, variable_spec, aggregation = data_id.split(':')
+        variable_properties = self._var_map[variable_spec]
 
         # Each dataset only provides one variable, so we don't have an opener
         # parameter to select variables -- we just determine the variable
         # name directly from the data_id.
-        variables = self._var_map[variable_spec][0]
+        variables = variable_properties.variables
         assert len(variables) == 1,\
                'Each data_id should provide precisely one variable.'
         variable = variables[0]
@@ -84,9 +97,17 @@ class SoilMoistureHandler(CDSDatasetHandler):
             '10-day': '10_day_average',
             'monthly': 'month_average'}[aggregation]
 
+        # The sensor type is only available as an opener parameter for datasets
+        # with more than one sensor type available. If no sensor type is
+        # specified in the opener parameters, it's determined from the data ID.
+        type_of_sensor = opener_params.get(
+            'type_of_sensor',
+            variable_properties.sensor_types[0]
+        )
+
         cds_params = dict(
             variable=variable,
-            type_of_sensor=opener_params['type_of_sensor'],
+            type_of_sensor=type_of_sensor,
             time_aggregation=cds_aggregation_specifier,
             type_of_record=opener_params['type_of_record'],
             version=opener_params['version'],
@@ -130,31 +151,34 @@ class SoilMoistureHandler(CDSDatasetHandler):
         return list(self._data_id_map)
 
     def get_open_data_params_schema(self, data_id: str) -> JsonObjectSchema:
-        _, variable_spec, aggregation = data_id.split(':')
-        sensors = self._var_map[variable_spec][1]
+        _, variable_spec, _ = data_id.split(':')
+        variable_properties = self._var_map[variable_spec]
+
         params = dict(
             time_range=JsonDateSchema.new_range(),
-            # crs omitted, since it's constant.
-            # bbox omitted, since it's constant.
-            # spatial_res omitted, since it's constant.
+            # crs, bbox, and spatial_res omitted, since they're constant.
             # time_period omitted, since (although the store as a whole offers
             # three aggregation periods) it's constant for a given data-id.
 
-            # Non-standard parameters start here. There are complex
-            # interdependencies between allowed values for these and for
-            # the date specifiers, which can't be represented in JSON Schema.
-            # The best we can do is to make them all available, set sensible
-            # defaults, and trust that the user knows what they're requesting.
+            # There are complex interdependencies between allowed values for
+            # these parameters and for the date specifiers, which can't be
+            # represented in JSON Schema. The best we can do is to make them
+            # all available, set sensible defaults, and trust that the user
+            # knows what they're requesting.
 
-            # TODO: only include the sensor parameter if >1 type available
-            type_of_sensor=JsonStringSchema(
-                enum=sensors,
-                default=sensors[0],
-                title='Type of sensor',
-                description=(
-                    'Passive sensors measure reflected sunlight. '
-                    'Active sensors have their own source of illumination.'
-                )),
+            # type_of_sensor will be added below *only* if >1 type available.
+
+            # There's only one variable available per data ID, but we can't
+            # omit variable_names, because we need to support the
+            # variable_names=[] case (to produce an empty cube).
+            variable_names=JsonArraySchema(
+                items=(JsonStringSchema(
+                    min_length=0,
+                    enum=variable_properties.variables,
+                    default=variable_properties.variables[0])),
+                unique_items=True,
+                default=[variable_properties.variables[0]]
+            ),
             type_of_record=JsonStringSchema(
                 enum=['cdr', 'icdr'],
                 title='Type of record',
@@ -185,20 +209,27 @@ class SoilMoistureHandler(CDSDatasetHandler):
                     'initial Run number is zero.'),
                 default='v201912.0.0')
         )
-        required = [
-            'time_range',
-        ]
+
+        if len(variable_properties.sensor_types) > 1:
+            params['type_of_sensor'] = JsonStringSchema(
+                enum=variable_properties.sensor_types,
+                default=variable_properties.sensor_types[0],
+                title='Type of sensor',
+                description=(
+                    'Passive sensors measure reflected sunlight. '
+                    'Active sensors have their own source of illumination.'
+                ))
+
         return JsonObjectSchema(
-            properties=dict(
-                **params,
-            ),
-            required=required
+            properties=params,
+            required=['time_range'],
+            additional_properties=False
         )
 
     def get_human_readable_data_id(self, data_id: str):
         return self._data_id_map[data_id]
 
-    def describe_data(self, data_id: str) -> DataDescriptor:
+    def describe_data(self, data_id: str) -> DatasetDescriptor:
         _, variable_spec, aggregation = data_id.split(':')
 
         sm_attrs = dict(
