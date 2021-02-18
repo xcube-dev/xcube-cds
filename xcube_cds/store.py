@@ -49,6 +49,7 @@ from xcube.core.store import DataDescriptor
 from xcube.core.store import DataOpener
 from xcube.core.store import DataStore
 from xcube.core.store import DataStoreError
+from xcube.core.store import DatasetDescriptor
 from xcube.core.store import DefaultSearchMixin
 from xcube.core.store import TYPE_SPECIFIER_CUBE
 from xcube.core.store import TypeSpecifier
@@ -106,7 +107,7 @@ class CDSDatasetHandler(ABC):
         """
 
     @abstractmethod
-    def describe_data(self, data_id: str) -> DataDescriptor:
+    def describe_data(self, data_id: str) -> DatasetDescriptor:
         """Return a data descriptor for a given data ID.
 
         :param data_id: a data ID
@@ -430,11 +431,11 @@ class CDSDataOpener(DataOpener):
 
         # Disable PyCharm's inspection which thinks False and [] are equivalent
         # noinspection PySimplifyBooleanCheck
-        if open_params['variable_names'] == []:
+        if all_open_params['variable_names'] == []:
             # The CDS API requires at least one variable to be selected,
             # so in order to return an empty dataset we have to construct
             # it ourselves.
-            dataset = self._create_empty_dataset(all_open_params)
+            dataset = self._create_empty_dataset(data_id, all_open_params)
         else:
             dataset_name, cds_api_params = \
                 handler.transform_params(all_open_params, data_id)
@@ -444,22 +445,26 @@ class CDSDataOpener(DataOpener):
                                **cds_api_params},
                               fh)
             dataset = self._open_data_with_handler(
-                handler, dataset_name, open_params, cds_api_params,
+                handler, dataset_name, all_open_params, cds_api_params,
                 read_file_from, save_file_to)
 
         if save_zarr_to:
             dataset.to_zarr(save_zarr_to)
         return dataset
 
-    def _create_empty_dataset(self, open_params: dict) -> xr.Dataset:
+    def _create_empty_dataset(self, data_id, open_params: dict) -> xr.Dataset:
         """Make a dataset with space and time dimensions but no data variables
 
         :param open_params: opener parameters
         :return: a dataset with the spatial and temporal dimensions given in
                  the supplied parameters and no data variables
         """
-        bbox = open_params['bbox']
-        spatial_res = open_params['spatial_res']
+
+        store = CDSDataStore()
+        data_descriptor = store.describe_data(data_id)
+        bbox = open_params.get('bbox', data_descriptor.bbox)
+        spatial_res = open_params.get('spatial_res',
+                                      data_descriptor.spatial_res)
         # arange returns a half-open range, so we add *almost* a whole
         # spatial_res to the upper limit to make sure that it's included.
         lons = np.arange(bbox[0], bbox[2] + (spatial_res * 0.99), spatial_res)
@@ -467,7 +472,7 @@ class CDSDataOpener(DataOpener):
 
         time_range = open_params['time_range']
         times = self._create_time_range(time_range[0], time_range[1],
-                                        open_params['time_period'])
+                                        data_descriptor.time_period)
         return xr.Dataset({}, coords={'time': times, 'lat': lats, 'lon': lons})
 
     @staticmethod
@@ -772,7 +777,7 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
                data_id in self._handler_registry
 
     def describe_data(self, data_id: str, type_specifier: Optional[str] = None) \
-            -> DataDescriptor:
+            -> DatasetDescriptor:
         self._validate_data_id(data_id)
         self._validate_type_specifier(type_specifier)
         return self._handler_registry[data_id].describe_data(data_id)

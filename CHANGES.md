@@ -4,6 +4,7 @@
  - Update demo notebooks to remove dependency on cartopy
  - Document CDS API key usage in store docstring (closes #26)
  - Remove redundant requirements list from setup.py (closes #29)
+ - Remove constant-valued parameters from opener schemas (closes #28 and #36)
 
 ## Changes in 0.6.0
 
