@@ -66,8 +66,6 @@ class CDSSoilMoistureTest(unittest.TestCase):
         dataset = store.open_data(
             data_id,
             time_range=['2016-03-01', '2016-03-04'],
-            _save_request_to='/home/pont/cds-request',
-            _save_file_to='/home/pont/cds-result'
         )
         self.assertTrue('sm' in dataset.variables)
         self.assertEqual(4, len(dataset.variables['time']))
