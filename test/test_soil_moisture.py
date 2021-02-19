@@ -54,8 +54,8 @@ class CDSSoilMoistureTest(unittest.TestCase):
         self.assertEqual('2015-02-28T12:00:00Z',
                          dataset.attrs['time_coverage_end'])
         description = store.describe_data(data_id)
-        self.assertEqual(sorted([dv.name for dv in description.data_vars]),
-                         sorted(map(str, dataset.data_vars)))
+        self.assertCountEqual(description.data_vars.keys(),
+                         map(str, dataset.data_vars))
 
     def test_soil_moisture_saturation_daily(self):
         store = CDSDataStore(client_class=CDSClientMock,
@@ -74,8 +74,8 @@ class CDSSoilMoistureTest(unittest.TestCase):
         self.assertEqual('20191231T235959Z',
                          dataset.attrs['time_coverage_end'])
         description = store.describe_data(data_id)
-        self.assertEqual(sorted([dv.name for dv in description.data_vars]),
-                         sorted(map(str, dataset.data_vars)))
+        self.assertCountEqual(description.data_vars.keys(),
+                              map(str, dataset.data_vars))
 
     def test_soil_moisture_volumetric_optional_params(self):
         store = CDSDataStore(client_class=CDSClientMock,
@@ -95,8 +95,8 @@ class CDSSoilMoistureTest(unittest.TestCase):
         self.assertEqual('2015-02-28T12:00:00Z',
                          dataset.attrs['time_coverage_end'])
         description = store.describe_data(data_id)
-        self.assertEqual(sorted([dv.name for dv in description.data_vars]),
-                         sorted(map(str, dataset.data_vars)))
+        self.assertCountEqual(description.data_vars.keys(),
+                              map(str, dataset.data_vars))
 
     def test_soil_moisture_empty_variables_list(self):
         store = CDSDataStore(cds_api_url=_CDS_API_URL,

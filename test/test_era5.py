@@ -200,17 +200,16 @@ class CDSEra5Test(unittest.TestCase):
         self.assertEqual(265, len(descriptor.data_vars))
         self.assertEqual('WGS84', descriptor.crs)
         self.assertTupleEqual((-180, -90, 180, 90), descriptor.bbox)
-        # We don't exhaustively check all 260 variables, but we check the
-        # first one and make sure that they all have correct type and
-        # dimensions.
+        # We don't exhaustively check all 260 variables, but we check one
+        # fully and make sure that the rest have correct type and dimensions.
         expected_vd = VariableDescriptor(
             name='u100',
             dtype='float32',
             dims=('time', 'latitude', 'longitude'),
             attrs=dict(units='m s**-1', long_name='100 metre U wind component'))
         self.assertDictEqual(expected_vd.__dict__,
-                             descriptor.data_vars[0].__dict__)
-        for vd in descriptor.data_vars:
+                             descriptor.data_vars['u100'].__dict__)
+        for vd in descriptor.data_vars.values():
             self.assertEqual('float32', vd.dtype)
             self.assertTupleEqual(('time', 'latitude', 'longitude'),
                                   vd.dims)

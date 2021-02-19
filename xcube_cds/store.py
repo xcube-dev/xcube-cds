@@ -776,7 +776,8 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         return self._is_type_specifier_satisfied(type_specifier) and \
                data_id in self._handler_registry
 
-    def describe_data(self, data_id: str, type_specifier: Optional[str] = None) \
+    def describe_data(self, data_id: str,
+                      type_specifier: Optional[str] = None) \
             -> DatasetDescriptor:
         self._validate_data_id(data_id)
         self._validate_type_specifier(type_specifier)
@@ -787,7 +788,8 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
                     **search_params) \
             -> Iterator[DataDescriptor]:
         self._validate_type_specifier(type_specifier)
-        return super().search_data(type_specifier=type_specifier, **search_params)
+        return super().search_data(type_specifier=type_specifier,
+                                   **search_params)
 
     def get_data_opener_ids(self, data_id: Optional[str] = None,
                             type_specifier: Optional[str] = None) \
