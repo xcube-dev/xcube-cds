@@ -308,11 +308,13 @@ class SoilMoistureHandler(CDSDatasetHandler):
 
         ]
 
+        descriptors = descriptors_common + \
+            (descriptors_daily if aggregation == 'daily'
+             else descriptors_aggregated)
+
         return DatasetDescriptor(
             data_id=data_id,
-            data_vars=(descriptors_common +
-                       (descriptors_daily if aggregation == 'daily'
-                        else descriptors_aggregated)),
+            data_vars={desc.name: desc for desc in descriptors},
             crs='WGS84',
             bbox=(-180, -90, 180, 90),
             spatial_res=0.25,

@@ -25,6 +25,7 @@ import os
 import pathlib
 from typing import Dict
 from typing import List
+from typing import Mapping
 from typing import Optional
 from typing import Tuple
 
@@ -200,10 +201,12 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             open_params_schema=self.get_open_data_params_schema(data_id)
         )
 
-    def _create_variable_descriptors(self, data_id: str):
+    def _create_variable_descriptors(self, data_id: str) -> \
+            Mapping[str, VariableDescriptor]:
         dataset_id = data_id.split(':')[0]
 
-        return [
+        return {
+            netcdf_name:
             VariableDescriptor(
                 name=netcdf_name,
                 # dtype string format not formally defined as of 2020-06-18.
@@ -215,7 +218,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 attrs=dict(units=units, long_name=long_name))
             for (api_name, netcdf_name, units, long_name)
             in self._dataset_dicts[dataset_id]['variables']
-        ]
+        }
 
     def transform_params(self, plugin_params: Dict, data_id: str) -> \
             Tuple[str, Dict]:

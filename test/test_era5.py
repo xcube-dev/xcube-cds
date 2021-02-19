@@ -45,7 +45,7 @@ class CDSEra5Test(unittest.TestCase):
 
     def test_open(self):
         opener = CDSDataOpener(client_class=CDSClientMock,
-                               cds_api_url=_CDS_API_URL,
+                               endpoint_url=_CDS_API_URL,
                                cds_api_key=_CDS_API_KEY)
         dataset = opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
@@ -63,7 +63,7 @@ class CDSEra5Test(unittest.TestCase):
 
     def test_normalize_variable_names(self):
         store = CDSDataStore(client_class=CDSClientMock, normalize_names=True,
-                             cds_api_url=_CDS_API_URL,
+                             endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
@@ -78,7 +78,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertTrue('p54_162' in dataset.variables)
 
     def test_request_parameter_out_of_range(self):
-        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+        store = CDSDataStore(endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         with self.assertRaises(ValidationError):
             store.open_data(
@@ -91,7 +91,7 @@ class CDSEra5Test(unittest.TestCase):
 
     def test_era5_land_monthly(self):
         store = CDSDataStore(client_class=CDSClientMock,
-                             cds_api_url=_CDS_API_URL,
+                             endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             'reanalysis-era5-land-monthly-means:'
@@ -107,7 +107,7 @@ class CDSEra5Test(unittest.TestCase):
 
     def test_era5_single_levels_hourly(self):
         store = CDSDataStore(client_class=CDSClientMock,
-                             cds_api_url=_CDS_API_URL,
+                             endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             'reanalysis-era5-single-levels:'
@@ -124,7 +124,7 @@ class CDSEra5Test(unittest.TestCase):
 
     def test_era5_land_hourly(self):
         store = CDSDataStore(client_class=CDSClientMock,
-                             cds_api_url=_CDS_API_URL,
+                             endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             'reanalysis-era5-land',
@@ -140,7 +140,7 @@ class CDSEra5Test(unittest.TestCase):
 
     def test_era5_bounds(self):
         opener = CDSDataOpener(client_class=CDSClientMock,
-                               cds_api_url=_CDS_API_URL,
+                               endpoint_url=_CDS_API_URL,
                                cds_api_key=_CDS_API_KEY)
         dataset = opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
@@ -162,7 +162,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertLessEqual(south, north)
 
     def test_era5_open_data_empty_variables_list(self):
-        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+        store = CDSDataStore(endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             'reanalysis-era5-land-monthly-means:monthly_averaged_reanalysis',
@@ -177,7 +177,7 @@ class CDSEra5Test(unittest.TestCase):
 
     def test_open_data_null_variables_list(self):
         store = CDSDataStore(client_class=CDSClientMock,
-                             cds_api_url=_CDS_API_URL,
+                             endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         data_id = 'reanalysis-era5-single-levels-monthly-means:'\
             'monthly_averaged_reanalysis'
@@ -193,24 +193,23 @@ class CDSEra5Test(unittest.TestCase):
         self.assertEqual(n_vars, len(dataset.data_vars))
 
     def test_era5_describe_data(self):
-        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+        store = CDSDataStore(endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         descriptor = store.describe_data(
             'reanalysis-era5-single-levels:reanalysis')
         self.assertEqual(265, len(descriptor.data_vars))
         self.assertEqual('WGS84', descriptor.crs)
         self.assertTupleEqual((-180, -90, 180, 90), descriptor.bbox)
-        # We don't exhaustively check all 260 variables, but we check the
-        # first one and make sure that they all have correct type and
-        # dimensions.
+        # We don't exhaustively check all 260 variables, but we check one
+        # fully and make sure that the rest have correct type and dimensions.
         expected_vd = VariableDescriptor(
             name='u100',
             dtype='float32',
             dims=('time', 'latitude', 'longitude'),
             attrs=dict(units='m s**-1', long_name='100 metre U wind component'))
         self.assertDictEqual(expected_vd.__dict__,
-                             descriptor.data_vars[0].__dict__)
-        for vd in descriptor.data_vars:
+                             descriptor.data_vars['u100'].__dict__)
+        for vd in descriptor.data_vars.values():
             self.assertEqual('float32', vd.dtype)
             self.assertTupleEqual(('time', 'latitude', 'longitude'),
                                   vd.dims)

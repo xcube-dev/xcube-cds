@@ -315,7 +315,7 @@ class CDSDataOpener(DataOpener):
     def __init__(self,
                  normalize_names: Optional[bool] = False,
                  client_class=cdsapi.Client,
-                 cds_api_url=None,
+                 endpoint_url=None,
                  cds_api_key=None
                  ):
         """Instantiate a CDS data opener.
@@ -327,7 +327,7 @@ class CDSDataOpener(DataOpener):
                another class implementing the same interface. In practice, this
                is expected to be either cdsapi.Client itself or a mock class for
                testing.
-        :param cds_api_url: CDS API URL. Will be passed to the CDS API client.
+        :param endpoint_url: CDS API URL. Will be passed to the CDS API client.
                If omitted, the client will read the value from an environment
                variable or configuration file.
         :param cds_api_url: CDS API key. Will be passed to the CDS API client.
@@ -343,7 +343,7 @@ class CDSDataOpener(DataOpener):
             import SoilMoistureHandler
         self._register_dataset_handler(SoilMoistureHandler())
         self._client_class = client_class
-        self.cds_api_url = cds_api_url
+        self.cds_api_url = endpoint_url
         self.cds_api_key = cds_api_key
         self.last_instantiated_client = None  # for debugging and testing
 
@@ -776,7 +776,8 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         return self._is_type_specifier_satisfied(type_specifier) and \
                data_id in self._handler_registry
 
-    def describe_data(self, data_id: str, type_specifier: Optional[str] = None) \
+    def describe_data(self, data_id: str,
+                      type_specifier: Optional[str] = None) \
             -> DatasetDescriptor:
         self._validate_data_id(data_id)
         self._validate_type_specifier(type_specifier)
@@ -787,7 +788,8 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
                     **search_params) \
             -> Iterator[DataDescriptor]:
         self._validate_type_specifier(type_specifier)
-        return super().search_data(type_specifier=type_specifier, **search_params)
+        return super().search_data(type_specifier=type_specifier,
+                                   **search_params)
 
     def get_data_opener_ids(self, data_id: Optional[str] = None,
                             type_specifier: Optional[str] = None) \
