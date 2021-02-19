@@ -68,7 +68,7 @@ _CDS_API_KEY = 'dummy'
 class CDSStoreTest(unittest.TestCase):
 
     def test_invalid_data_id(self):
-        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+        store = CDSDataStore(endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         with self.assertRaises(ValueError):
             store.open_data(
@@ -78,7 +78,7 @@ class CDSStoreTest(unittest.TestCase):
             )
 
     def test_list_and_describe_data_ids(self):
-        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+        store = CDSDataStore(endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         data_ids = store.get_data_ids()
         self.assertIsInstance(data_ids, Iterator)
@@ -95,7 +95,7 @@ class CDSStoreTest(unittest.TestCase):
             CDSDatasetHandler.convert_time_range([])  # incorrect list length
 
     def test_get_open_params_schema_without_data_id(self):
-        opener = CDSDataOpener(cds_api_url=_CDS_API_URL,
+        opener = CDSDataOpener(endpoint_url=_CDS_API_URL,
                                cds_api_key=_CDS_API_KEY)
         schema = opener.get_open_data_params_schema()
 
@@ -112,13 +112,13 @@ class CDSStoreTest(unittest.TestCase):
         )
 
     def test_search_data_invalid_id(self):
-        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+        store = CDSDataStore(endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         with self.assertRaises(DataStoreError):
             store.search_data('This is an invalid ID.')
 
     def test_search_data_valid_id(self):
-        store = CDSDataStore(cds_api_url=_CDS_API_URL,
+        store = CDSDataStore(endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         result = list(store.search_data('dataset'))
         self.assertTrue(len(result) > 0)
@@ -162,7 +162,7 @@ class CDSStoreTest(unittest.TestCase):
 
     def test_get_data_ids(self):
         store = CDSDataStore(client_class=CDSClientMock,
-                             cds_api_url=_CDS_API_URL,
+                             endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         self.assertEqual([], list(store.get_data_ids('unsupported_type_spec')))
         self.assertEqual([],
@@ -210,10 +210,10 @@ class ClientUrlTest(unittest.TestCase):
 
         self._set_up_api_configuration('wrong URL 1', 'wrong key 1',
                                        'wrong URL 2', 'wrong key 2')
-        cds_api_url = 'https://example.com/'
+        endpoint_url = 'https://example.com/'
         cds_api_key = 'xyzzy'
         opener = CDSDataOpener(client_class=CDSClientMock,
-                               cds_api_url=cds_api_url,
+                               endpoint_url=endpoint_url,
                                cds_api_key=cds_api_key)
         opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
@@ -224,7 +224,7 @@ class ClientUrlTest(unittest.TestCase):
             time_range=['2015-10-15', '2015-10-15'],
         )
         client = opener.last_instantiated_client
-        self.assertEqual(cds_api_url, client.url)
+        self.assertEqual(endpoint_url, client.url)
         self.assertEqual(cds_api_key, client.key)
 
     def test_client_url_and_key_environment_variables(self):
@@ -235,12 +235,12 @@ class ClientUrlTest(unittest.TestCase):
         overriding any configuration file settings.
         """
 
-        cds_api_url = 'https://example.com/'
+        endpoint_url = 'https://example.com/'
         cds_api_key = 'xyzzy'
         self._set_up_api_configuration('wrong URL 1', 'wrong key 1',
-                                       cds_api_url, cds_api_key)
+                                       endpoint_url, cds_api_key)
         client = self._get_client()
-        self.assertEqual(cds_api_url, client.url)
+        self.assertEqual(endpoint_url, client.url)
         self.assertEqual(cds_api_key, client.key)
 
     def test_client_url_and_key_rc_file(self):
@@ -250,9 +250,9 @@ class ClientUrlTest(unittest.TestCase):
         a configuration file, are correctly passed to the CDS client.
         """
 
-        cds_api_url = 'https://example.com/'
+        endpoint_url = 'https://example.com/'
         cds_api_key = 'xyzzy'
-        self._set_up_api_configuration(cds_api_url, cds_api_key)
+        self._set_up_api_configuration(endpoint_url, cds_api_key)
         opener = CDSDataOpener(client_class=CDSClientMock)
         opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
@@ -263,7 +263,7 @@ class ClientUrlTest(unittest.TestCase):
             time_range=['2015-10-15', '2015-10-15'],
         )
         client = opener.last_instantiated_client
-        self.assertEqual(cds_api_url, client.url)
+        self.assertEqual(endpoint_url, client.url)
         self.assertEqual(cds_api_key, client.key)
 
     @staticmethod
