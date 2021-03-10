@@ -759,19 +759,23 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         return TYPE_SPECIFIER_CUBE,
 
     def get_data_ids(self, type_specifier: Optional[str] = None,
-                     include_titles: bool = True,
-                     include_attrs: Sequence[str] = None) \
-            -> Iterator[Tuple[str, Optional[str]]]:
-        # TODO: do not ignore include_attrs
-        if not self._is_type_specifier_satisfied(type_specifier):
-            # If the type specifier isn't compatible, return an empty iterator.
-            return iter(())
-        return iter(
-            (data_id,
-             self._handler_registry[data_id].
-             get_human_readable_data_id(data_id) if include_titles else None)
-            for data_id in self._handler_registry
-        )
+                     include_attrs: Sequence[str] = None) -> \
+            Union[Iterator[str], Iterator[Tuple[str, Dict[str, Any]]]]:
+
+        if self._is_type_specifier_satisfied(type_specifier):
+            # Only if the type specifier isn't compatible
+            return_tuples = include_attrs is not None
+            # TODO: respect names other than "title" in include_attrs
+            include_titles = return_tuples and 'title' in include_attrs
+
+            for data_id, handler in self._handler_registry.items():
+                if return_tuples:
+                    if include_titles:
+                        yield data_id, {'title': handler.get_human_readable_data_id(data_id)}
+                    else:
+                        yield data_id, {}
+                else:
+                    yield data_id
 
     def has_data(self, data_id: str, type_specifier: Optional[str] = None) \
             -> bool:
