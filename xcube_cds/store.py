@@ -29,7 +29,7 @@ import shutil
 import tempfile
 from abc import ABC
 from abc import abstractmethod
-from typing import Any, Sequence
+from typing import Any, Container
 from typing import Dict
 from typing import Iterator
 from typing import List
@@ -316,8 +316,7 @@ class CDSDataOpener(DataOpener):
                  normalize_names: Optional[bool] = False,
                  client_class=cdsapi.Client,
                  endpoint_url=None,
-                 cds_api_key=None
-                 ):
+                 cds_api_key=None):
         """Instantiate a CDS data opener.
 
         :param normalize_names: if True, all variable names in the returned
@@ -330,7 +329,7 @@ class CDSDataOpener(DataOpener):
         :param endpoint_url: CDS API URL. Will be passed to the CDS API client.
                If omitted, the client will read the value from an environment
                variable or configuration file.
-        :param cds_api_url: CDS API key. Will be passed to the CDS API client.
+        :param cds_api_key: CDS API key. Will be passed to the CDS API client.
                If omitted, the client will read the value from an environment
                variable or configuration file.
         """
@@ -759,7 +758,7 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         return TYPE_SPECIFIER_CUBE,
 
     def get_data_ids(self, type_specifier: Optional[str] = None,
-                     include_attrs: Sequence[str] = None) -> \
+                     include_attrs: Container[str] = None) -> \
             Union[Iterator[str], Iterator[Tuple[str, Dict[str, Any]]]]:
 
         if self._is_type_specifier_satisfied(type_specifier):
