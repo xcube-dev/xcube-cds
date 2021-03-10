@@ -29,7 +29,7 @@ import shutil
 import tempfile
 from abc import ABC
 from abc import abstractmethod
-from typing import Any
+from typing import Any, Sequence
 from typing import Dict
 from typing import Iterator
 from typing import List
@@ -759,8 +759,10 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         return TYPE_SPECIFIER_CUBE,
 
     def get_data_ids(self, type_specifier: Optional[str] = None,
-                     include_titles: bool = True) \
+                     include_titles: bool = True,
+                     include_attrs: Sequence[str] = None) \
             -> Iterator[Tuple[str, Optional[str]]]:
+        # TODO: do not ignore include_attrs
         if not self._is_type_specifier_satisfied(type_specifier):
             # If the type specifier isn't compatible, return an empty iterator.
             return iter(())
