@@ -63,7 +63,12 @@ without a configuration file by setting the `CDSAPI_URL` and `CDSAPI_KEY`
 environment variables. You can also pass the URL and key directly to the
 `CDSDataOpener` and `CDSDataStore` constructors using the named parameters
 `cds_api_url` and `cds_api_key`.
- 
+
+> :warning: Note that the `key` value must contain the UID *and* the API key,
+> separated by a colon. If you get the error
+> [‘TypeError: 'tuple' object is not callable in python cdsapi’](https://stackoverflow.com/q/64422955/6947739),
+> check that the `key` value follows this format correctly.
+
 #### Agree to the terms of use for the datasets you require
 
 The datasets available through CDS have associated terms of use. Before
@@ -209,16 +214,29 @@ creating a pull request to merge this branch into conda-forge's feedstock
 repository. dcs4cop's fork is at https://github.com/dcs4cop/xcube-cds-feedstock
 .
 
-The instructions below describe the manual procedure of creating branch and
+The instructions below describe the manual procedure of creating a branch and
 pull request yourself. conda-forge also has a bot called
-`regro-cf-autokick-bot` which should automatically create a pull request for
-each new GitHub release, within about an hour or two of the release appearing
-on GitHub. If you prefer to base the release on the automatically created
-pull request, skip the "create a new branch" and "create a pull request"
-steps below, and instead make the necessary changes (if any) on the branch
-created by the bot. If a release is made using a manually created branch,
-the bot will remove its own branch and pull request. (Sometimes it's necessary
-to apply the `bot-rerun` label to the pull request to make this happen.)
+`regro-cf-autotick-bot` which should automatically create a branch and pull
+request for each new GitHub release, within about an hour or two of the
+release appearing on GitHub. The bot also automatically updates the version
+number and release hash in the recipe, but further manual modifications (in
+the form of commits pushed to the PR) may be required, for example in order to
+update dependency lists. The manual procedure may be necessary or desirable in
+some cases, for example:
+
+* You are making an additional build from a version which has already been
+  released in conda-forge. In this case there's no new GitHub release to
+  trigger the bot.
+
+* You don't have time to wait for the bot to notice the new release and
+  create its pull request.
+
+If you are basing the release on the automatically created pull request, skip
+the "create a new branch" and "create a pull request" steps below, and instead
+make the necessary changes (if any) on the branch created by the bot. If a
+release is made using a manually created branch, the bot will remove its own
+branch and pull request. (Sometimes it's necessary to apply the `bot-rerun`
+label to the pull request to make this happen.)
 
 In detail, the steps are as follows.
 
@@ -235,8 +253,9 @@ In detail, the steps are as follows.
    environment for this.
    
    ```
-   conda install -c conda-forge conda-smithy
-   conda smithy rerender -c auto
+   conda create -c conda-forge -n smithy conda-smithy
+   conda activate smithy
+   conda-smithy rerender -c auto
    ```
    
    It's also possible to have the rendering done by a bot as part of the pull
@@ -256,14 +275,17 @@ In detail, the steps are as follows.
    4. If the dependencies have changed, update the list of dependencies in the
       `-run` subsection to match those in the `environment.yml` file.
 
-   5. Commit the changes and push them to GitHub, then create a pull request at
-      https://github.com/dcs4cop/xcube-cds-feedstock .
+5. Commit the changes and push them to GitHub, then create a pull request at
+   https://github.com/dcs4cop/xcube-cds-feedstock for a merge of your update
+   branch into the master branch at conda-forge.
 
-   6. Once conda-forge's automated checks have passed, merge the pull request.
+6. Once conda-forge's automated checks have passed and the reviewers (if
+   any) have approved the changes, merge the pull request.
 
-Once the pull request has been merged, the updated package should usually 
-become available from conda-forge within a couple of hours.
-
+Once the pull request has been merged, the updated package should become
+available from conda-forge within a couple of hours. Usually the updated
+package is visible on https://anaconda.org/conda-forge/xcube-cds some time
+before it becomes accessible to `conda search` and `conda install`.
 
 ### Post-release tasks
 
