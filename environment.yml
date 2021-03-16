@@ -8,4 +8,4 @@ dependencies:
   - numpy >=1.17
   - python-dateutil >=2.8.1
   - xarray >=0.14.1
-  - xcube >=0.7.0
+  - xcube >=0.8.0
