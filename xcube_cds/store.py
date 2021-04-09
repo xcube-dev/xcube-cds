@@ -751,11 +751,11 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
 
     @classmethod
     def get_type_specifiers(cls) -> Tuple[str, ...]:
-        return TYPE_SPECIFIER_CUBE,
+        return str(TYPE_SPECIFIER_CUBE),
 
     def get_type_specifiers_for_data(self, data_id: str) -> Tuple[str, ...]:
         self._validate_data_id(data_id)
-        return TYPE_SPECIFIER_CUBE,
+        return str(TYPE_SPECIFIER_CUBE),
 
     def get_data_ids(self, type_specifier: Optional[str] = None,
                      include_attrs: Container[str] = None) -> \
