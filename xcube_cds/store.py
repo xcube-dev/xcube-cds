@@ -29,7 +29,7 @@ import shutil
 import tempfile
 from abc import ABC
 from abc import abstractmethod
-from typing import Any
+from typing import Any, Container
 from typing import Dict
 from typing import Iterator
 from typing import List
@@ -316,8 +316,7 @@ class CDSDataOpener(DataOpener):
                  normalize_names: Optional[bool] = False,
                  client_class=cdsapi.Client,
                  endpoint_url=None,
-                 cds_api_key=None
-                 ):
+                 cds_api_key=None):
         """Instantiate a CDS data opener.
 
         :param normalize_names: if True, all variable names in the returned
@@ -330,7 +329,7 @@ class CDSDataOpener(DataOpener):
         :param endpoint_url: CDS API URL. Will be passed to the CDS API client.
                If omitted, the client will read the value from an environment
                variable or configuration file.
-        :param cds_api_url: CDS API key. Will be passed to the CDS API client.
+        :param cds_api_key: CDS API key. Will be passed to the CDS API client.
                If omitted, the client will read the value from an environment
                variable or configuration file.
         """
@@ -759,17 +758,23 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         return TYPE_SPECIFIER_CUBE,
 
     def get_data_ids(self, type_specifier: Optional[str] = None,
-                     include_titles: bool = True) \
-            -> Iterator[Tuple[str, Optional[str]]]:
-        if not self._is_type_specifier_satisfied(type_specifier):
-            # If the type specifier isn't compatible, return an empty iterator.
-            return iter(())
-        return iter(
-            (data_id,
-             self._handler_registry[data_id].
-             get_human_readable_data_id(data_id) if include_titles else None)
-            for data_id in self._handler_registry
-        )
+                     include_attrs: Container[str] = None) -> \
+            Union[Iterator[str], Iterator[Tuple[str, Dict[str, Any]]]]:
+
+        if self._is_type_specifier_satisfied(type_specifier):
+            # Only if the type specifier isn't compatible
+            return_tuples = include_attrs is not None
+            # TODO: respect names other than "title" in include_attrs
+            include_titles = return_tuples and 'title' in include_attrs
+
+            for data_id, handler in self._handler_registry.items():
+                if return_tuples:
+                    if include_titles:
+                        yield data_id, {'title': handler.get_human_readable_data_id(data_id)}
+                    else:
+                        yield data_id, {}
+                else:
+                    yield data_id
 
     def has_data(self, data_id: str, type_specifier: Optional[str] = None) \
             -> bool:
