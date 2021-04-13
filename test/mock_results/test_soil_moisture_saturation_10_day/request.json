@@ -1,0 +1,1 @@
+{"_dataset_name": "satellite-soil-moisture", "variable": "soil_moisture_saturation", "type_of_sensor": "active", "time_aggregation": "10_day_average", "type_of_record": "cdr", "version": "v201912.0.0", "format": "tgz", "day": ["01", "11"], "month": "04", "year": "2015"}
