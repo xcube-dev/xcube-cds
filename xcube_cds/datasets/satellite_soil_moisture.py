@@ -115,6 +115,13 @@ class SoilMoistureHandler(CDSDatasetHandler):
 
         time_selectors = self.transform_time_params(
             self.convert_time_range(opener_params['time_range']))
+        time_selectors.pop('time', None)
+        if aggregation == 'monthly':
+            time_selectors['day'] = '01'
+        if aggregation == '10-day':
+            time_selectors['day'] =\
+                sorted(set(time_selectors['day'])
+                       .intersection({'01', '11', '21'}))
         cds_params.update(time_selectors)
 
         # Transform singleton list values into their single members, as

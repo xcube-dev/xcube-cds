@@ -770,7 +770,9 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
             for data_id, handler in self._handler_registry.items():
                 if return_tuples:
                     if include_titles:
-                        yield data_id, {'title': handler.get_human_readable_data_id(data_id)}
+                        yield data_id,\
+                              {'title':
+                                   handler.get_human_readable_data_id(data_id)}
                     else:
                         yield data_id, {}
                 else:

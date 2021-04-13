@@ -34,7 +34,6 @@ of use for any datasets you want to acccess.
 
 #### Obtain a CDS API key
 
-
 You can obtain the UID and API key as follows:
 
 1. Create a user account on the

@@ -98,9 +98,12 @@ class ERA5DatasetHandler(CDSDatasetHandler):
         # (issue #6) and sometimes with non-increasing time (issue #5), so
         # for now they are blacklisted.
         blacklist = frozenset([
-            'reanalysis-era5-land-monthly-means:monthly_averaged_reanalysis_by_hour_of_day',
-            'reanalysis-era5-single-levels-monthly-means:monthly_averaged_ensemble_members_by_hour_of_day',
-            'reanalysis-era5-single-levels-monthly-means:monthly_averaged_reanalysis_by_hour_of_day'
+            'reanalysis-era5-land-monthly-means:'
+            'monthly_averaged_reanalysis_by_hour_of_day',
+            'reanalysis-era5-single-levels-monthly-means:'
+            'monthly_averaged_ensemble_members_by_hour_of_day',
+            'reanalysis-era5-single-levels-monthly-means:'
+            'monthly_averaged_reanalysis_by_hour_of_day'
         ])
 
         # We use a list rather than a set, since we want to preserve ordering
