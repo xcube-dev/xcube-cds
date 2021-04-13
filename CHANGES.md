@@ -1,10 +1,13 @@
 ## Changes in 0.8.0 (in development)
 
-* Store methods *get_type_specifier* and *get_type_specifiers_for_data* now return 
-  values in correct format (strings instead of type specifiers)
-* Provided xcube data store framework interface compatibility with 
-  breaking changes in xcube 0.8.0 (see https://github.com/dcs4cop/xcube/issues/420).
-  
+- Store methods `get_type_specifier` and `get_type_specifiers_for_data` now
+  return values in correct format (strings instead of type specifiers)
+- Provided xcube data store framework interface compatibility with 
+  breaking changes in xcube 0.8.0 (see
+  https://github.com/dcs4cop/xcube/issues/420).
+- Soil moisture dataset handler updated to avoid "Request too large" errors
+  (closes #48)
+
 ## Changes in 0.7.0
 
  - Replace Travis CI with AppVeyor for CI (closes #25)
