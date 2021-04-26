@@ -26,6 +26,7 @@ import json
 import os
 import re
 import shutil
+import sys
 import tempfile
 from abc import ABC
 from abc import abstractmethod
@@ -63,6 +64,7 @@ from xcube.util.jsonschema import JsonStringSchema
 from xcube.util.undefined import UNDEFINED
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.constants import DEFAULT_NUM_RETRIES
+from xcube_cds.version import version
 
 
 class CDSDatasetHandler(ABC):
@@ -411,6 +413,7 @@ class CDSDataOpener(DataOpener):
         )
 
     def open_data(self, data_id: str, **open_params) -> xr.Dataset:
+        print(f"xcube-cds version {version}", file=sys.stderr)
         # Unofficial parameters for testing, debugging, etc.
         # They're not in the schema so we remove them before validating.
         read_file_from = open_params.pop('_read_file_from', None)
