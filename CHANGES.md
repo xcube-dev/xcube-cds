@@ -1,4 +1,4 @@
-## Changes in 0.8.0 (in development)
+## Changes in 0.8.0
 
  - Store methods `get_type_specifier` and `get_type_specifiers_for_data` now
    return values in correct format (strings instead of type specifiers)
