@@ -37,7 +37,7 @@ build_script:
   # Install the packages required by xcube-cds (including xcube and its
   # dependencies), as well as the pytest package (needed for testing).
   - micromamba create --yes --name xcube --file environment.yml
-  - micromamba activate xcube-cds
+  - micromamba activate xcube
   - micromamba install --yes --name xcube --channel conda-forge pytest
 
   # Clone the xcube repository and install its dependencies using its conda
