@@ -15,52 +15,41 @@ for:
     only:
       - image: macos
   install:
-    - curl -L https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh > miniconda.sh
-    - bash miniconda.sh -b -p $HOME/miniconda
+    - curl -Ls https://micromamba.snakepit.net/api/micromamba/osx-64/latest | tar -xvj bin/micromamba
+    - mv bin/micromamba ./micromamba
 -
   matrix:
     only:
       - image: Ubuntu2004
   install:
-    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-    - bash miniconda.sh -b -p $HOME/miniconda
+    - wget -qO- https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -xvj bin/micromamba --strip-components=1
 
 build_script:
-  - export PATH="$HOME/miniconda/bin:$PATH"
+  - ./micromamba shell init -s bash -p ~/micromamba
+  - source ~/.bashrc
+  - source ~/.bash_profile
   - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  # - conda update -q conda # makes travis build fail
-  - conda info -a  # Useful for debugging any issues with conda
-  - conda init bash
-  - export CONDA_BASE=$(conda info --base)
-  - source $CONDA_BASE/etc/profile.d/conda.sh
-
-  # Install mamba as a dramatically faster conda replacement. Specifying a
-  # fixed version makes the installation of mamba itself much faster, and
-  # avoids potential breakage due to changes in mamba behaviour.
-  - conda install mamba=0.7.3 -c conda-forge
-
-  # Environments created by mamba can't be referenced by name from conda
-  # (presumably a bug), so we use an explicit path instead.
+  - mkdir -p ~/micromamba/pkgs/
+  - export MAMBA_ROOT_PREFIX=~/micromamba
+  - export MAMBA_EXE=$(pwd)/micromamba
+  - . $MAMBA_ROOT_PREFIX/etc/profile.d/mamba.sh
 
   # Install the packages required by xcube-cds (including xcube and its
   # dependencies), as well as the pytest package (needed for testing).
-  - mamba env create --prefix $HOME/mamba-env --file environment.yml
-  - mamba install --prefix $HOME/mamba-env pytest
+  - micromamba create --yes --file environment.yml
+  - micromamba install --channel conda-forge pytest
 
   # Clone the xcube repository and install its dependencies using its conda
   # environment file
   - git clone https://github.com/dcs4cop/xcube $HOME/xcube
-  - mamba env update --prefix $HOME/mamba-env --file $HOME/xcube/environment.yml
+  - micromamba update --file $HOME/xcube/environment.yml
 
   # Remove the xcube conda package itself, because we want to install xcube
   # directly from its repository instead.
-  - mamba remove --prefix $HOME/mamba-env xcube
+  - micromamba remove --prefix $HOME/mamba-env xcube
 
-  # Activate the conda environment and list the installed packages (useful for
-  # debugging).
-  - conda activate $HOME/mamba-env
-  - conda list
+  # List the installed packages (useful for debugging).
+  - micromamba list
 
   # Install xcube from its repository using setuptools.
   - cd $HOME/xcube
@@ -72,4 +61,3 @@ build_script:
 
   # Run the test suite.
   - pytest
-
