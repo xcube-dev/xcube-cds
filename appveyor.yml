@@ -35,10 +35,9 @@ build_script:
   - . $MAMBA_ROOT_PREFIX/etc/profile.d/mamba.sh
 
   # Install the packages required by xcube-cds (including xcube and its
-  # dependencies), as well as the pytest package (needed for testing).
+  # dependencies)
   - micromamba create --yes --name xcube --file environment.yml
   - micromamba activate xcube
-  - micromamba install --yes --name xcube --channel conda-forge pytest attr
 
   # Clone the xcube repository and install its dependencies using its conda
   # environment file
@@ -61,4 +60,5 @@ build_script:
   - python setup.py install
 
   # Run the test suite.
+  - micromamba install --yes --name xcube --channel conda-forge pytest attrs
   - python -m pytest
