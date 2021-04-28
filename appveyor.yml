@@ -61,4 +61,4 @@ build_script:
   - python setup.py install
 
   # Run the test suite.
-  - py.test
+  - python -m pytest
