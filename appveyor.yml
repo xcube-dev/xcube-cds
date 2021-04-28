@@ -36,18 +36,18 @@ build_script:
 
   # Install the packages required by xcube-cds (including xcube and its
   # dependencies), as well as the pytest package (needed for testing).
-  - micromamba create --yes --file environment.yml
+  - micromamba create --yes --name xcube --file environment.yml
   - micromamba activate xcube-cds
-  - micromamba install --channel conda-forge pytest
+  - micromamba install --yes --name xcube --channel conda-forge pytest
 
   # Clone the xcube repository and install its dependencies using its conda
   # environment file
   - git clone https://github.com/dcs4cop/xcube $HOME/xcube
-  - micromamba update --file $HOME/xcube/environment.yml
+  - micromamba update --name xcube --file $HOME/xcube/environment.yml
 
   # Remove the xcube conda package itself, because we want to install xcube
   # directly from its repository instead.
-  - micromamba remove --prefix $HOME/mamba-env xcube
+  - micromamba remove --name xcube xcube
 
   # List the installed packages (useful for debugging).
   - micromamba list
