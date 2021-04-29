@@ -51,6 +51,7 @@ build_script:
 
   # List the installed packages (useful for debugging).
   - micromamba list
+  - micromamba list --name xcube
 
   # Install xcube from its repository using setuptools.
   - cd $HOME/xcube
