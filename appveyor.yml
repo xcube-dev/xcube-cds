@@ -50,6 +50,13 @@ build_script:
   - micromamba update --yes --name xc --file env_no_xcube.yml
   - python setup.py install
 
-  # Make sure pytest is installed and run the test suite.
+  # Make sure pytest is installed
   - micromamba install --yes --name xc --channel conda-forge pytest attrs
+
+  # Print some diagnostics (useful for debugging)
+  - micromamba list
+  - xcube --version
+  - python -c "from xcube_cds.version import version; print(f'xcube_cds version {version}')"
+
+  # Run the test suite
   - python -m pytest
