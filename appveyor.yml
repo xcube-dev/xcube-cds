@@ -34,36 +34,20 @@ build_script:
   - export MAMBA_EXE=$(pwd)/micromamba
   - . $MAMBA_ROOT_PREFIX/etc/profile.d/mamba.sh
 
-  # Install the packages required by xcube-cds (including xcube and its
-  # dependencies)
-  - micromamba create --yes --name xcube --file environment.yml
-  - micromamba activate xcube
-  - micromamba install -vvv --yes --name xcube --channel conda-forge attrs
-
-  # Clone the xcube repository and install its dependencies using its conda
-  # environment file
   - git clone https://github.com/dcs4cop/xcube $HOME/xcube
-  - micromamba update --name xcube --file $HOME/xcube/environment.yml
-
-  # Remove the xcube conda package itself, because we want to install xcube
-  # directly from its repository instead.
-  - micromamba remove --name xcube xcube
-
-  # List the installed packages (useful for debugging).
-  - micromamba list
-  - micromamba list --name xcube
-
-  # Install xcube from its repository using setuptools.
+  - micromamba create --name xc --file $HOME/xcube/environment.yml
+  - micromamba activate xc
   - cd $HOME/xcube
   - python setup.py install
 
-  # Install xcube-cds from its repository using setuptools.
   - cd $APPVEYOR_BUILD_FOLDER
+  - grep -v "^  - xcube" environment.yml > env_no_xcube.yml
+  - micromamba update --yes --name xc --file env_no_xcube.yml
   - python setup.py install
 
   # Run the test suite.
-  - micromamba activate xcube
-  - micromamba install --yes --name xcube --channel conda-forge pytest attrs
+  - micromamba activate xc
+  - micromamba install --yes --name xc --channel conda-forge pytest attrs
   - python -c "import sys; print(sys.path)"
-  - ls -1 $HOME/micromamba/envs/xcube/lib/python3.9/site-packages/
+  - ls -1 $HOME/micromamba/envs/xc/lib/python3.9/site-packages/
   - python -m pytest
