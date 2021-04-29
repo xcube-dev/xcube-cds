@@ -61,4 +61,7 @@ build_script:
 
   # Run the test suite.
   - micromamba install --yes --name xcube --channel conda-forge pytest attrs
+  - micromamba activate xcube
+  - python -c "import sys; print(sys.path)"
+  - ls $HOME/micromamba/envs/xcube/lib/python3.9/site-packages/
   - python -m pytest
