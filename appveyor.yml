@@ -38,6 +38,7 @@ build_script:
   # dependencies)
   - micromamba create --yes --name xcube --file environment.yml
   - micromamba activate xcube
+  - micromamba install -vvv --yes --name xcube --channel conda-forge attrs
 
   # Clone the xcube repository and install its dependencies using its conda
   # environment file
@@ -60,8 +61,8 @@ build_script:
   - python setup.py install
 
   # Run the test suite.
-  - micromamba install --yes --name xcube --channel conda-forge pytest attrs
   - micromamba activate xcube
+  - micromamba install --yes --name xcube --channel conda-forge pytest attrs
   - python -c "import sys; print(sys.path)"
-  - ls $HOME/micromamba/envs/xcube/lib/python3.9/site-packages/
+  - ls -1 $HOME/micromamba/envs/xcube/lib/python3.9/site-packages/
   - python -m pytest
