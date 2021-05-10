@@ -145,7 +145,8 @@ class SoilMoistureHandler(CDSDatasetHandler):
         # it's OK because the Product User Guide (C3S_312a_Lot7_EODC_2016SC1,
         # §1, p. 12) states that the data are in Classic format,
         # and inspection of some downloaded files confirms it.
-        ds = xr.open_mfdataset(paths, combine="by_coords")
+        ds = xr.open_mfdataset(paths, combine="by_coords",
+                               engine="netcdf4", decode_cf=True)
         ds.attrs.update(self.combine_netcdf_time_limits(paths))
 
         # Subsetting is no longer implemented by the plugin (see Issue

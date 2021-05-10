@@ -297,5 +297,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
     def read_file(self, dataset_name: str, open_params: Dict,
                   cds_api_params: Dict, file_path: str, temp_dir: str):
 
-        # decode_cf is the default, but it's clearer to make it explicit.
-        return xr.open_dataset(file_path, decode_cf=True)
+        # decode_cf=True is the default and the netcdf4 engine should be
+        # available and automatically selected, but it's safer and clearer to
+        # be explicit.
+        return xr.open_dataset(file_path, engine="netcdf4", decode_cf=True)
