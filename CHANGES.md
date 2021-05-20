@@ -1,6 +1,8 @@
-## Changes in 0.8.1.dev0
+## Changes in 0.8.1
 
-
+ - Use micromamba instead of mamba for CI
+ - Use more explicit parameters in xr.open_dataset calls (avoids "cannot
+   guess the engine" errors from xarray)
 
 ## Changes in 0.8.0
 
