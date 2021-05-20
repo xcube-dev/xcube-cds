@@ -2,7 +2,7 @@
 
  - Use micromamba instead of mamba for CI
  - Use more explicit parameters in xr.open_dataset calls (avoids "cannot
-   guess the engine" errors from xarray)
+   guess the engine" errors from xarray) (closes #52)
 
 ## Changes in 0.8.0
 
