@@ -46,14 +46,15 @@ import numpy as np
 import xarray as xr
 
 import xcube.core.normalize
+from xcube.core.store import DATASET_TYPE
 from xcube.core.store import DataDescriptor
 from xcube.core.store import DataOpener
 from xcube.core.store import DataStore
 from xcube.core.store import DataStoreError
+from xcube.core.store import DataType
+from xcube.core.store import DataTypeLike
 from xcube.core.store import DatasetDescriptor
 from xcube.core.store import DefaultSearchMixin
-from xcube.core.store import TYPE_SPECIFIER_CUBE
-from xcube.core.store import TypeSpecifier
 from xcube.util.jsonschema import JsonArraySchema
 from xcube.util.jsonschema import JsonBooleanSchema
 from xcube.util.jsonschema import JsonDateSchema
@@ -753,18 +754,19 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         )
 
     @classmethod
-    def get_type_specifiers(cls) -> Tuple[str, ...]:
-        return str(TYPE_SPECIFIER_CUBE),
+    def get_data_types(cls) -> Tuple[str, ...]:
+        return DATASET_TYPE.alias,
 
-    def get_type_specifiers_for_data(self, data_id: str) -> Tuple[str, ...]:
+    def get_data_types_for_data(self, data_id: str) -> Tuple[str, ...]:
         self._validate_data_id(data_id)
-        return str(TYPE_SPECIFIER_CUBE),
+        return DATASET_TYPE.alias,
 
-    def get_data_ids(self, type_specifier: Optional[str] = None,
+    def get_data_ids(self,
+                     data_type: DataTypeLike = None,
                      include_attrs: Container[str] = None) -> \
             Union[Iterator[str], Iterator[Tuple[str, Dict[str, Any]]]]:
 
-        if self._is_type_specifier_satisfied(type_specifier):
+        if self._is_data_type_satisfied(data_type):
             # Only if the type specifier isn't compatible
             return_tuples = include_attrs is not None
             # TODO: respect names other than "title" in include_attrs
@@ -773,7 +775,7 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
             for data_id, handler in self._handler_registry.items():
                 if return_tuples:
                     if include_titles:
-                        yield data_id,\
+                        yield data_id, \
                               {'title':
                                    handler.get_human_readable_data_id(data_id)}
                     else:
@@ -781,30 +783,30 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
                 else:
                     yield data_id
 
-    def has_data(self, data_id: str, type_specifier: Optional[str] = None) \
+    def has_data(self, data_id: str, data_type: Optional[str] = None) \
             -> bool:
-        return self._is_type_specifier_satisfied(type_specifier) and \
+        return self._is_data_type_satisfied(data_type) and \
                data_id in self._handler_registry
 
     def describe_data(self, data_id: str,
-                      type_specifier: Optional[str] = None) \
+                      data_type: Optional[str] = None) \
             -> DatasetDescriptor:
         self._validate_data_id(data_id)
-        self._validate_type_specifier(type_specifier)
+        self._validate_data_type(data_type)
         return self._handler_registry[data_id].describe_data(data_id)
 
     # noinspection PyTypeChecker
-    def search_data(self, type_specifier: Optional[str] = None,
+    def search_data(self, data_type: Optional[str] = None,
                     **search_params) \
             -> Iterator[DataDescriptor]:
-        self._validate_type_specifier(type_specifier)
-        return super().search_data(type_specifier=type_specifier,
+        self._validate_data_type(data_type)
+        return super().search_data(data_type=data_type,
                                    **search_params)
 
     def get_data_opener_ids(self, data_id: Optional[str] = None,
-                            type_specifier: Optional[str] = None) \
+                            data_type: Optional[str] = None) \
             -> Tuple[str, ...]:
-        self._validate_type_specifier(type_specifier)
+        self._validate_data_type(data_type)
         self._validate_data_id(data_id, allow_none=True)
         return CDS_DATA_OPENER_ID,
 
@@ -827,23 +829,23 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
     # Implementation helpers
 
     @staticmethod
-    def _validate_type_specifier(type_specifier: Union[str, TypeSpecifier]):
-        if not CDSDataStore._is_type_specifier_satisfied(type_specifier):
+    def _validate_data_type(data_type: DataTypeLike):
+        if not CDSDataStore._is_data_type_satisfied(data_type):
             raise DataStoreError(
-                f'Supplied type specifier "{type_specifier}" is not compatible '
-                f'with "{TYPE_SPECIFIER_CUBE}."'
+                f'Supplied type specifier {data_type!r} is not compatible '
+                f'with "{DATASET_TYPE!r}."'
             )
 
     @staticmethod
-    def _is_type_specifier_satisfied(
-            type_specifier: Union[str, TypeSpecifier]) -> bool:
+    def _is_data_type_satisfied(
+            data_type: DataTypeLike) -> bool:
         # At present, all datasets are available as cubes, so we simply check
         # against TYPE_SPECIFIER_CUBE. If more (non-cube) datasets are added,
         # the logic will have to be delegated to CDSDatasetHandler
         # implementations.
-        if type_specifier is None:
+        if data_type is None:
             return True
-        return TYPE_SPECIFIER_CUBE.satisfies(type_specifier)
+        return DATASET_TYPE.is_sub_type_of(data_type)
 
     @staticmethod
     def _assert_valid_opener_id(opener_id):

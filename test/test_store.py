@@ -134,7 +134,7 @@ class CDSStoreTest(unittest.TestCase):
         }, CDSDataStore.get_data_store_params_schema().to_dict())
 
     def test_get_type_specifiers(self):
-        type_specifiers = CDSDataStore.get_type_specifiers()
+        type_specifiers = CDSDataStore.get_data_types()
         self.assertEqual(1, len(type_specifiers))
         self.assertIsInstance(type_specifiers[0], str)
         self.assertTupleEqual(('dataset[cube]',), type_specifiers)

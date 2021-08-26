@@ -218,7 +218,7 @@ class CDSEra5Test(unittest.TestCase):
         store = CDSDataStore()
         self.assertEqual(
             (TYPE_SPECIFIER_CUBE, ),
-            store.get_type_specifiers_for_data('reanalysis-era5-land')
+            store.get_data_types_for_data('reanalysis-era5-land')
         )
 
     def test_has_data_true(self):
