@@ -765,7 +765,6 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
                      data_type: DataTypeLike = None,
                      include_attrs: Container[str] = None) -> \
             Union[Iterator[str], Iterator[Tuple[str, Dict[str, Any]]]]:
-
         if self._is_data_type_satisfied(data_type):
             # Only if the type specifier isn't compatible
             return_tuples = include_attrs is not None
@@ -832,8 +831,8 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
     def _validate_data_type(data_type: DataTypeLike):
         if not CDSDataStore._is_data_type_satisfied(data_type):
             raise DataStoreError(
-                f'Supplied type specifier {data_type!r} is not compatible '
-                f'with "{DATASET_TYPE!r}."'
+                f'Supplied data type {data_type!r} is not compatible'
+                f' with "{DATASET_TYPE!r}."'
             )
 
     @staticmethod
@@ -845,7 +844,7 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         # implementations.
         if data_type is None:
             return True
-        return DATASET_TYPE.is_sub_type_of(data_type)
+        return DATASET_TYPE.is_super_type_of(data_type)
 
     @staticmethod
     def _assert_valid_opener_id(opener_id):

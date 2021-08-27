@@ -49,12 +49,10 @@ from collections.abc import Iterator
 
 import xcube
 import xcube.core
+from test.mocks import CDSClientMock
+from xcube.core.store import DATASET_TYPE
 from xcube.core.store import DataDescriptor
 from xcube.core.store import DataStoreError
-from xcube.core.store import TYPE_SPECIFIER_CUBE
-from xcube.core.store import TYPE_SPECIFIER_DATASET
-
-from test.mocks import CDSClientMock
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
 from xcube_cds.store import CDSDataOpener
@@ -114,8 +112,8 @@ class CDSStoreTest(unittest.TestCase):
     def test_search_data_invalid_id(self):
         store = CDSDataStore(endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
-        with self.assertRaises(DataStoreError):
-            store.search_data('This is an invalid ID.')
+        with self.assertRaises(ValueError):
+            store.search_data(data_type='This is an invalid ID.')
 
     def test_search_data_valid_id(self):
         store = CDSDataStore(endpoint_url=_CDS_API_URL,
@@ -133,27 +131,31 @@ class CDSStoreTest(unittest.TestCase):
             'additionalProperties': False
         }, CDSDataStore.get_data_store_params_schema().to_dict())
 
-    def test_get_type_specifiers(self):
-        type_specifiers = CDSDataStore.get_data_types()
-        self.assertEqual(1, len(type_specifiers))
-        self.assertIsInstance(type_specifiers[0], str)
-        self.assertTupleEqual(('dataset[cube]',), type_specifiers)
+    def test_get_data_types(self):
+        data_types = CDSDataStore.get_data_types()
+        self.assertEqual(1, len(data_types))
+        self.assertIsInstance(data_types[0], str)
+        self.assertTupleEqual((DATASET_TYPE.alias,), data_types)
 
     def test_has_data_false(self):
         self.assertFalse(CDSDataStore().has_data('nonexistent data ID'))
 
     def test_get_data_opener_ids_invalid_type_id(self):
-        with self.assertRaises(DataStoreError):
-            CDSDataStore().get_data_opener_ids(CDS_DATA_OPENER_ID,
-                                               'this is an invalid ID')
+        with self.assertRaises(ValueError):
+            CDSDataStore().get_data_opener_ids(
+                data_id=CDS_DATA_OPENER_ID,
+                data_type='this is an invalid ID'
+            )
 
     def test_get_data_opener_ids_invalid_opener_id(self):
         with self.assertRaises(ValueError):
-            CDSDataStore().get_data_opener_ids('this is an invalid ID',
-                                               TYPE_SPECIFIER_DATASET)
+            CDSDataStore().get_data_opener_ids(
+                data_id='this is an invalid ID',
+                data_type=DATASET_TYPE
+            )
 
     def test_get_data_opener_ids_with_default_arguments(self):
-        self.assertTupleEqual((CDS_DATA_OPENER_ID, ),
+        self.assertTupleEqual((CDS_DATA_OPENER_ID,),
                               CDSDataStore().get_data_opener_ids())
 
     def test_get_store_open_params_schema_without_data_id(self):
@@ -166,9 +168,8 @@ class CDSStoreTest(unittest.TestCase):
         store = CDSDataStore(client_class=CDSClientMock,
                              endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
-        self.assertEqual([], list(store.get_data_ids('unsupported_type_spec')))
-        self.assertEqual([],
-                         list(store.get_data_ids('dataset[unsupported_flag]')))
+        with self.assertRaises(ValueError):
+            list(store.get_data_ids(data_type='unsupported_data_type'))
 
         # The number of available datasets is expected to increase over time,
         # so to avoid overfitting the test we just check that more than a few
@@ -176,8 +177,6 @@ class CDSStoreTest(unittest.TestCase):
         # defined to be 5.
         minimum_expected_datasets = 5
         self.assertGreater(len(list(store.get_data_ids('dataset'))),
-                           minimum_expected_datasets)
-        self.assertGreater(len(list(store.get_data_ids('dataset[cube]'))),
                            minimum_expected_datasets)
 
     def test_era5_transform_params_empty_variable_list(self):
@@ -190,7 +189,6 @@ class CDSStoreTest(unittest.TestCase):
 
 
 class ClientUrlTest(unittest.TestCase):
-
     """Tests connected with passing CDS API URL and key to opener or store."""
 
     def setUp(self):
