@@ -428,7 +428,7 @@ class CDSDataOpener(DataOpener):
         # Fill in defaults from the schema
         props = self.get_open_data_params_schema(data_id).properties
         all_open_params = {k: props[k].default for k in props
-                           if props[k].default is not UNDEFINED}
+                           if props[k].default != UNDEFINED}
         all_open_params.update(open_params)
 
         # Disable PyCharm's inspection which thinks False and [] are equivalent
