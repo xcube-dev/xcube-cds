@@ -1,3 +1,6 @@
+## Changes in 0.8.2 (in development)
+
+
 ## Changes in 0.8.1
 
  - Use micromamba instead of mamba for CI (closes #43)
