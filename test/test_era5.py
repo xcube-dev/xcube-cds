@@ -214,7 +214,7 @@ class CDSEra5Test(unittest.TestCase):
             self.assertTupleEqual(('time', 'latitude', 'longitude'),
                                   vd.dims)
 
-    def test_get_type_specifiers_for_data(self):
+    def test_get_data_types_for_data(self):
         store = CDSDataStore()
         self.assertEqual(
             (DATASET_TYPE.alias,),

@@ -52,7 +52,6 @@ import xcube.core
 from test.mocks import CDSClientMock
 from xcube.core.store import DATASET_TYPE
 from xcube.core.store import DataDescriptor
-from xcube.core.store import DataStoreError
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
 from xcube_cds.store import CDSDataOpener
@@ -109,13 +108,13 @@ class CDSStoreTest(unittest.TestCase):
             actual['properties'].keys()
         )
 
-    def test_search_data_invalid_id(self):
+    def test_search_data_invalid_data_type(self):
         store = CDSDataStore(endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         with self.assertRaises(ValueError):
-            store.search_data(data_type='This is an invalid ID.')
+            store.search_data(data_type='This is an invalid data type.')
 
-    def test_search_data_valid_id(self):
+    def test_search_data_valid_data_type(self):
         store = CDSDataStore(endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         result = list(store.search_data('dataset'))
@@ -140,17 +139,17 @@ class CDSStoreTest(unittest.TestCase):
     def test_has_data_false(self):
         self.assertFalse(CDSDataStore().has_data('nonexistent data ID'))
 
-    def test_get_data_opener_ids_invalid_type_id(self):
+    def test_get_data_opener_ids_invalid_data_type(self):
         with self.assertRaises(ValueError):
             CDSDataStore().get_data_opener_ids(
                 data_id=CDS_DATA_OPENER_ID,
-                data_type='this is an invalid ID'
+                data_type='this is an invalid data type'
             )
 
-    def test_get_data_opener_ids_invalid_opener_id(self):
+    def test_get_data_opener_ids_invalid_data_id(self):
         with self.assertRaises(ValueError):
             CDSDataStore().get_data_opener_ids(
-                data_id='this is an invalid ID',
+                data_id='this is an invalid data ID',
                 data_type=DATASET_TYPE
             )
 

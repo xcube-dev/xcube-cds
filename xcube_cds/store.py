@@ -51,7 +51,6 @@ from xcube.core.store import DataDescriptor
 from xcube.core.store import DataOpener
 from xcube.core.store import DataStore
 from xcube.core.store import DataStoreError
-from xcube.core.store import DataType
 from xcube.core.store import DataTypeLike
 from xcube.core.store import DatasetDescriptor
 from xcube.core.store import DefaultSearchMixin
@@ -776,7 +775,7 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
                     if include_titles:
                         yield data_id, \
                               {'title':
-                                   handler.get_human_readable_data_id(data_id)}
+                               handler.get_human_readable_data_id(data_id)}
                     else:
                         yield data_id, {}
                 else:
@@ -795,7 +794,7 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         return self._handler_registry[data_id].describe_data(data_id)
 
     # noinspection PyTypeChecker
-    def search_data(self, data_type: Optional[str] = None,
+    def search_data(self, data_type: Optional[DataTypeLike] = None,
                     **search_params) \
             -> Iterator[DataDescriptor]:
         self._validate_data_type(data_type)
