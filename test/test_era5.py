@@ -27,13 +27,13 @@ See test_store.py for further documentation.
 
 import unittest
 
+from jsonschema import ValidationError
+
 import xcube
 import xcube.core
-from jsonschema import ValidationError
-from xcube.core.store import TYPE_SPECIFIER_CUBE
-from xcube.core.store import VariableDescriptor
-
 from test.mocks import CDSClientMock
+from xcube.core.store import DATASET_TYPE
+from xcube.core.store import VariableDescriptor
 from xcube_cds.store import CDSDataOpener
 from xcube_cds.store import CDSDataStore
 
@@ -179,8 +179,8 @@ class CDSEra5Test(unittest.TestCase):
         store = CDSDataStore(client_class=CDSClientMock,
                              endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
-        data_id = 'reanalysis-era5-single-levels-monthly-means:'\
-            'monthly_averaged_reanalysis'
+        data_id = 'reanalysis-era5-single-levels-monthly-means:' \
+                  'monthly_averaged_reanalysis'
         schema = store.get_open_data_params_schema(data_id)
         n_vars = len(schema.properties['variable_names'].items.enum)
         dataset = store.open_data(
@@ -214,11 +214,11 @@ class CDSEra5Test(unittest.TestCase):
             self.assertTupleEqual(('time', 'latitude', 'longitude'),
                                   vd.dims)
 
-    def test_get_type_specifiers_for_data(self):
+    def test_get_data_types_for_data(self):
         store = CDSDataStore()
         self.assertEqual(
-            (TYPE_SPECIFIER_CUBE, ),
-            store.get_type_specifiers_for_data('reanalysis-era5-land')
+            (DATASET_TYPE.alias,),
+            store.get_data_types_for_data('reanalysis-era5-land')
         )
 
     def test_has_data_true(self):
