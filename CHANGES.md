@@ -1,5 +1,9 @@
-## Changes in 0.8.2 (in development)
+## Changes in 0.9.0
 
+ - Replace TypeSpecifier with simpler DataType class
+   (addresses https://github.com/dcs4cop/xcube/issues/509)
+ - Fix handling of undefined parameters in
+   get_open_data_params_schema (commit 0ec84ff4)
 
 ## Changes in 0.8.1
 
