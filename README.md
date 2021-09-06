@@ -181,6 +181,11 @@ This section is intended for developers preparing a new release of xcube-cds.
 
 ### Pre-release tasks
 
+ - Make sure that dependencies and their versions are up to date in
+   the `environment.yml` file. In particular, check that the required xcube 
+   version is correct and that required version numbers of packages which are 
+   also transitive xcube dependencies (e.g. xarray) are compatible with
+   xcube's requirements.
  - Make sure that all unit tests pass and that test coverage is 100% (or
    as near to 100% as practicable).
  - Remove any pre-release (‘dev’, ‘rc’ etc.) suffix from the version number in
