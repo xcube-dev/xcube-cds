@@ -1,3 +1,8 @@
+## Changes in 0.9.1
+
+ - Update some dependency versions (most importantly:
+   require xcube >= 0.9.0)
+
 ## Changes in 0.9.0
 
  - Replace TypeSpecifier with simpler DataType class
