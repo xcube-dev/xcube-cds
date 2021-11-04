@@ -1,3 +1,5 @@
+## Changes in 0.9.2 (in development)
+
 ## Changes in 0.9.1
 
  - Update some dependency versions (most importantly:
