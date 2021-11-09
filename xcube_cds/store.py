@@ -237,6 +237,15 @@ class CDSDatasetHandler(ABC):
         # hour / day / month numbers which intersect with the selected time
         # range.
 
+        # TODO: rewrite the three rrule calls below to avoid simultaneous use
+        #  of the count and until arguments (now deprecated, will result in
+        #  an error in future dateutil versions). One untested workaround: as
+        #  well as hour1, calculate hour_max = hour0 + 24 hours, then replace
+        #  until=hour1 with until=min(hour1, hour_max) -- and similarly for
+        #  days and months. The obvious solution (remove the count argument,
+        #  then truncate the result) is unacceptably inefficient, e.g. if we
+        #  create a list of all the hours in a 30-year time series.
+
         hour0 = datetime.datetime(time0.year, time0.month, time0.day,
                                   time0.hour, 0)
         hour1 = datetime.datetime(time1.year, time1.month, time1.day,
