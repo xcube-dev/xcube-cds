@@ -1,5 +1,8 @@
 ## Changes in 0.9.2 (in development)
 
+ - Provide version number in `xcube_cds.__version__` and `xcube_cds.version`
+   rather than `xcube_cds.version.version` (closes #56).
+
 ## Changes in 0.9.1
 
  - Update some dependency versions (most importantly:
