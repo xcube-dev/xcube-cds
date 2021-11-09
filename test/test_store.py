@@ -43,6 +43,7 @@ To create a new unit test of this kind,
 """
 
 import os
+import re
 import tempfile
 import unittest
 from collections.abc import Iterator
@@ -185,6 +186,12 @@ class CDSStoreTest(unittest.TestCase):
                 dict(bbox=[0, 0, 10, 10], spatial_res=0.5, variable_names=[]),
                 'reanalysis-era5-land'
             )
+
+    def test_version_number(self):
+        valid_version = re.compile(r'^(\d[.])+(dev\d+|\d+)$')
+        import xcube_cds.version
+        self.assertTrue(valid_version.match(xcube_cds.version))
+        self.assertTrue(valid_version.match(xcube_cds.__version__))
 
 
 class ClientUrlTest(unittest.TestCase):
