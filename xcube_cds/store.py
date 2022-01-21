@@ -257,8 +257,11 @@ class CDSDatasetHandler(ABC):
 
         day0 = datetime.datetime(time0.year, time0.month, time0.day, 0, 1)
         day1 = datetime.datetime(time1.year, time1.month, time1.day, 23, 59)
+        # count=100 (rather than the more obvious 31) ensures that we'll
+        # get a 31-day month if the specified time span contains one.
         days = [dt.day for dt in dateutil.rrule.rrule(
-            freq=dateutil.rrule.DAILY, count=31, dtstart=day0, until=day1)]
+            freq=dateutil.rrule.DAILY, count=100, dtstart=day0, until=day1
+        )]
         days = sorted(set(days))
 
         month0 = datetime.datetime(time0.year, time0.month, 1)
