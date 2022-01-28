@@ -233,49 +233,42 @@ class CDSDatasetHandler(ABC):
         time1 = datetime.datetime.now() if time_range[1] is None \
             else dateutil.parser.isoparse(time_range[1])
 
-        # We use datetime's recurrence rule features to enumerate the
+        # We use dateutil's recurrence rule features to enumerate the
         # hour / day / month numbers which intersect with the selected time
         # range.
-
-        # TODO: rewrite the three rrule calls below to avoid simultaneous use
-        #  of the count and until arguments (now deprecated, will result in
-        #  an error in future dateutil versions). One untested workaround: as
-        #  well as hour1, calculate hour_max = hour0 + 24 hours, then replace
-        #  until=hour1 with until=min(hour1, hour_max) -- and similarly for
-        #  days and months. The obvious solution (remove the count argument,
-        #  then truncate the result) is unacceptably inefficient, e.g. if we
-        #  create a list of all the hours in a 30-year time series.
 
         hour0 = datetime.datetime(time0.year, time0.month, time0.day,
                                   time0.hour, 0)
         hour1 = datetime.datetime(time1.year, time1.month, time1.day,
                                   time1.hour, 59)
+        hour_max = hour0 + datetime.timedelta(hours=24)
         hours = [dt.hour for dt in dateutil.rrule.rrule(
-            freq=dateutil.rrule.HOURLY, count=24,
-            dtstart=hour0, until=hour1)]
-        hours.sort()
+            freq=dateutil.rrule.HOURLY,
+            dtstart=hour0, until=min(hour1, hour_max))]
+        hours = sorted(set(hours))
 
         day0 = datetime.datetime(time0.year, time0.month, time0.day, 0, 1)
         day1 = datetime.datetime(time1.year, time1.month, time1.day, 23, 59)
-        # count=100 (rather than the more obvious 31) ensures that we'll
-        # get a 31-day month if the specified time span contains one.
+        # Setting the maximum delta to 100 days (rather than the more obvious
+        # 31) ensures that we'll get a 31-day month if the specified time
+        # span contains one.
+        day_max = day0 + datetime.timedelta(days=100)
         days = [dt.day for dt in dateutil.rrule.rrule(
-            freq=dateutil.rrule.DAILY, count=100, dtstart=day0, until=day1
+            freq=dateutil.rrule.DAILY, dtstart=day0, until=min(day1, day_max)
         )]
         days = sorted(set(days))
 
         month0 = datetime.datetime(time0.year, time0.month, 1)
         month1 = datetime.datetime(time1.year, time1.month, 28)
+        month_max = month0 + datetime.timedelta(days=366)
         months = [dt.month for dt in dateutil.rrule.rrule(
-            freq=dateutil.rrule.MONTHLY, count=12,
-            dtstart=month0, until=month1)]
-        months.sort()
+            freq=dateutil.rrule.MONTHLY,
+            dtstart=month0, until=min(month1, month_max))]
+        months = sorted(set(months))
 
         years = list(range(time0.year, time1.year + 1))
 
-        return dict(hours=hours,
-                    days=days,
-                    months=months, years=years)
+        return dict(hours=hours, days=days, months=months, years=years)
 
     @staticmethod
     def unwrap_singleton_values(dictionary: dict) -> dict:

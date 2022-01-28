@@ -124,6 +124,27 @@ class CDSStoreTest(unittest.TestCase):
             )
         )
 
+    def test_convert_time_range_5(self):
+        self.assertEqual(
+            dict(hours=list(range(24)), days=list(range(1, 32)),
+                 months=[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12],
+                 years=[1977, 1978]),
+            CDSDatasetHandler.convert_time_range(
+                ['1977-08-15T12:34:56Z', '1978-06-01T01:23:45Z']
+            )
+        )
+
+    def test_convert_time_range_6(self):
+        self.assertEqual(
+            dict(hours=list(range(24)),
+                 days=[1, 2, 3, 4, 5, 23, 24, 25, 26, 27, 28],
+                 months=[2, 3],
+                 years=[1991]),
+            CDSDatasetHandler.convert_time_range(
+                ['1991-02-23T12:00:00Z', '1991-03-05T12:00:00Z']
+            )
+        )
+
     def test_convert_invalid_time_range(self):
         with self.assertRaises(ValueError):
             CDSDatasetHandler.convert_time_range([])  # incorrect list length
