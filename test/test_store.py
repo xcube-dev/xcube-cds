@@ -88,6 +88,63 @@ class CDSStoreTest(unittest.TestCase):
             descriptor = store.describe_data(data_id[0])
             self.assertIsInstance(descriptor, DataDescriptor)
 
+    def test_convert_time_range_1(self):
+        self.assertEqual(
+            dict(hours=[5, 6, 7, 8], days=[20], months=[2], years=[1952]),
+            CDSDatasetHandler.convert_time_range(
+                ['1952-02-20T05:00:00Z', '1952-02-20T08:00:00Z']
+            )
+        )
+
+    def test_convert_time_range_2(self):
+        self.assertEqual(
+            dict(hours=list(range(24)), days=[7, 8, 9, 10, 11],
+                 months=[5], years=[2011]),
+            CDSDatasetHandler.convert_time_range(
+                ['2011-05-07T00:00:00Z', '2011-05-11T01:00:00Z']
+            )
+        )
+
+    def test_convert_time_range_3(self):
+        self.assertEqual(
+            dict(hours=list(range(24)), days=list(range(1, 32)),
+                 months=[1, 2, 3, 4], years=[2000]),
+            CDSDatasetHandler.convert_time_range(
+                ['2000-01-01T00:00:00Z', '2000-04-30T19:25:13Z']
+            )
+        )
+
+    def test_convert_time_range_4(self):
+        self.assertEqual(
+            dict(hours=list(range(24)), days=list(range(1, 32)),
+                 months=list(range(1, 13)),
+                 years=[1914, 1915, 1916, 1917, 1918]),
+            CDSDatasetHandler.convert_time_range(
+                ['1914-06-11T13:00:00Z', '1918-01-01T00:00:00Z']
+            )
+        )
+
+    def test_convert_time_range_5(self):
+        self.assertEqual(
+            dict(hours=list(range(24)), days=list(range(1, 32)),
+                 months=[1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12],
+                 years=[1977, 1978]),
+            CDSDatasetHandler.convert_time_range(
+                ['1977-08-15T12:34:56Z', '1978-06-01T01:23:45Z']
+            )
+        )
+
+    def test_convert_time_range_6(self):
+        self.assertEqual(
+            dict(hours=list(range(24)),
+                 days=[1, 2, 3, 4, 5, 23, 24, 25, 26, 27, 28],
+                 months=[2, 3],
+                 years=[1991]),
+            CDSDatasetHandler.convert_time_range(
+                ['1991-02-23T12:00:00Z', '1991-03-05T12:00:00Z']
+            )
+        )
+
     def test_convert_invalid_time_range(self):
         with self.assertRaises(ValueError):
             CDSDatasetHandler.convert_time_range([])  # incorrect list length
