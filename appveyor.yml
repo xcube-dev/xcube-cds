@@ -60,7 +60,7 @@ build_script:
   # Make sure pytest is installed
   - micromamba install --yes --name xc --channel conda-forge pytest attrs
 
-  - if [ $PLATFORM = macos ]; then micromamba install --yes --name xc --channel conda-forge fontconfig 2.13.96 h676cef8_1; fi
+  - if [ $PLATFORM = macos ]; then micromamba install --yes --name xc --channel conda-forge fontconfig 2.13.96 h10f422b_0; fi
 
   # Print some diagnostics (useful for debugging)
   - micromamba list
