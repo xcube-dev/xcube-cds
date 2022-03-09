@@ -14,7 +14,7 @@ for:
   matrix:
     only:
       - image: macos
-      - image: Previous macos
+      - image: Previous macos  # not usually needed, but might use it while debugging
   install:
     - curl -Ls https://micromamba.snakepit.net/api/micromamba/osx-64/latest | tar -xvj bin/micromamba
     - mv bin/micromamba ./micromamba
@@ -60,8 +60,6 @@ build_script:
 
   # Make sure pytest is installed
   - micromamba install --yes --name xc --channel conda-forge pytest attrs
-
-  # - if [ "$APPVEYOR_BUILD_WORKER_IMAGE" = "macOS" ]; then micromamba install --yes --name xc --channel conda-forge fontconfig=2.13.96=h10f422b_0; fi
 
   # Print some diagnostics (useful for debugging)
   - micromamba list
