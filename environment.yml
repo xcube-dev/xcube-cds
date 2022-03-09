@@ -4,6 +4,7 @@ channels:
   - defaults
 dependencies:
   - cdsapi >=0.5.1
+  - fontconfig <2.13.96
   - jsonschema >=3.2.0
   - numpy >=1.17
   - python-dateutil >=2.8.1
