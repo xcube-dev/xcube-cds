@@ -2,7 +2,7 @@ version: '{build}'
 
 image:
   - Ubuntu2004
-  - macos
+  - Previous macos
 
 configuration: Release
 
