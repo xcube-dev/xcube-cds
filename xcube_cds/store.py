@@ -348,6 +348,8 @@ class CDSDataOpener(DataOpener):
         from xcube_cds.datasets.satellite_soil_moisture \
             import SoilMoistureHandler
         self._register_dataset_handler(SoilMoistureHandler())
+        from xcube_cds.datasets.seaice import SeaIceHandler
+        self._register_dataset_handler(SeaIceHandler())
         self._client_class = client_class
         self.cds_api_url = endpoint_url
         self.cds_api_key = cds_api_key

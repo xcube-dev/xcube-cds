@@ -44,7 +44,7 @@ VariableProperties = collections.namedtuple(
 )
 
 
-class SeaiceHandler(CDSDatasetHandler):
+class SeaIceHandler(CDSDatasetHandler):
 
     _data_id_map = {
         'satellite-sea-ice-thickness:envisat':
@@ -57,10 +57,10 @@ class SeaiceHandler(CDSDatasetHandler):
     _var_map = {
         'envisat':
             VariableProperties(['cdr'],
-                               ['2002-10-01'], ['2010-10-31']),
+                               '2002-10-01', '2010-10-31'),
         'cryosat-2':
             VariableProperties(['cdr', 'icdr'],
-                               ['2010-11-01'], None)
+                               '2010-11-01', None)
     }
 
     def get_supported_data_ids(self) -> List[str]:
@@ -68,7 +68,7 @@ class SeaiceHandler(CDSDatasetHandler):
 
     def get_open_data_params_schema(self, data_id: str) -> \
             JsonObjectSchema:
-        _, mission_spec, _ = data_id.split(':')
+        _, mission_spec = data_id.split(':')
         variable_properties = self._var_map[mission_spec]
 
         params = dict(
@@ -104,19 +104,8 @@ class SeaiceHandler(CDSDatasetHandler):
                     'and an Interim Climate Data Record (ICDR), which provides '
                     'regular temporal extensions to the CDR and where '
                     'consistency with the CDR is expected but not extensively '
-                    'checked. Here, the CDR is based on measurements from the '
-                    'RA-2 altimeter on Envisat (October 2002 to October 2010) '
-                    'and the SIRAL altimeter on CryoSat-2 '
-                    '(November 2010 to April 2020). The ICDR is based on '
-                    'observations from CryoSat-2 only (from April 2015 onward) '
-                    'and is updated monthly with a one-month delay behind '
-                    'real time. Users should note that the quality and '
-                    'accuracy of the data record are higher during '
-                    'the CryoSat-2 period than during the Envisat period. '
-                    'As a result, care should be taken when combining '
-                    'the two missions to assess long-term changes and trends. '
-                    'More information can be found in the Product User Guide '
-                    'and Product Quality Assessment Report.'),
+                    'checked. The ICDR is based on '
+                    'observations from CryoSat-2 only (from April 2015 onward).'),
                 default='cdr'),
             version=JsonStringSchema(
                 enum=['2.0', '1.0'],
@@ -196,6 +185,8 @@ class SeaiceHandler(CDSDatasetHandler):
     def describe_data(self, data_id: str) -> DatasetDescriptor:
         _, mission = data_id.split(':')
 
+        # not including the flag meanings and flag values of status_flag and
+        # quality_flag in the attributes, as these differ between versions
         variable_descriptors = [
             VariableDescriptor(
                 name='sea_ice_thickness',
@@ -224,11 +215,6 @@ class SeaiceHandler(CDSDatasetHandler):
                                'thickness retrieval',
                     'coordinates': 'time lat lon',
                     'coverage_content_type': 'qualityInformation',
-                    'flag_meanings': 'nominal_quality '
-                                     'intermediate_quality '
-                                     'low_quality '
-                                     'no_data',
-                    'flag_values': '0b 1b 2b 3b',
                     'grid_mapping': 'Lambert_Azimuthal_Grid',
                     'long_name': 'Sea Ice Thickness Quality Flag',
                     'standard_name': 'quality_flag',
@@ -244,12 +230,6 @@ class SeaiceHandler(CDSDatasetHandler):
                 attrs={
                     'coordinates': 'time lat lon',
                     'coverage_content_type': 'qualityInformation',
-                    'flag_meanings': 'nominal_retrieval '
-                                     'no_data open_ocean '
-                                     'satellite_pole_hole '
-                                     'land_lake_landice '
-                                     'retrieval_failed',
-                    'flag_values': '0b 1b 2b 3b 4b 5b',
                     'grid_mapping': 'Lambert_Azimuthal_Grid',
                     'long_name': 'Sea Ice Thickness Status Flag',
                     'standard_name': 'status_flag',
@@ -337,7 +317,7 @@ class SeaiceHandler(CDSDatasetHandler):
                 attrs={
                     'standard_name': 'projection_y_coordinate',
                     'units': 'km',
-                    'long_name': 'y coordinate of projection (eastings)',
+                    'long_name': 'y coordinate of projection (northing)',
                     'coverage_content_type': 'coordinate',
                 }
             ),
@@ -359,6 +339,9 @@ class SeaiceHandler(CDSDatasetHandler):
             )
         ]
 
+        start_date = self._var_map[mission].start_date
+        end_date = self._var_map[mission].end_date
+
         return DatasetDescriptor(
             data_id=data_id,
             data_vars={desc.name: desc for desc in variable_descriptors},
@@ -366,6 +349,6 @@ class SeaiceHandler(CDSDatasetHandler):
             crs='EPSG:6931',
             bbox=(-180, 16.6239, 180, 90),
             spatial_res=25.0,
-            time_range=('2002-10-01', None),
+            time_range=(start_date, end_date),
             open_params_schema=self.get_open_data_params_schema(data_id)
         )

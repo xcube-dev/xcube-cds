@@ -25,178 +25,193 @@
 See test_store.py for further documentation.
 """
 
-import os
-import tempfile
+from copy import deepcopy
+from typing import Optional
 import unittest
 
 from test.mocks import CDSClientMock
 from xcube_cds.store import CDSDataStore
+from xcube_cds.datasets.seaice import SeaIceHandler
 
 _CDS_API_URL = 'dummy'
 _CDS_API_KEY = 'dummy'
 
+_ENVISAT_DATA_ID = 'satellite-sea-ice-thickness:envisat'
+_CRYOSAT_2_DATA_ID = 'satellite-sea-ice-thickness:cryosat-2'
 
-class CDSSeaiceDataset(unittest.TestCase):
+_OPEN_PARAMS_SCHEMA_TEMPLATE = {
+    'type': 'object',
+    'properties':
+        {
+            'time_range':
+                {
+                    'type': 'array',
+                    'items':
+                        [
+                            {
+                                'type': 'string',
+                                'format': 'date',
+                            },
+                            {
+                                'type': 'string',
+                                'format': 'date',
+                            }
+                        ]
+                },
+            'variable_names':
+                {
+                    'type': 'array',
+                    'default': ['all'],
+                    'items':
+                        {
+                            'type': 'string',
+                            'default': 'all',
+                            'enum': ['all'],
+                            'minLength': 0
+                        },
+                    'uniqueItems': True
+                },
+            'type_of_record':
+                {
+                    'type': 'string',
+                    'default': 'cdr',
+                    'title': 'Type of record',
+                    'description': 'This dataset combines a Climate Data Record (CDR), '
+                                   'which has sufficient length, consistency, and '
+                                   'continuity to be used to assess climate '
+                                   'variability and change, and an Interim Climate '
+                                   'Data Record (ICDR), which provides regular '
+                                   'temporal extensions to the CDR and where '
+                                   'consistency with the CDR is expected but not '
+                                   'extensively checked. The ICDR is based on '
+                                   'observations from CryoSat-2 only (from April 2015 '
+                                   'onward).',
+                },
+            'version':
+                {
+                    'type': 'string',
+                    'default': '2.0',
+                    'enum': ['2.0', '1.0'],
+                    'title': 'Data version'
+                }
+        },
+    'additionalProperties': False,
+    'required': ['time_range']
+}
+_ENVISAT_PARAMS_SCHEMA = deepcopy(_OPEN_PARAMS_SCHEMA_TEMPLATE)
+_ENVISAT_PARAMS_SCHEMA['properties']['time_range']['items'][0]['minDate'] = '2002-10-01'
+_ENVISAT_PARAMS_SCHEMA['properties']['time_range']['items'][0]['maxDate'] = '2010-10-31'
+_ENVISAT_PARAMS_SCHEMA['properties']['time_range']['items'][1]['minDate'] = '2002-10-01'
+_ENVISAT_PARAMS_SCHEMA['properties']['time_range']['items'][1]['maxDate'] = '2010-10-31'
+_ENVISAT_PARAMS_SCHEMA['properties']['type_of_record']['enum'] = ['cdr']
 
-    def test_seaice(self):
-        store = CDSDataStore(
-            client_class=CDSClientMock,
+_CRYOSAT_PARAMS_SCHEMA = deepcopy(_OPEN_PARAMS_SCHEMA_TEMPLATE)
+_CRYOSAT_PARAMS_SCHEMA['properties']['time_range']['items'][0]['minDate'] = '2010-11-01'
+_CRYOSAT_PARAMS_SCHEMA['properties']['time_range']['items'][1]['minDate'] = '2010-11-01'
+_CRYOSAT_PARAMS_SCHEMA['properties']['type_of_record']['enum'] = ['cdr', 'icdr']
+
+
+class CDSSeaIceHandlerTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.sea_ice_handler = SeaIceHandler()
+
+    def testGetSupportedDataIds(self):
+        ids = self.sea_ice_handler.get_supported_data_ids()
+        self.assertEquals({_ENVISAT_DATA_ID, _CRYOSAT_2_DATA_ID}, set(ids))
+
+    def testGetHumanReadableDataId(self):
+        self.assertEqual('Sea ice thickness (Envisat)',
+                         self.sea_ice_handler.get_human_readable_data_id(
+                             _ENVISAT_DATA_ID
+                         ))
+        self.assertEqual('Sea ice thickness (CryoSat-2)',
+                         self.sea_ice_handler.get_human_readable_data_id(
+                             _CRYOSAT_2_DATA_ID
+                         ))
+
+    def test_describe_envisat_data(self):
+        self.assertDescriptor(_ENVISAT_DATA_ID, '2002-10-01', '2010-10-31')
+
+    def test_describe_cryosat_data(self):
+        self.assertDescriptor(_CRYOSAT_2_DATA_ID, '2010-11-01', None)
+
+    def assertDescriptor(self,
+                         data_id: str,
+                         start_date: str,
+                         end_date: Optional[str]):
+        descriptor = self.sea_ice_handler.describe_data(data_id)
+        self.assertEqual(data_id, descriptor.data_id)
+        self.assertEqual('EPSG:6931', descriptor.crs)
+        self.assertEqual((-180, 16.6239, 180, 90), descriptor.bbox)
+        self.assertEqual(25.0, descriptor.spatial_res)
+        self.assertEqual(start_date, descriptor.time_range[0])
+        if end_date is None:
+            self.assertIsNone(descriptor.time_range[1])
+        else:
+            self.assertEquals(end_date, descriptor.time_range[1])
+        self.assertEquals({'sea_ice_thickness', 'quality_flag', 'status_flag',
+                           'uncertainty'},
+                          set(descriptor.data_vars.keys()))
+        self.assertEquals({'lat', 'lon', 'time', 'time_bnds', 'xc', 'yc',
+                           'Lambert_Azimuthal_Grid'},
+                          set(descriptor.coords.keys()))
+
+    def test_get_open_data_params_schema_envisat(self):
+        envisat_schema = self.sea_ice_handler.get_open_data_params_schema(
+            _ENVISAT_DATA_ID
+        )
+        self.assertEquals(_ENVISAT_PARAMS_SCHEMA, envisat_schema.to_dict())
+
+    def test_get_open_data_params_schema_cryosat(self):
+        cryosat_schema = self.sea_ice_handler.get_open_data_params_schema(
+            _CRYOSAT_2_DATA_ID
+        )
+        self.assertEquals(_CRYOSAT_PARAMS_SCHEMA, cryosat_schema.to_dict())
+
+
+class CdsSeaIceStoreTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        self.store = CDSDataStore(
             endpoint_url=_CDS_API_URL,
             cds_api_key=_CDS_API_KEY
         )
-        ids = list(store.get_data_ids())
-        self.assertIsNotNone(store)
 
+    def test_get_data_ids(self):
+        ids = list(self.store.get_data_ids())
+        self.assertIn('satellite-sea-ice-thickness:envisat', ids)
+        self.assertIn('satellite-sea-ice-thickness:cryosat-2', ids)
 
-class CDSSoilMoistureTest(unittest.TestCase):
+    def test_get_open_params_schema(self):
+        envisat_open_params = self.store.get_open_data_params_schema(_ENVISAT_DATA_ID)
+        self.assertEquals(_ENVISAT_PARAMS_SCHEMA, envisat_open_params.to_dict())
+        cryosat_open_params = self.store.get_open_data_params_schema(_CRYOSAT_2_DATA_ID)
+        self.assertEquals(_CRYOSAT_PARAMS_SCHEMA, cryosat_open_params.to_dict())
 
-    def test_soil_moisture_volumetric_minimal_params(self):
-        store = CDSDataStore(
-            client_class=CDSClientMock,
-            endpoint_url=_CDS_API_URL,
-            cds_api_key=_CDS_API_KEY
-        )
-        data_id = 'satellite-soil-moisture:volumetric:monthly'
-        dataset = store.open_data(
-            data_id,
-            time_range=['2015-01-01', '2015-02-28'],
-        )
-        self.assertTrue('sm' in dataset.variables)
-        self.assertEqual(2, len(dataset.variables['time']))
-        self.assertEqual('2014-12-31T12:00:00Z',
-                         dataset.attrs['time_coverage_start'])
-        self.assertEqual('2015-02-28T12:00:00Z',
-                         dataset.attrs['time_coverage_end'])
-        description = store.describe_data(data_id)
-        self.assertCountEqual(description.data_vars.keys(),
-                              map(str, dataset.data_vars))
+    def test_describe_envisat_data(self):
+        self.assertDescriptor(_ENVISAT_DATA_ID, '2002-10-01', '2010-10-31')
 
-    def test_soil_moisture_volumetric_monthly_2_years(self):
-        store = CDSDataStore(
-            client_class=CDSClientMock,
-            endpoint_url=_CDS_API_URL,
-            cds_api_key=_CDS_API_KEY
-        )
-        data_id = 'satellite-soil-moisture:volumetric:monthly'
-        dataset = store.open_data(
-            data_id,
-            time_range=['2015-01-01', '2016-12-31'],
-            type_of_record='cdr',
-        )
-        self.assertTrue('sm' in dataset.variables)
-        self.assertEqual(24, len(dataset.variables['time']))
-        self.assertEqual('2014-12-31T12:00:00Z',
-                         dataset.attrs['time_coverage_start'])
-        self.assertEqual('2016-12-31T12:00:00Z',
-                         dataset.attrs['time_coverage_end'])
-        description = store.describe_data(data_id)
-        self.assertCountEqual(description.data_vars.keys(),
-                              map(str, dataset.data_vars))
+    def test_describe_cryosat_data(self):
+        self.assertDescriptor(_CRYOSAT_2_DATA_ID, '2010-11-01', None)
 
-    def test_soil_moisture_saturation_daily(self):
-        store = CDSDataStore(
-            client_class=CDSClientMock,
-            endpoint_url=_CDS_API_URL,
-            cds_api_key=_CDS_API_KEY
-        )
-
-        data_id = 'satellite-soil-moisture:saturation:daily'
-        dataset = store.open_data(
-            data_id,
-            time_range=['2016-03-01', '2016-03-04'],
-        )
-        self.assertTrue('sm' in dataset.variables)
-        self.assertEqual(4, len(dataset.variables['time']))
-        self.assertEqual('19910805T000000Z',
-                         dataset.attrs['time_coverage_start'])
-        self.assertEqual('20191231T235959Z',
-                         dataset.attrs['time_coverage_end'])
-        description = store.describe_data(data_id)
-        self.assertCountEqual(description.data_vars.keys(),
-                              map(str, dataset.data_vars))
-
-    def test_soil_moisture_saturation_10_day(self):
-        store = CDSDataStore(
-            client_class=CDSClientMock,
-            endpoint_url=_CDS_API_URL,
-            cds_api_key=_CDS_API_KEY
-        )
-
-        data_id = 'satellite-soil-moisture:saturation:10-day'
-        dataset = store.open_data(
-            data_id,
-            time_range=['2015-04-01', '2015-04-11'],
-        )
-        self.assertTrue('sm' in dataset.variables)
-        self.assertEqual(2, len(dataset.variables['time']))
-        self.assertEqual('2015-03-31T12:00:00Z',
-                         dataset.attrs['time_coverage_start'])
-        self.assertEqual('2015-04-20T12:00:00Z',
-                         dataset.attrs['time_coverage_end'])
-        description = store.describe_data(data_id)
-        self.assertCountEqual(description.data_vars.keys(),
-                              map(str, dataset.data_vars))
-
-    def test_soil_moisture_volumetric_optional_params(self):
-        store = CDSDataStore(
-            client_class=CDSClientMock,
-            endpoint_url=_CDS_API_URL,
-            cds_api_key=_CDS_API_KEY
-        )
-        data_id = 'satellite-soil-moisture:volumetric:monthly'
-        dataset = store.open_data(
-            data_id,
-            variable_names=['volumetric_surface_soil_moisture'],
-            type_of_sensor='combined_passive_and_active',
-            time_range=['2015-01-01', '2015-02-28'],
-        )
-        self.assertTrue('sm' in dataset.variables)
-        self.assertEqual(2, len(dataset.variables['time']))
-        self.assertEqual('2014-12-31T12:00:00Z',
-                         dataset.attrs['time_coverage_start'])
-        self.assertEqual('2015-02-28T12:00:00Z',
-                         dataset.attrs['time_coverage_end'])
-        description = store.describe_data(data_id)
-        self.assertCountEqual(description.data_vars.keys(),
-                              map(str, dataset.data_vars))
-
-    def test_soil_moisture_empty_variables_list(self):
-        store = CDSDataStore(endpoint_url=_CDS_API_URL,
-                             cds_api_key=_CDS_API_KEY)
-        dataset = store.open_data(
-            'satellite-soil-moisture:volumetric:10-day',
-            variable_names=[],
-            time_range=['1981-06-14', '1982-02-13']
-        )
-        self.assertEqual(len(dataset.data_vars), 0)
-        self.assertEqual(26, len(dataset.variables['time']))
-        self.assertEqual(1441, len(dataset.variables['lon']))
-
-    def test_copy_on_open(self):
-        store = CDSDataStore(client_class=CDSClientMock,
-                             endpoint_url=_CDS_API_URL,
-                             cds_api_key=_CDS_API_KEY)
-        data_id = 'satellite-soil-moisture:volumetric:monthly'
-        with tempfile.TemporaryDirectory() as temp_dir:
-            request_path = os.path.join(temp_dir, 'request.json')
-            result_path = os.path.join(temp_dir, 'result')
-            zarr_path = os.path.join(temp_dir, 'result.zarr')
-            store.open_data(
-                data_id,
-                _save_request_to=request_path,
-                _save_file_to=result_path,
-                _save_zarr_to=zarr_path,
-                variable_names=['volumetric_surface_soil_moisture'],
-                time_range=['2015-01-01', '2015-02-28'],
-            )
-            self.assertTrue(os.path.isfile(request_path))
-            self.assertTrue(os.path.isfile(result_path))
-            self.assertTrue(os.path.isdir(zarr_path))
-
-    def test_soil_moisture_get_open_params_schema(self):
-        store = CDSDataStore(client_class=CDSClientMock,
-                             endpoint_url=_CDS_API_URL,
-                             cds_api_key=_CDS_API_KEY)
-        data_id = 'satellite-soil-moisture:volumetric:monthly'
-        schema = store.get_open_data_params_schema(data_id)
-        schema.to_dict()
+    def assertDescriptor(self,
+                         data_id: str,
+                         start_date: str,
+                         end_date: Optional[str]):
+        descriptor = self.store.describe_data(data_id)
+        self.assertEqual(data_id, descriptor.data_id)
+        self.assertEqual('EPSG:6931', descriptor.crs)
+        self.assertEqual((-180, 16.6239, 180, 90), descriptor.bbox)
+        self.assertEqual(25.0, descriptor.spatial_res)
+        self.assertEqual(start_date, descriptor.time_range[0])
+        if end_date is None:
+            self.assertIsNone(descriptor.time_range[1])
+        else:
+            self.assertEquals(end_date, descriptor.time_range[1])
+        self.assertEquals({'sea_ice_thickness', 'quality_flag', 'status_flag',
+                           'uncertainty'},
+                          set(descriptor.data_vars.keys()))
+        self.assertEquals({'lat', 'lon', 'time', 'time_bnds', 'xc', 'yc',
+                           'Lambert_Azimuthal_Grid'},
+                          set(descriptor.coords.keys()))
