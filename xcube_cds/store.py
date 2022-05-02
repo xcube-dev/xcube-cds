@@ -616,14 +616,15 @@ class CDSDataOpener(DataOpener):
         # dataset.transpose('time', ..., 'lat', 'lon')
 
         dataset.coords['time'].attrs['standard_name'] = 'time'
-        dataset.coords['lat'].attrs['standard_name'] = 'latitude'
-        dataset.coords['lon'].attrs['standard_name'] = 'longitude'
-
         # Correct units not entirely clear: cubespec document says
         # degrees_north / degrees_east for WGS84 Schema, but SH Plugin
         # had decimal_degrees.
-        dataset.coords['lat'].attrs['units'] = 'degrees_north'
-        dataset.coords['lon'].attrs['units'] = 'degrees_east'
+        if 'lat' in dataset.coords:
+            dataset.coords['lat'].attrs['standard_name'] = 'latitude'
+            dataset.coords['lat'].attrs['units'] = 'degrees_north'
+        if 'lon' in dataset.coords:
+            dataset.coords['lon'].attrs['standard_name'] = 'longitude'
+            dataset.coords['lon'].attrs['units'] = 'degrees_east'
 
         # TODO: Temporal coordinate variables MUST have units, standard_name,
         # and any others. standard_name MUST be "time", units MUST have
