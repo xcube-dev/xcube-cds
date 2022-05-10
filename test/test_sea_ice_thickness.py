@@ -118,7 +118,7 @@ class CDSSeaIceThicknessHandlerTest(unittest.TestCase):
 
     def testGetSupportedDataIds(self):
         ids = self.sea_ice_handler.get_supported_data_ids()
-        self.assertEquals({_ENVISAT_DATA_ID, _CRYOSAT_2_DATA_ID}, set(ids))
+        self.assertEqual({_ENVISAT_DATA_ID, _CRYOSAT_2_DATA_ID}, set(ids))
 
     def testGetHumanReadableDataId(self):
         self.assertEqual('Sea ice thickness (Envisat)',
@@ -150,10 +150,10 @@ class CDSSeaIceThicknessHandlerTest(unittest.TestCase):
             self.assertIsNone(descriptor.time_range[1])
         else:
             self.assertEqual(end_date, descriptor.time_range[1])
-        self.assertEquals({'sea_ice_thickness', 'quality_flag', 'status_flag',
+        self.assertEqual({'sea_ice_thickness', 'quality_flag', 'status_flag',
                            'uncertainty'},
                           set(descriptor.data_vars.keys()))
-        self.assertEquals({'time', 'time_bnds', 'xc', 'yc',
+        self.assertEqual({'time', 'time_bnds', 'xc', 'yc',
                            'Lambert_Azimuthal_Grid'},
                           set(descriptor.coords.keys()))
 
@@ -161,13 +161,13 @@ class CDSSeaIceThicknessHandlerTest(unittest.TestCase):
         envisat_schema = self.sea_ice_handler.get_open_data_params_schema(
             _ENVISAT_DATA_ID
         )
-        self.assertEquals(_ENVISAT_PARAMS_SCHEMA, envisat_schema.to_dict())
+        self.assertEqual(_ENVISAT_PARAMS_SCHEMA, envisat_schema.to_dict())
 
     def test_get_open_data_params_schema_cryosat(self):
         cryosat_schema = self.sea_ice_handler.get_open_data_params_schema(
             _CRYOSAT_2_DATA_ID
         )
-        self.assertEquals(_CRYOSAT_PARAMS_SCHEMA, cryosat_schema.to_dict())
+        self.assertEqual(_CRYOSAT_PARAMS_SCHEMA, cryosat_schema.to_dict())
 
 
 class CdsSeaIceThicknessStoreTest(unittest.TestCase):
@@ -186,9 +186,9 @@ class CdsSeaIceThicknessStoreTest(unittest.TestCase):
 
     def test_get_open_params_schema(self):
         envisat_open_params = self.store.get_open_data_params_schema(_ENVISAT_DATA_ID)
-        self.assertEquals(_ENVISAT_PARAMS_SCHEMA, envisat_open_params.to_dict())
+        self.assertEqual(_ENVISAT_PARAMS_SCHEMA, envisat_open_params.to_dict())
         cryosat_open_params = self.store.get_open_data_params_schema(_CRYOSAT_2_DATA_ID)
-        self.assertEquals(_CRYOSAT_PARAMS_SCHEMA, cryosat_open_params.to_dict())
+        self.assertEqual(_CRYOSAT_PARAMS_SCHEMA, cryosat_open_params.to_dict())
 
     def test_describe_envisat_data(self):
         self.assertDescriptor(_ENVISAT_DATA_ID, '2002-10-01', '2010-10-31')
@@ -209,11 +209,11 @@ class CdsSeaIceThicknessStoreTest(unittest.TestCase):
         if end_date is None:
             self.assertIsNone(descriptor.time_range[1])
         else:
-            self.assertEquals(end_date, descriptor.time_range[1])
-        self.assertEquals({'sea_ice_thickness', 'quality_flag', 'status_flag',
+            self.assertEqual(end_date, descriptor.time_range[1])
+        self.assertEqual({'sea_ice_thickness', 'quality_flag', 'status_flag',
                            'uncertainty'},
                           set(descriptor.data_vars.keys()))
-        self.assertEquals({'time', 'time_bnds', 'xc', 'yc',
+        self.assertEqual({'time', 'time_bnds', 'xc', 'yc',
                            'Lambert_Azimuthal_Grid'},
                           set(descriptor.coords.keys()))
 

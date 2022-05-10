@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2020-2021 Brockmann Consult GmbH
+# Copyright (c) 2020-2022 Brockmann Consult GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -102,8 +102,8 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
                     'and an Interim Climate Data Record (ICDR), which provides '
                     'regular temporal extensions to the CDR and where '
                     'consistency with the CDR is expected but not extensively '
-                    'checked. The ICDR is based on '
-                    'observations from CryoSat-2 only (from April 2015 onward).'),
+                    'checked. The ICDR is based on observations '
+                    'from CryoSat-2 only (from April 2015 onward).'),
                 default='cdr'),
             version=JsonStringSchema(
                 enum=['2.0', '1.0'],
