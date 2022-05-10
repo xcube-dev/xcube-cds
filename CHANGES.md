@@ -2,6 +2,8 @@
 
  - Provide version number in `xcube_cds.__version__` and `xcube_cds.version`
    rather than `xcube_cds.version.version` (closes #56).
+ - Added support for sea ice thickness dataset (closes #61). This includes a
+   Jupyter notebook to validate its functionality.
 
 ## Changes in 0.9.1
 
