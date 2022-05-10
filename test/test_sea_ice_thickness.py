@@ -149,7 +149,7 @@ class CDSSeaIceThicknessHandlerTest(unittest.TestCase):
         if end_date is None:
             self.assertIsNone(descriptor.time_range[1])
         else:
-            self.assertEquals(end_date, descriptor.time_range[1])
+            self.assertEqual(end_date, descriptor.time_range[1])
         self.assertEquals({'sea_ice_thickness', 'quality_flag', 'status_flag',
                            'uncertainty'},
                           set(descriptor.data_vars.keys()))
