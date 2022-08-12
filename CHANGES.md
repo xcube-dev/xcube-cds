@@ -1,4 +1,4 @@
-## Changes in 0.9.2 (in development)
+## Changes in 0.9.2
 
  - Provide version number in `xcube_cds.__version__` and `xcube_cds.version`
    rather than `xcube_cds.version.version` (closes #56).
