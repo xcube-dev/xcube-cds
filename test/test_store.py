@@ -185,7 +185,10 @@ class CDSStoreTest(unittest.TestCase):
             'properties': {
                 'normalize_names': {'type': 'boolean', 'default': False},
                 'num_retries': {'type': 'integer', 'default': 200,
-                                'minimum': 0}},
+                                'minimum': 0},
+                'endpoint_url': {'type': 'string'},
+                'cds_api_key': {'type': 'string'}
+            },
             'additionalProperties': False
         }, CDSDataStore.get_data_store_params_schema().to_dict())
 
