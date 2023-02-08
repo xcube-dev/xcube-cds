@@ -1,3 +1,8 @@
+## Changes in 0.9.3 (in development)
+
+ - Add `endpoint_url` and `cds_api_key` to store parameters schema
+   (fixes #65).
+
 ## Changes in 0.9.2
 
  - Provide version number in `xcube_cds.__version__` and `xcube_cds.version`

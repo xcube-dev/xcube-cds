@@ -45,6 +45,7 @@ To create a new unit test of this kind,
 import os
 import re
 import tempfile
+import typing
 import unittest
 from collections.abc import Iterator
 
@@ -184,7 +185,10 @@ class CDSStoreTest(unittest.TestCase):
             'properties': {
                 'normalize_names': {'type': 'boolean', 'default': False},
                 'num_retries': {'type': 'integer', 'default': 200,
-                                'minimum': 0}},
+                                'minimum': 0},
+                'endpoint_url': {'type': 'string'},
+                'cds_api_key': {'type': 'string'}
+            },
             'additionalProperties': False
         }, CDSDataStore.get_data_store_params_schema().to_dict())
 
@@ -245,7 +249,15 @@ class CDSStoreTest(unittest.TestCase):
             )
 
     def test_version_number(self):
-        valid_version = re.compile(r'^(\d[.])+(dev\d+|\d+)$')
+        # The official semver regex, from
+        # https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+        valid_version = re.compile(
+            r'^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.'
+            r'(?P<patch>0|[1-9]\d*)'
+            r'(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)'
+            r'(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?'
+            r'(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
+        )
         import xcube_cds.version
         self.assertTrue(valid_version.match(xcube_cds.version))
         self.assertTrue(valid_version.match(xcube_cds.__version__))
@@ -328,6 +340,18 @@ class ClientUrlTest(unittest.TestCase):
         client = opener.last_instantiated_client
         self.assertEqual(endpoint_url, client.url)
         self.assertEqual(cds_api_key, client.key)
+
+    def test_new_datastore_with_credential_parameters(self):
+        """Test passing URL and key parameters to new_data_store"""
+
+        from xcube.core.store import new_data_store
+        endpoint_url = 'https://example.com/'
+        cds_api_key = 'plugh'
+        store = typing.cast(CDSDataStore, new_data_store(
+            'cds', endpoint_url=endpoint_url, cds_api_key=cds_api_key
+        ))
+        self.assertEqual(endpoint_url, store.cds_api_url)
+        self.assertEqual(cds_api_key, store.cds_api_key)
 
     @staticmethod
     def _get_client(**opener_args):
