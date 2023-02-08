@@ -752,6 +752,8 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         cds_params = dict(
             num_retries=JsonIntegerSchema(default=DEFAULT_NUM_RETRIES,
                                           minimum=0),
+            endpoint_url=JsonStringSchema(),
+            cds_api_key=JsonStringSchema(),
         )
 
         params.update(cds_params)
