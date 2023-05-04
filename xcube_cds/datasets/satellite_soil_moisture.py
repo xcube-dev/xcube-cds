@@ -64,7 +64,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
     # Map second component of data ID to variable and sensor type information
     _var_map = {
         'saturation':
-            VariableProperties(['soil_moisture_saturation'], ['active']),
+            VariableProperties(['surface_soil_moisture'], ['active']),
         'volumetric':
             VariableProperties(
                 ['volumetric_surface_soil_moisture'],
@@ -202,19 +202,13 @@ class SoilMoistureHandler(CDSDatasetHandler):
                     'checked.'),
                 default='cdr'),
             version=JsonStringSchema(
-                enum=['v201706.0.0', 'v201812.0.0', 'v201812.0.1',
-                      'v201912.0.0'],
+                enum=['v201706', 'v201812', 'v201912', 'v202012'],
                 title='Data version',
                 description=(
-                    'Format: vMajor.Minor.Run, e.g. "v201706.0.0". The Major '
-                    'number usually represents the year (YYYY) and month (MM) '
-                    'of date. The initial value for Minor is zero, and will '
-                    'increment when updating the file. If there is a need – '
-                    'e.g. because of technical issues – to replace a file '
-                    'which has already been made public, the Run number of '
-                    'the replacement file shifts to the next increment. The '
-                    'initial Run number is zero.'),
-                default='v201912.0.0')
+                    'Product version, in the format vYYYYMM, where YYYY'
+                    'represents a year number and MM a two-digit month number'
+                    '(with leading zero if required).'),
+                default='v202012')
         )
 
         if len(variable_properties.sensor_types) > 1:
