@@ -31,7 +31,7 @@ from jsonschema import ValidationError
 
 import xcube
 import xcube.core
-from test.mocks import CDSClientMock
+from test.mocks import get_cds_client
 from xcube.core.store import DATASET_TYPE
 from xcube.core.store import VariableDescriptor
 from xcube_cds.store import CDSDataOpener
@@ -44,7 +44,7 @@ _CDS_API_KEY = 'dummy'
 class CDSEra5Test(unittest.TestCase):
 
     def test_open(self):
-        opener = CDSDataOpener(client_class=CDSClientMock,
+        opener = CDSDataOpener(client_class=get_cds_client(),
                                endpoint_url=_CDS_API_URL,
                                cds_api_key=_CDS_API_KEY)
         dataset = opener.open_data(
@@ -62,7 +62,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertEqual(10, len(dataset.variables['time']))
 
     def test_normalize_variable_names(self):
-        store = CDSDataStore(client_class=CDSClientMock, normalize_names=True,
+        store = CDSDataStore(client_class=get_cds_client(), normalize_names=True,
                              endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
@@ -90,7 +90,7 @@ class CDSEra5Test(unittest.TestCase):
             )
 
     def test_era5_land_monthly(self):
-        store = CDSDataStore(client_class=CDSClientMock,
+        store = CDSDataStore(client_class=get_cds_client(),
                              endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
@@ -106,7 +106,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertTrue('u10' in dataset.variables)
 
     def test_era5_single_levels_hourly(self):
-        store = CDSDataStore(client_class=CDSClientMock,
+        store = CDSDataStore(client_class=get_cds_client(),
                              endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
@@ -123,7 +123,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertEqual(48, len(dataset.variables['time']))
 
     def test_era5_land_hourly(self):
-        store = CDSDataStore(client_class=CDSClientMock,
+        store = CDSDataStore(client_class=get_cds_client(),
                              endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
@@ -139,7 +139,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertEqual(48, len(dataset.variables['time']))
 
     def test_era5_bounds(self):
-        opener = CDSDataOpener(client_class=CDSClientMock,
+        opener = CDSDataOpener(client_class=get_cds_client(),
                                endpoint_url=_CDS_API_URL,
                                cds_api_key=_CDS_API_KEY)
         dataset = opener.open_data(
@@ -176,7 +176,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertEqual(361, len(dataset.variables['lon']))
 
     def test_open_data_null_variables_list(self):
-        store = CDSDataStore(client_class=CDSClientMock,
+        store = CDSDataStore(client_class=get_cds_client(),
                              endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         data_id = 'reanalysis-era5-single-levels-monthly-means:' \

@@ -29,7 +29,7 @@ import os
 import tempfile
 import unittest
 
-from test.mocks import CDSClientMock
+from test.mocks import get_cds_client
 from xcube_cds.store import CDSDataStore
 
 _CDS_API_URL = 'dummy'
@@ -40,7 +40,7 @@ class CDSSoilMoistureTest(unittest.TestCase):
 
     def test_soil_moisture_volumetric_minimal_params(self):
         store = CDSDataStore(
-            client_class=CDSClientMock,
+            client_class=get_cds_client(),
             endpoint_url=_CDS_API_URL,
             cds_api_key=_CDS_API_KEY
         )
@@ -61,7 +61,7 @@ class CDSSoilMoistureTest(unittest.TestCase):
 
     def test_soil_moisture_volumetric_monthly_2_years(self):
         store = CDSDataStore(
-            client_class=CDSClientMock,
+            client_class=get_cds_client(),
             endpoint_url=_CDS_API_URL,
             cds_api_key=_CDS_API_KEY
         )
@@ -83,7 +83,7 @@ class CDSSoilMoistureTest(unittest.TestCase):
 
     def test_soil_moisture_saturation_daily(self):
         store = CDSDataStore(
-            client_class=CDSClientMock,
+            client_class=get_cds_client(),
             endpoint_url=_CDS_API_URL,
             cds_api_key=_CDS_API_KEY
         )
@@ -105,7 +105,7 @@ class CDSSoilMoistureTest(unittest.TestCase):
 
     def test_soil_moisture_saturation_10_day(self):
         store = CDSDataStore(
-            client_class=CDSClientMock,
+            client_class=get_cds_client(),
             endpoint_url=_CDS_API_URL,
             cds_api_key=_CDS_API_KEY
         )
@@ -127,7 +127,7 @@ class CDSSoilMoistureTest(unittest.TestCase):
 
     def test_soil_moisture_volumetric_optional_params(self):
         store = CDSDataStore(
-            client_class=CDSClientMock,
+            client_class=get_cds_client(),
             endpoint_url=_CDS_API_URL,
             cds_api_key=_CDS_API_KEY
         )
@@ -161,7 +161,7 @@ class CDSSoilMoistureTest(unittest.TestCase):
         self.assertEqual(1441, len(dataset.variables['lon']))
 
     def test_copy_on_open(self):
-        store = CDSDataStore(client_class=CDSClientMock,
+        store = CDSDataStore(client_class=get_cds_client(),
                              endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         data_id = 'satellite-soil-moisture:volumetric:monthly'
@@ -182,7 +182,7 @@ class CDSSoilMoistureTest(unittest.TestCase):
             self.assertTrue(os.path.isdir(zarr_path))
 
     def test_soil_moisture_get_open_params_schema(self):
-        store = CDSDataStore(client_class=CDSClientMock,
+        store = CDSDataStore(client_class=get_cds_client(),
                              endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         data_id = 'satellite-soil-moisture:volumetric:monthly'

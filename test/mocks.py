@@ -1,8 +1,16 @@
 import json
 import shutil
 import os
+import inspect
 
 import cdsapi
+
+_SAVE_REQUESTS_AND_RESULTS = True
+
+
+class _SessionMock:
+    def close(self):
+        pass
 
 
 class CDSClientMock:
@@ -26,10 +34,7 @@ class CDSClientMock:
     """
 
     def __init__(self, url=None, key=None):
-        class Session:
-            def close(self):
-                pass
-        self.session = Session()
+        self.session = _SessionMock()
 
         if url is None:
             url = os.environ.get('CDSAPI_URL')
@@ -70,3 +75,32 @@ class CDSClientMock:
         params_with_name = {**dict(_dataset_name=dataset_name),
                             **params}
         shutil.copy2(self._get_result(params_with_name), file_path)
+
+
+def get_cds_client(dirname=None):
+    if _SAVE_REQUESTS_AND_RESULTS:
+        # Wrap the real client and save the requests and responses
+        # for future mocking.
+        dirname = inspect.currentframe().f_back.f_code.co_name
+        resource_path = os.path.join(os.path.dirname(__file__),
+                                     'mock_results')
+        path = os.path.join(resource_path, dirname)
+
+        class CDSClientWrapper:
+
+            def __init__(self, url=None, key=None):
+                self.session = _SessionMock()
+                self.real_client = cdsapi.Client()
+
+            def retrieve(self, dataset_name, params, file_path):
+                params_with_name = {**dict(_dataset_name=dataset_name),
+                                    **params}
+                with open(os.path.join(path, 'request.json'), 'w') as fh:
+                    json.dump(params_with_name, fh)
+                self.real_client.retrieve(dataset_name, params, file_path)
+                shutil.copy2(file_path, os.path.join(path, 'result'))
+
+        return CDSClientWrapper
+    else:
+        # Use pre-generated response data for known requests.
+        return CDSClientMock

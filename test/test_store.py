@@ -38,7 +38,7 @@ To create a new unit test of this kind,
    of the subdirectory is arbitrary, but it is useful to give it the same
    name as the unit test method.
 4. Remove the _save_request_to and _save_file_to arguments from the open_data
-   call, and add a 'client_class=CDSClientMock' argument to the CDSDataOpener
+   call, and add a 'client_class=get_cds_client()' argument to the CDSDataOpener
    constructor.
 """
 
@@ -51,7 +51,7 @@ from collections.abc import Iterator
 
 import xcube
 import xcube.core
-from test.mocks import CDSClientMock
+from test.mocks import get_cds_client
 from xcube.core.store import DATASET_TYPE
 from xcube.core.store import DataDescriptor
 from xcube_cds.constants import CDS_DATA_OPENER_ID
@@ -226,7 +226,7 @@ class CDSStoreTest(unittest.TestCase):
         )
 
     def test_get_data_ids(self):
-        store = CDSDataStore(client_class=CDSClientMock,
+        store = CDSDataStore(client_class=get_cds_client(),
                              endpoint_url=_CDS_API_URL,
                              cds_api_key=_CDS_API_KEY)
         with self.assertRaises(ValueError):
@@ -287,7 +287,7 @@ class ClientUrlTest(unittest.TestCase):
                                        'wrong URL 2', 'wrong key 2')
         endpoint_url = 'https://example.com/'
         cds_api_key = 'xyzzy'
-        opener = CDSDataOpener(client_class=CDSClientMock,
+        opener = CDSDataOpener(client_class=get_cds_client(),
                                endpoint_url=endpoint_url,
                                cds_api_key=cds_api_key)
         opener.open_data(
@@ -328,7 +328,7 @@ class ClientUrlTest(unittest.TestCase):
         endpoint_url = 'https://example.com/'
         cds_api_key = 'xyzzy'
         self._set_up_api_configuration(endpoint_url, cds_api_key)
-        opener = CDSDataOpener(client_class=CDSClientMock)
+        opener = CDSDataOpener(client_class=get_cds_client())
         opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -360,7 +360,7 @@ class ClientUrlTest(unittest.TestCase):
         Open a dataset and return the client that was instantiated to execute
         the CDS API query.
         """
-        opener = CDSDataOpener(client_class=CDSClientMock, **opener_args)
+        opener = CDSDataOpener(client_class=get_cds_client(), **opener_args)
         opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
