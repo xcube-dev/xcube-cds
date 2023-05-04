@@ -862,3 +862,24 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
             raise DataStoreError(
                 f'Data opener identifier must be "{CDS_DATA_OPENER_ID}"'
                 f'but got "{opener_id}"')
+
+
+def _update_all_mock_results(root: str):
+    # Untested
+    subdirs = os.listdir(root)
+    client = cdsapi.Client()
+    for subdir in subdirs:
+        _update_mock_result(os.path.join(root, subdir), client)
+
+
+def _update_mock_result(path: str, client: cdsapi.Client = None):
+    # Untested
+    request_path = os.path.join(path, 'request.json')
+    result_path = os.path.join(path, 'result')
+    if client is None:
+        client = cdsapi.Client()
+    with open(request_path, 'r') as fh:
+        request = json.load(fh)
+    dataset_name = request['_dataset_name']
+    del request['_dataset_name']
+    client.retrieve(dataset_name, request, result_path)
