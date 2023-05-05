@@ -97,7 +97,7 @@ class CDSSoilMoistureTest(unittest.TestCase):
         self.assertEqual(4, len(dataset.variables['time']))
         self.assertEqual('19910805T000000Z',
                          dataset.attrs['time_coverage_start'])
-        self.assertEqual('20191231T235959Z',
+        self.assertEqual('20201231T235959Z',
                          dataset.attrs['time_coverage_end'])
         description = store.describe_data(data_id)
         self.assertCountEqual(description.data_vars.keys(),
