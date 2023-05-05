@@ -1,4 +1,5 @@
 import json
+import pathlib
 import shutil
 import os
 import inspect
@@ -114,6 +115,7 @@ def get_cds_client(dirname=None):
             dirname = inspect.currentframe().f_back.f_code.co_name
         resource_path = os.path.join(os.path.dirname(__file__), 'mock_results')
         path = os.path.join(resource_path, dirname)
+        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
         class ResultSavingClientWrapper(CDSClientWrapper):
             def retrieve(self, dataset_name, params, file_path):

@@ -174,7 +174,7 @@ class CdsSeaIceThicknessStoreTest(unittest.TestCase):
 
     def setUp(self) -> None:
         self.store = CDSDataStore(
-            client_class=get_cds_client(),
+            client_class=get_cds_client(dirname=self._testMethodName),
             endpoint_url=_CDS_API_URL,
             cds_api_key=_CDS_API_KEY
         )

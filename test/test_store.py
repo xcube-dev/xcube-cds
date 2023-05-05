@@ -314,7 +314,9 @@ class ClientUrlTest(unittest.TestCase):
         cds_api_key = 'xyzzy'
         self._set_up_api_configuration('wrong URL 1', 'wrong key 1',
                                        endpoint_url, cds_api_key)
-        client = self._get_client()
+        client = self._get_client(
+            name='test_client_url_and_key_environment_variables'
+        )
         self.assertEqual(endpoint_url, client.url)
         self.assertEqual(cds_api_key, client.key)
 
@@ -354,13 +356,18 @@ class ClientUrlTest(unittest.TestCase):
         self.assertEqual(cds_api_key, store.cds_api_key)
 
     @staticmethod
-    def _get_client(**opener_args):
+    def _get_client(opener_args=None, name=None):
         """Return the client instantiated to open a dataset
 
         Open a dataset and return the client that was instantiated to execute
         the CDS API query.
         """
-        opener = CDSDataOpener(client_class=get_cds_client(), **opener_args)
+
+        if opener_args is None:
+            opener_args = {}
+        opener = CDSDataOpener(
+            client_class=get_cds_client(name),
+            **opener_args)
         opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
