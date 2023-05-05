@@ -115,7 +115,6 @@ def get_cds_client(dirname=None):
             dirname = inspect.currentframe().f_back.f_code.co_name
         resource_path = os.path.join(os.path.dirname(__file__), 'mock_results')
         path = os.path.join(resource_path, dirname)
-        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
         class ResultSavingClientWrapper(CDSClientWrapper):
             def retrieve(self, dataset_name, params, file_path):
@@ -123,6 +122,7 @@ def get_cds_client(dirname=None):
                     **dict(_dataset_name=dataset_name),
                     **params,
                 }
+                pathlib.Path(path).mkdir(parents=True, exist_ok=True)
                 with open(os.path.join(path, 'request.json'), 'w') as fh:
                     json.dump(params_with_name, fh)
                 self.real_client.retrieve(dataset_name, params, file_path)
