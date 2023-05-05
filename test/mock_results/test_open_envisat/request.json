@@ -1,0 +1,1 @@
+{"_dataset_name": "satellite-sea-ice-thickness", "satellite": "envisat", "cdr_type": "cdr", "version": "2_0", "variable": "all", "format": "tgz", "month": ["03", "04"], "year": "2005"}

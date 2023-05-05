@@ -1,1 +1,0 @@
-{"_dataset_name": "satellite-sea-ice-thickness", "satellite": "cryosat-2", "cdr_type": "cdr", "version": "2_0", "variable": "all", "format": "tgz", "month": ["03", "04"], "year": "2016"}
