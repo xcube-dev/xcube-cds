@@ -262,6 +262,12 @@
       "Friction velocity"
     ],
     [
+      "geopotential",
+      "z",
+      "m**2 s**-2",
+      "Geopotential"
+    ],
+    [
       "gravity_wave_dissipation",
       "gwd",
       "J m**-2",
@@ -920,12 +926,6 @@
       "wind",
       "m s**-1",
       "10 metre wind speed"
-    ],
-    [
-      "orography",
-      "z",
-      "m**2 s**-2",
-      "Geopotential"
     ],
     [
       "peak_wave_period",
