@@ -29,7 +29,7 @@ from copy import deepcopy
 from typing import Optional
 import unittest
 
-from test.mocks import CDSClientMock
+from test.mocks import get_cds_client
 from xcube_cds.store import CDSDataStore
 from xcube_cds.datasets.satellite_sea_ice_thickness import SeaIceThicknessHandler
 
@@ -174,7 +174,7 @@ class CdsSeaIceThicknessStoreTest(unittest.TestCase):
 
     def setUp(self) -> None:
         self.store = CDSDataStore(
-            client_class=CDSClientMock,
+            client_class=get_cds_client(dirname=self._testMethodName),
             endpoint_url=_CDS_API_URL,
             cds_api_key=_CDS_API_KEY
         )

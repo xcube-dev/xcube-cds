@@ -137,8 +137,13 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
             variable_properties.cdr_types[0]
         )
 
+        satellites = {
+            'cryosat-2': 'cryosat_2',
+            'envisat': 'envisat'
+        }
+
         cds_params = dict(
-            satellite=mission,
+            satellite=satellites[mission],
             cdr_type=cdr_type,
             version=version,
             variable='all',

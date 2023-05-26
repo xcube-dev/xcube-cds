@@ -1,0 +1,1 @@
+{"_dataset_name": "reanalysis-era5-single-levels-monthly-means", "variable": "2m_temperature", "area": [89.875, -179.875, -89.875, 179.875], "grid": [0.25, 0.25], "format": "netcdf", "product_type": "monthly_averaged_reanalysis", "time": "00:00", "day": "15", "month": "10", "year": "2015"}
