@@ -13,8 +13,11 @@ class _Behaviour(enum.Enum):
     REAL_CLIENT = enum.auto()
     SAVE_RESULTS = enum.auto()
 
-
-_BEHAVIOUR = _Behaviour.MOCK
+# MOCK uses a mock CDS API client returning pre-generated, saved results
+# REAL_CLIENT uses the real CDS client
+# SAVE_RESULTS uses the real CDS client and saves results for future mocking
+# REAL_CLIENT and SAVE_results require the credentials to be set
+_BEHAVIOUR = _Behaviour.REAL_CLIENT
 
 
 class _SessionMock:

@@ -51,7 +51,7 @@ from collections.abc import Iterator
 
 import xcube
 import xcube.core
-from test.mocks import get_cds_client
+from test.mocks import get_cds_client, CDSClientMock
 from xcube.core.store import DATASET_TYPE
 from xcube.core.store import DataDescriptor
 from xcube_cds.constants import CDS_DATA_OPENER_ID
@@ -287,7 +287,10 @@ class ClientUrlTest(unittest.TestCase):
                                        'wrong URL 2', 'wrong key 2')
         endpoint_url = 'https://example.com/'
         cds_api_key = 'xyzzy'
-        opener = CDSDataOpener(client_class=get_cds_client(),
+
+        # We always use a mock here regardless of the behaviour setting,
+        # since the real client would complain about the invalid parameters.
+        opener = CDSDataOpener(client_class=CDSClientMock,
                                endpoint_url=endpoint_url,
                                cds_api_key=cds_api_key)
         opener.open_data(
@@ -314,8 +317,12 @@ class ClientUrlTest(unittest.TestCase):
         cds_api_key = 'xyzzy'
         self._set_up_api_configuration('wrong URL 1', 'wrong key 1',
                                        endpoint_url, cds_api_key)
+
+        # We always use a mock here regardless of the behaviour setting,
+        # since the real client would complain about the invalid parameters.
         client = self._get_client(
-            name='test_client_url_and_key_environment_variables'
+            name='test_client_url_and_key_environment_variables',
+            client_class=CDSClientMock
         )
         self.assertEqual(endpoint_url, client.url)
         self.assertEqual(cds_api_key, client.key)
@@ -330,7 +337,10 @@ class ClientUrlTest(unittest.TestCase):
         endpoint_url = 'https://example.com/'
         cds_api_key = 'xyzzy'
         self._set_up_api_configuration(endpoint_url, cds_api_key)
-        opener = CDSDataOpener(client_class=get_cds_client())
+
+        # We always use a mock here regardless of the behaviour setting,
+        # since the real client would complain about the invalid parameters.
+        opener = CDSDataOpener(client_class=CDSClientMock)
         opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
             'monthly_averaged_reanalysis',
@@ -356,7 +366,7 @@ class ClientUrlTest(unittest.TestCase):
         self.assertEqual(cds_api_key, store.cds_api_key)
 
     @staticmethod
-    def _get_client(opener_args=None, name=None):
+    def _get_client(opener_args=None, name=None, client_class=None):
         """Return the client instantiated to open a dataset
 
         Open a dataset and return the client that was instantiated to execute
@@ -365,8 +375,10 @@ class ClientUrlTest(unittest.TestCase):
 
         if opener_args is None:
             opener_args = {}
+        if client_class is None:
+            client_class = get_cds_client(name)
         opener = CDSDataOpener(
-            client_class=get_cds_client(name),
+            client_class=client_class,
             **opener_args)
         opener.open_data(
             'reanalysis-era5-single-levels-monthly-means:'
