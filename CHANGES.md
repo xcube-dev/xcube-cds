@@ -1,10 +1,11 @@
-## Changes in 0.9.3 (in development)
-
- - Add `endpoint_url` and `cds_api_key` to store parameters schema
-   (fixes #65).
-
 ## Changes in 0.9.2
 
+ - Update dataset handlers to deal with recent changes in the CDS
+   backend API (fixes #68).
+ - Add `endpoint_url` and `cds_api_key` to store parameters schema
+   (fixes #65).
+ - Update example notebooks to use the `new_data_store` function
+   (closes #70).
  - Provide version number in `xcube_cds.__version__` and `xcube_cds.version`
    rather than `xcube_cds.version.version` (closes #56).
  - Added support for sea ice thickness dataset (closes #61). This includes a
