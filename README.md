@@ -260,8 +260,8 @@ In detail, the steps are as follows.
     conda-smithy rerender -c auto
     ```
    
-   It's also possible to have the rendering done by a bot as part of the pull
-   request, but this may fail if it doesn't have the necessary permissions.
+    It's also possible to have the rendering done by a bot as part of the pull
+    request, but this may fail if it doesn't have the necessary permissions.
 
 4.  Update `recipe/meta.yaml` for the new version. Mainly this will involve the 
     following steps:
