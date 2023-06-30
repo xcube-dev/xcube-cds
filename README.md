@@ -90,12 +90,13 @@ made available to you (using the same user credentials) through the API.
 This section describes three alternative methods you can use to install the
 xcube-cds plugin.
 
-conda can sometimes be inconveniently slow when resolving an environment.
-If this causes problems, consider using
-[mamba](https://github.com/mamba-org/mamba) as a much faster drop-in
-alternative to conda.
+For installation of conda packages, we recommend
+[mamba](https://mamba.readthedocs.io/). It is also possible to use conda,
+but note that installation may be significantly slower with conda than with
+mamba. If using conda rather than mamba, replace the `mamba` command with
+`conda` in the installation commands given below.
 
-#### Installation into a new environment with conda
+#### Installation into a new environment with mamba
 
 This method creates a new conda environment and installs the latest conda-forge
 release of xcube-cds, along with all its required dependencies, into the
@@ -108,14 +109,14 @@ The conda package manager itself can be obtained in the [miniconda
 distribution](https://docs.conda.io/en/latest/miniconda.html). Once conda
 is installed, xcube-cds can be installed like this:
 
-```
-$ conda create --name xcube-cds-environment --channel conda-forge xcube-cds
-$ conda activate xcube-cds-environment
+```bash
+mamba create --name xcube-cds-environment --channel conda-forge xcube-cds
+mamba activate xcube-cds-environment
 ```
 
 The name of the environment may be freely chosen.
 
-#### Installation into an existing environment with conda
+#### Installation into an existing environment with mamba
 
 This method assumes that you have an existing conda environment and you want
 to install xcube-cds into it.
@@ -123,8 +124,8 @@ to install xcube-cds into it.
 xcube-cds can also be installed into an existing conda environment.
 With the existing environment activated, execute this command:
 
-```
-$ conda install --channel conda-forge xcube-cds
+```bash
+mamba install --channel conda-forge xcube-cds
 ```
 
 Once again, xcube and any other necessary dependencies will be installed
@@ -136,11 +137,11 @@ If you want to install xcube-cds directly from the git repository (for example
 if order to use an unreleased version or to modify the code), you can
 do so as follows:
 
-```
-$ conda create --name xcube-cds-environment --channel conda-forge --only-deps xcube-cds
-$ conda activate xcube-cds-environment
-$ git clone https://github.com/dcs4cop/xcube-cds.git
-$ python -m pip install --no-deps --editable xcube-cds/
+```bash
+mamba create --name xcube-cds-environment --channel conda-forge --only-deps xcube-cds
+mamba activate xcube-cds-environment
+git clone https://github.com/dcs4cop/xcube-cds.git
+python -m pip install --no-deps --editable xcube-cds/
 ```
 
 This installs all the dependencies of xcube-cds into a fresh conda environment,
@@ -150,8 +151,8 @@ then installs xcube-cds into this environment from the repository.
 
 You can run the unit tests for xcube-cds by executing
 
-```
-$ pytest
+```bash
+pytest
 ```
 
 in the `xcube-cds` repository. Note that, in order to successfully run the
@@ -161,7 +162,7 @@ release.
 
 To create a test coverage report, you can use
 
-```
+```bash
 coverage run --include='xcube_cds/**' --module pytest
 coverage html
 ```
@@ -179,26 +180,26 @@ This section is intended for developers preparing a new release of xcube-cds.
 
 ### Pre-release tasks
 
- - Make sure that dependencies and their versions are up to date in
-   the `environment.yml` file. In particular, check that the required xcube 
-   version is correct and that required version numbers of packages which are 
-   also transitive xcube dependencies (e.g. xarray) are compatible with
-   xcube's requirements.
- - Make sure that all unit tests pass and that test coverage is 100% (or
-   as near to 100% as practicable).
- - Remove any pre-release (‘dev’, ‘rc’ etc.) suffix from the version number in
-   `xcube_cds/version.py`.
- - Make sure that the readme and changelog are up to date. Remove any
-   pre-release suffix from the current (first) section title of the changelog.
+-   Make sure that dependencies and their versions are up to date in
+    the `environment.yml` file. In particular, check that the required xcube 
+    version is correct and that required version numbers of packages which are 
+    also transitive xcube dependencies (e.g. xarray) are compatible with
+    xcube's requirements.
+-   Make sure that all unit tests pass and that test coverage is 100% (or
+    as near to 100% as practicable).
+-   Remove any pre-release (‘dev’, ‘rc’ etc.) suffix from the version number in
+    xcube_cds/version.py`.
+-   Make sure that the readme and changelog are up to date. Remove any
+    pre-release suffix from the current (first) section title of the changelog.
 
 ### Making a GitHub release
 
 Create a release tag on GitHub.
 
- - Tag version name should be the version number prefixed by ‘v’.
- - Release title should be version name without a prefix.
- - Description should be a list of changes in this version (pasted in
-   from most recent section of changelog).
+-   Tag version name should be the version number prefixed by ‘v’.
+-   Release title should be version name without a prefix.
+-   Description should be a list of changes in this version (pasted in
+    from most recent section of changelog).
    
 Creating the release will automatically produce a source code archive as an
 associated asset, which will be needed to create the conda package.
@@ -211,10 +212,10 @@ https://conda-forge.org/docs/maintainer/updating_pkgs.html .
 Conda-forge packages are produced from a github feedstock repository belonging
 to the conda-forge organization. The feedstock for xcube-cds is at
 https://github.com/conda-forge/xcube-cds-feedstock . The package is updated
-by forking this repository, creating a new branch for the changes, and
+by forking this repository (to a personal GitHub account, not to an
+organization), creating a new branch for the changes, and
 creating a pull request to merge this branch into conda-forge's feedstock
-repository. dcs4cop's fork is at https://github.com/dcs4cop/xcube-cds-feedstock
-.
+repository.
 
 The instructions below describe the manual procedure of creating a branch and
 pull request yourself. conda-forge also has a bot called
@@ -226,12 +227,12 @@ the form of commits pushed to the PR) may be required, for example in order to
 update dependency lists. The manual procedure may be necessary or desirable in
 some cases, for example:
 
-* You are making an additional build from a version which has already been
-  released in conda-forge. In this case there's no new GitHub release to
-  trigger the bot.
-
-* You don't have time to wait for the bot to notice the new release and
-  create its pull request.
+-   You are making an additional build from a version which has already been
+    released in conda-forge. In this case there's no new GitHub release to
+    trigger the bot.
+  
+-   You don't have time to wait for the bot to notice the new release and
+    create its pull request.
 
 If you are basing the release on the automatically created pull request, skip
 the "create a new branch" and "create a pull request" steps below, and instead
@@ -242,52 +243,58 @@ label to the pull request to make this happen.)
 
 In detail, the steps are as follows.
 
-1. Update the [dcs4cop fork](https://github.com/dcs4cop/xcube-cds-feedstock)
-   of the feedstock repository, if it's not already up to date with
-   conda-forge's upstream repository.
+1.  Fork the feedstock repository to a personal GitHub account (not an
+    organization).
 
-2. Clone the repository locally and create a new branch. The name of the branch
-   is not strictly prescribed, but it's sensible to choose an informative
-   name like `update_0_5_3`.
+2.  Clone the repository locally and create a new branch. The name of the
+    branch is not strictly prescribed, but it's sensible to choose an
+    informative name like `update_0_5_3`.
 
-3. Rerender the feedstock using `conda-smithy`. This updates common conda-forge
-   feedstock files. It's probably easiest to install `conda-smithy` in a fresh
-   environment for this.
+3.  Rerender the feedstock using `conda-smithy`. This updates common
+    conda-forge feedstock files. It's probably easiest to install
+    `conda-smithy` in a fresh environment for this.
    
-   ```
-   conda create -c conda-forge -n smithy conda-smithy
-   conda activate smithy
-   conda-smithy rerender -c auto
-   ```
+    ```bash
+    mamba create -c conda-forge -n smithy conda-smithy
+    mamba activate smithy
+    conda-smithy rerender -c auto
+    ```
    
    It's also possible to have the rendering done by a bot as part of the pull
    request, but this may fail if it doesn't have the necessary permissions.
 
-4. Update `recipe/meta.yaml` for the new version. Mainly this will involve the 
-   following steps:
-   
-   1. Update the value of the `version` variable (or, if the version number
-      has not changed, increment the build number).
-   
-   2. If the version number *has* changed, ensure that the build number is
-      set to 0.
-   
-   3. Update the sha256 hash of the source archive prepared by GitHub.
-   
-   4. If the dependencies have changed, update the list of dependencies in the
-      `-run` subsection to match those in the `environment.yml` file.
+4.  Update `recipe/meta.yaml` for the new version. Mainly this will involve the 
+    following steps:
+    
+    1.  Update the value of the `version` variable (or, if the version number
+        has not changed, increment the build number).
+     
+    2.  If the version number *has* changed, ensure that the build number is
+        set to 0.
+     
+    3.  Update the sha256 hash of the source archive prepared by GitHub.
+     
+    4.  If the dependencies have changed, update the list of dependencies in
+        the `-run` subsection to match those in the `environment.yml` file.
 
-5. Commit the changes and push them to GitHub, then create a pull request at
-   https://github.com/dcs4cop/xcube-cds-feedstock for a merge of your update
-   branch into the master branch at conda-forge.
+    5.  Make sure that the list of recipe maintainers (in the
+        `extra.recipe-maintainers` section of the `meta.yaml` file) is up
+        to date.
 
-6. Once conda-forge's automated checks have passed and the reviewers (if
-   any) have approved the changes, merge the pull request.
+    6.  Make sure that the list of code owners (in `.github/CODEOWNERS`)
+        is up to date.
+
+5.  Commit the changes and push them to GitHub, then create a pull request at
+    https://github.com/dcs4cop/xcube-cds-feedstock for a merge of your update
+    branch into the master branch at conda-forge.
+ 
+6.  Once conda-forge's automated checks have passed and the reviewers (if
+    any) have approved the changes, merge the pull request.
 
 Once the pull request has been merged, the updated package should become
 available from conda-forge within a couple of hours. Usually the updated
 package is visible on https://anaconda.org/conda-forge/xcube-cds some time
-before it becomes accessible to `conda search` and `conda install`.
+before it becomes accessible to `mamba search` and `mamba install`.
 
 ### Post-release tasks
 
@@ -298,6 +305,3 @@ before it becomes accessible to `conda search` and `conda install`.
 
  - Add a new first section to the changelog with the new version number.
 
- - Merge the changes from https://github.com/conda-forge/xcube-cds-feedstock
-   back to the master branch of https://github.com/dcs4cop/xcube-cds-feedstock,
-   so that it's ready to serve as a base for the next update branch.
