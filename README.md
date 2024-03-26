@@ -1,4 +1,4 @@
-[![Build Status](https://ci.appveyor.com/api/projects/status/urs0anenn7rujy1v/branch/master?svg=true)](https://ci.appveyor.com/project/bcdev/xcube-cds)
+[![Build Status](https://ci.appveyor.com/api/projects/status/urs0anenn7rujy1v/branch/main?svg=true)](https://ci.appveyor.com/project/bcdev/xcube-cds)
 
 # xcube-cds
 
@@ -284,9 +284,9 @@ In detail, the steps are as follows.
     6.  Make sure that the list of code owners (in `.github/CODEOWNERS`)
         is up to date.
 
-5.  Commit the changes and push them to GitHub, then create a pull request at
-    https://github.com/dcs4cop/xcube-cds-feedstock for a merge of your update
-    branch into the master branch at conda-forge.
+5.  Commit the changes and push them to GitHub, then create a pull request
+    from your branch for a merge of your update branch into the main branch
+    at conda-forge.
  
 6.  Once conda-forge's automated checks have passed and the reviewers (if
     any) have approved the changes, merge the pull request.
