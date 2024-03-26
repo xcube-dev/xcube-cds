@@ -30,14 +30,16 @@ from xcube_cds.constants import CDS_DATA_STORE_ID
 
 def init_plugin(ext_registry: extension.ExtensionRegistry):
     ext_registry.add_extension(
-        loader=extension.import_component('xcube_cds.store:CDSDataStore'),
+        loader=extension.import_component("xcube_cds.store:CDSDataStore"),
         point=EXTENSION_POINT_DATA_STORES,
         name=CDS_DATA_STORE_ID,
-        description='Climate Data Store API')
+        description="Climate Data Store API",
+    )
 
     ext_registry.add_extension(
-        loader=extension.import_component('xcube_cds.store:CDSDataOpener'),
+        loader=extension.import_component("xcube_cds.store:CDSDataOpener"),
         point=EXTENSION_POINT_DATA_OPENERS,
         name=CDS_DATA_OPENER_ID,
-        description='xarray.Dataset in NetCDF format '
-                    'from Climate Data Store API')
+        description="xarray.Dataset in NetCDF format "
+        "from Climate Data Store API",
+    )

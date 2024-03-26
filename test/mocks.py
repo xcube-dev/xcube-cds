@@ -13,6 +13,7 @@ class _Behaviour(enum.Enum):
     REAL_CLIENT = enum.auto()
     SAVE_RESULTS = enum.auto()
 
+
 # MOCK uses a mock CDS API client returning pre-generated, saved results
 # REAL_CLIENT uses the real CDS client
 # SAVE_RESULTS uses the real CDS client and saves results for future mocking
@@ -27,19 +28,19 @@ class _SessionMock:
 
 def _get_url_and_key(url, key):
     if url is None:
-        url = os.environ.get('CDSAPI_URL')
+        url = os.environ.get("CDSAPI_URL")
     if key is None:
-        key = os.environ.get('CDSAPI_KEY')
-    dotrc = os.environ.get('CDSAPI_RC', os.path.expanduser('~/.cdsapirc'))
+        key = os.environ.get("CDSAPI_KEY")
+    dotrc = os.environ.get("CDSAPI_RC", os.path.expanduser("~/.cdsapirc"))
     if url is None or key is None:
         if os.path.exists(dotrc):
             config = cdsapi.api.read_config(dotrc)
             if key is None:
-                key = config.get('key')
+                key = config.get("key")
             if url is None:
-                url = config.get('url')
+                url = config.get("url")
     if url is None or key is None:
-        raise Exception(f'Missing/incomplete configuration file: {dotrc}')
+        raise Exception(f"Missing/incomplete configuration file: {dotrc}")
     return url, key
 
 
@@ -66,23 +67,21 @@ class CDSClientMock:
         self.session = _SessionMock()
         self.url, self.key = _get_url_and_key(url, key)
 
-        resource_path = os.path.join(os.path.dirname(__file__), 'mock_results')
+        resource_path = os.path.join(os.path.dirname(__file__), "mock_results")
         # request_map is a list because dicts can't be hashed in Python, and
         # it's not worth introducing a dependency on frozendict just for this.
         self.request_map = []
         for d in os.listdir(resource_path):
             dir_path = os.path.join(resource_path, d)
-            with open(os.path.join(dir_path, 'request.json'), 'r') as fh:
+            with open(os.path.join(dir_path, "request.json"), "r") as fh:
                 request = json.load(fh)
-            self.request_map.append(
-                (request, os.path.join(dir_path, 'result'))
-            )
+            self.request_map.append((request, os.path.join(dir_path, "result")))
 
     def _get_result(self, request):
         for canned_request, canned_result in self.request_map:
             if request == canned_request:
                 return canned_result
-        raise KeyError('Request not recognized')
+        raise KeyError("Request not recognized")
 
     def retrieve(self, dataset_name, params, file_path):
         params_with_name = {**dict(_dataset_name=dataset_name), **params}
@@ -116,7 +115,7 @@ def get_cds_client(dirname=None):
         if dirname is None:
             # Default directory name is name of calling function.
             dirname = inspect.currentframe().f_back.f_code.co_name
-        resource_path = os.path.join(os.path.dirname(__file__), 'mock_results')
+        resource_path = os.path.join(os.path.dirname(__file__), "mock_results")
         path = os.path.join(resource_path, dirname)
 
         class ResultSavingClientWrapper(CDSClientWrapper):
@@ -126,11 +125,11 @@ def get_cds_client(dirname=None):
                     **params,
                 }
                 pathlib.Path(path).mkdir(parents=True, exist_ok=True)
-                with open(os.path.join(path, 'request.json'), 'w') as fh:
+                with open(os.path.join(path, "request.json"), "w") as fh:
                     json.dump(params_with_name, fh)
                 self.real_client.retrieve(dataset_name, params, file_path)
-                shutil.copy2(file_path, os.path.join(path, 'result'))
+                shutil.copy2(file_path, os.path.join(path, "result"))
 
         return ResultSavingClientWrapper
     else:
-        raise Exception(f'Unknown behaviour {_BEHAVIOUR}')
+        raise Exception(f"Unknown behaviour {_BEHAVIOUR}")

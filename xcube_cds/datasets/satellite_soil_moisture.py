@@ -39,105 +39,107 @@ from xcube.util.jsonschema import JsonStringSchema
 from xcube_cds.store import CDSDatasetHandler
 
 VariableProperties = collections.namedtuple(
-    'VariableProperties',
-    ['variables', 'sensor_types']
+    "VariableProperties", ["variables", "sensor_types"]
 )
 
 
 class SoilMoistureHandler(CDSDatasetHandler):
-
     _data_id_map = {
-        'satellite-soil-moisture:saturation:daily':
-            'Soil moisture (saturation, daily)',
-        'satellite-soil-moisture:saturation:10-day':
-            'Soil moisture (saturation, 10-day)',
-        'satellite-soil-moisture:saturation:monthly':
-            'Soil moisture (saturation, monthly)',
-        'satellite-soil-moisture:volumetric:daily':
-            'Soil moisture (volumetric, daily)',
-        'satellite-soil-moisture:volumetric:10-day':
-            'Soil moisture (volumetric, 10-day)',
-        'satellite-soil-moisture:volumetric:monthly':
-            'Soil moisture (volumetric, monthly)',
+        "satellite-soil-moisture:saturation:daily": "Soil moisture (saturation, daily)",
+        "satellite-soil-moisture:saturation:10-day": "Soil moisture (saturation, 10-day)",
+        "satellite-soil-moisture:saturation:monthly": "Soil moisture (saturation, monthly)",
+        "satellite-soil-moisture:volumetric:daily": "Soil moisture (volumetric, daily)",
+        "satellite-soil-moisture:volumetric:10-day": "Soil moisture (volumetric, 10-day)",
+        "satellite-soil-moisture:volumetric:monthly": "Soil moisture (volumetric, monthly)",
     }
 
     # Map second component of data ID to variable and sensor type information
     _var_map = {
-        'saturation':
-            VariableProperties(['surface_soil_moisture'], ['active']),
-        'volumetric':
-            VariableProperties(
-                ['volumetric_surface_soil_moisture'],
-                ['combined_passive_and_active', 'passive'])
+        "saturation": VariableProperties(["surface_soil_moisture"], ["active"]),
+        "volumetric": VariableProperties(
+            ["volumetric_surface_soil_moisture"],
+            ["combined_passive_and_active", "passive"],
+        ),
     }
 
     # Map third component of data ID to time period in CDS API format
-    _aggregation_map = {'daily': '1D', '10-day': '10D', 'monthly': '1M'}
+    _aggregation_map = {"daily": "1D", "10-day": "10D", "monthly": "1M"}
 
-    def transform_params(self, opener_params, data_id: str) -> \
-            Tuple[str, Dict[str, Any]]:
+    def transform_params(
+        self, opener_params, data_id: str
+    ) -> Tuple[str, Dict[str, Any]]:
         # We don't need to check the argument format, since CDSDataStore does
         # this for us. We can also ignore the dataset ID (constant).
-        _, variable_spec, aggregation = data_id.split(':')
+        _, variable_spec, aggregation = data_id.split(":")
         variable_properties = self._var_map[variable_spec]
 
         # Each dataset only provides one variable, so we don't have an opener
         # parameter to select variables -- we just determine the variable
         # name directly from the data_id.
         variables = variable_properties.variables
-        assert len(variables) == 1,\
-               'Each data_id should provide precisely one variable.'
+        assert (
+            len(variables) == 1
+        ), "Each data_id should provide precisely one variable."
         variable = variables[0]
 
         # Aggregation period is not an opener parameter, since it's already
         # specified as part of the data_id.
         cds_aggregation_specifier = {
-            'daily': 'day_average',
-            '10-day': '10_day_average',
-            'monthly': 'month_average'}[aggregation]
+            "daily": "day_average",
+            "10-day": "10_day_average",
+            "monthly": "month_average",
+        }[aggregation]
 
         # The sensor type is only available as an opener parameter for datasets
         # with more than one sensor type available. If no sensor type is
         # specified in the opener parameters, it's determined from the data ID.
         type_of_sensor = opener_params.get(
-            'type_of_sensor',
-            variable_properties.sensor_types[0]
+            "type_of_sensor", variable_properties.sensor_types[0]
         )
 
         cds_params = dict(
             variable=variable,
             type_of_sensor=type_of_sensor,
             time_aggregation=cds_aggregation_specifier,
-            type_of_record=opener_params['type_of_record'],
-            version=opener_params['version'],
-            format='tgz'
+            type_of_record=opener_params["type_of_record"],
+            version=opener_params["version"],
+            format="tgz",
         )
 
         time_selectors = self.transform_time_params(
-            self.convert_time_range(opener_params['time_range']))
-        time_selectors.pop('time', None)
-        if aggregation == 'monthly':
-            time_selectors['day'] = '01'
-        if aggregation == '10-day':
-            time_selectors['day'] =\
-                sorted(set(time_selectors['day'])
-                       .intersection({'01', '11', '21'}))
+            self.convert_time_range(opener_params["time_range"])
+        )
+        time_selectors.pop("time", None)
+        if aggregation == "monthly":
+            time_selectors["day"] = "01"
+        if aggregation == "10-day":
+            time_selectors["day"] = sorted(
+                set(time_selectors["day"]).intersection({"01", "11", "21"})
+            )
         cds_params.update(time_selectors)
 
         # Transform singleton list values into their single members, as
         # required by the CDS API.
         unwrapped = self.unwrap_singleton_values(cds_params)
 
-        return 'satellite-soil-moisture', unwrapped
+        return "satellite-soil-moisture", unwrapped
 
-    def read_file(self, dataset_name: str, open_params: Dict,
-                  cds_api_params: Dict, file_path: str, temp_dir: str):
+    def read_file(
+        self,
+        dataset_name: str,
+        open_params: Dict,
+        cds_api_params: Dict,
+        file_path: str,
+        temp_dir: str,
+    ):
         # Unpack the .tar.gz into the temporary directory.
         with tarfile.open(file_path) as tgz_file:
             tgz_file.extractall(path=temp_dir)
 
-        paths = [os.path.join(temp_dir, filename) for filename in
-                 next(os.walk(temp_dir))[2]]
+        paths = [
+            os.path.join(temp_dir, filename)
+            for filename in next(os.walk(temp_dir))[2]
+        ]
 
         # I'm not sure if xr.open_mfdataset calls through to
         # netCDF4.MFDataset. If it does, note that the latter supports
@@ -145,8 +147,9 @@ class SoilMoistureHandler(CDSDatasetHandler):
         # it's OK because the Product User Guide (C3S_312a_Lot7_EODC_2016SC1,
         # §1, p. 12) states that the data are in Classic format,
         # and inspection of some downloaded files confirms it.
-        ds = xr.open_mfdataset(paths, combine="by_coords",
-                               engine="netcdf4", decode_cf=True)
+        ds = xr.open_mfdataset(
+            paths, combine="by_coords", engine="netcdf4", decode_cf=True
+        )
         ds.attrs.update(self.combine_netcdf_time_limits(paths))
 
         # Subsetting is no longer implemented by the plugin (see Issue
@@ -158,7 +161,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
         return list(self._data_id_map)
 
     def get_open_data_params_schema(self, data_id: str) -> JsonObjectSchema:
-        _, variable_spec, _ = data_id.split(':')
+        _, variable_spec, _ = data_id.split(":")
         variable_properties = self._var_map[variable_spec]
 
         params = dict(
@@ -166,96 +169,101 @@ class SoilMoistureHandler(CDSDatasetHandler):
             # crs, bbox, and spatial_res omitted, since they're constant.
             # time_period omitted, since (although the store as a whole offers
             # three aggregation periods) it's constant for a given data-id.
-
             # There are complex interdependencies between allowed values for
             # these parameters and for the date specifiers, which can't be
             # represented in JSON Schema. The best we can do is to make them
             # all available, set sensible defaults, and trust that the user
             # knows what they're requesting.
-
             # type_of_sensor will be added below *only* if >1 type available.
-
             # There's only one variable available per data ID, but we can't
             # omit variable_names, because we need to support the
             # variable_names=[] case (to produce an empty cube).
             variable_names=JsonArraySchema(
-                items=(JsonStringSchema(
-                    min_length=0,
-                    enum=variable_properties.variables,
-                    default=variable_properties.variables[0])),
+                items=(
+                    JsonStringSchema(
+                        min_length=0,
+                        enum=variable_properties.variables,
+                        default=variable_properties.variables[0],
+                    )
+                ),
                 unique_items=True,
-                default=[variable_properties.variables[0]]
+                default=[variable_properties.variables[0]],
             ),
             type_of_record=JsonStringSchema(
-                enum=['cdr', 'icdr'],
-                title='Type of record',
+                enum=["cdr", "icdr"],
+                title="Type of record",
                 description=(
-                    'When dealing with satellite data it is common to '
-                    'encounter references to Climate Data Records (CDR) and '
-                    'interim-CDR (ICDR). For this dataset, both the ICDR and '
-                    'CDR parts of each product were generated using the same '
-                    'software and algorithms. The CDR is intended to have '
-                    'sufficient length, consistency, and continuity to detect '
-                    'climate variability and change. The ICDR provides a '
-                    'short-delay access to current data where consistency with '
-                    'the CDR baseline is expected but was not extensively '
-                    'checked.'),
-                default='cdr'),
+                    "When dealing with satellite data it is common to "
+                    "encounter references to Climate Data Records (CDR) and "
+                    "interim-CDR (ICDR). For this dataset, both the ICDR and "
+                    "CDR parts of each product were generated using the same "
+                    "software and algorithms. The CDR is intended to have "
+                    "sufficient length, consistency, and continuity to detect "
+                    "climate variability and change. The ICDR provides a "
+                    "short-delay access to current data where consistency with "
+                    "the CDR baseline is expected but was not extensively "
+                    "checked."
+                ),
+                default="cdr",
+            ),
             version=JsonStringSchema(
-                enum=['v201706', 'v201812', 'v201912', 'v202012'],
-                title='Data version',
+                enum=["v201706", "v201812", "v201912", "v202012"],
+                title="Data version",
                 description=(
-                    'Product version, in the format vYYYYMM, where YYYY'
-                    'represents a year number and MM a two-digit month number'
-                    '(with leading zero if required).'),
-                default='v202012')
+                    "Product version, in the format vYYYYMM, where YYYY"
+                    "represents a year number and MM a two-digit month number"
+                    "(with leading zero if required)."
+                ),
+                default="v202012",
+            ),
         )
 
         if len(variable_properties.sensor_types) > 1:
-            params['type_of_sensor'] = JsonStringSchema(
+            params["type_of_sensor"] = JsonStringSchema(
                 enum=variable_properties.sensor_types,
                 default=variable_properties.sensor_types[0],
-                title='Type of sensor',
+                title="Type of sensor",
                 description=(
-                    'Passive sensors measure reflected sunlight. '
-                    'Active sensors have their own source of illumination.'
-                ))
+                    "Passive sensors measure reflected sunlight. "
+                    "Active sensors have their own source of illumination."
+                ),
+            )
 
         return JsonObjectSchema(
             properties=params,
-            required=['time_range'],
-            additional_properties=False
+            required=["time_range"],
+            additional_properties=False,
         )
 
     def get_human_readable_data_id(self, data_id: str):
         return self._data_id_map[data_id]
 
     def describe_data(self, data_id: str) -> DatasetDescriptor:
-        _, variable_spec, aggregation = data_id.split(':')
+        _, variable_spec, aggregation = data_id.split(":")
 
         sm_attrs = dict(
-            saturation=('percent', 'Percent of Saturation Soil Moisture'),
-            volumetric=('m3 m-3', 'Volumetric Soil Moisture'))[variable_spec]
+            saturation=("percent", "Percent of Saturation Soil Moisture"),
+            volumetric=("m3 m-3", "Volumetric Soil Moisture"),
+        )[variable_spec]
 
         descriptors_common = [
             VariableDescriptor(
-                name='sensor',
-                dtype='int16',
-                dims=('time', 'lat', 'lon'),
-                attrs={'long_name': 'Sensor'}
+                name="sensor",
+                dtype="int16",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Sensor"},
             ),
             VariableDescriptor(
-                name='freqbandID',
-                dtype='int16',
-                dims=('time', 'lat', 'lon'),
-                attrs={'long_name': 'Frequency Band Identification'}
+                name="freqbandID",
+                dtype="int16",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Frequency Band Identification"},
             ),
             VariableDescriptor(
-                name='sm',
-                dtype='float32',
-                dims=('time', 'lat', 'lon'),
-                attrs={'units': sm_attrs[0],
-                       'long_name': sm_attrs[1]}
+                name="sm",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={"units": sm_attrs[0], "long_name": sm_attrs[1]},
             ),
         ]
 
@@ -264,63 +272,67 @@ class SoilMoistureHandler(CDSDatasetHandler):
                 # The product user guide claims that sm_uncertainty is
                 # available for all three aggregation periods, but in practice
                 # it only seems to be present in the daily data.
-                name='sm_uncertainty',
-                dtype='float32',
-                dims=('time', 'lat', 'lon'),
-                attrs={'units': sm_attrs[0],
-                       'long_name': sm_attrs[1] + ' Uncertainty'}
+                name="sm_uncertainty",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={
+                    "units": sm_attrs[0],
+                    "long_name": sm_attrs[1] + " Uncertainty",
+                },
             ),
             VariableDescriptor(
-                name='t0',
-                dtype='float64',
-                dims=('time', 'lat', 'lon'),
-                attrs={'units': 'days since 1970-01-01 00:00:00 UTC',
-                       'long_name': 'Observation Timestamp'}
+                name="t0",
+                dtype="float64",
+                dims=("time", "lat", "lon"),
+                attrs={
+                    "units": "days since 1970-01-01 00:00:00 UTC",
+                    "long_name": "Observation Timestamp",
+                },
             ),
             VariableDescriptor(
-                name='dnflag',
-                dtype='int8',
-                dims=('time', 'lat', 'lon'),
-                attrs={'long_name': 'Day / Night Flag'}
+                name="dnflag",
+                dtype="int8",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Day / Night Flag"},
             ),
             VariableDescriptor(
-                name='flag',
-                dtype='int8',
-                dims=('time', 'lat', 'lon'),
-                attrs={'long_name': 'Flag'}
+                name="flag",
+                dtype="int8",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Flag"},
             ),
             VariableDescriptor(
-                name='mode',
-                dtype='int8',
-                dims=('time', 'lat', 'lon'),
+                name="mode",
+                dtype="int8",
+                dims=("time", "lat", "lon"),
                 # Note: the product user guide gives the long name as
                 # 'Satellite Mode' with one space, but the long name in the
                 # actual NetCDF files has two spaces.
-                attrs={'long_name': 'Satellite  Mode'}
+                attrs={"long_name": "Satellite  Mode"},
             ),
-
         ]
         descriptors_aggregated = [
             VariableDescriptor(
-                name='nobs',
-                dtype='int16',
-                dims=('time', 'lat', 'lon'),
-                attrs={'long_name': 'Number of valid observation'}
+                name="nobs",
+                dtype="int16",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Number of valid observation"},
             ),
-
         ]
 
-        descriptors = descriptors_common + \
-            (descriptors_daily if aggregation == 'daily'
-             else descriptors_aggregated)
+        descriptors = descriptors_common + (
+            descriptors_daily
+            if aggregation == "daily"
+            else descriptors_aggregated
+        )
 
         return DatasetDescriptor(
             data_id=data_id,
             data_vars={desc.name: desc for desc in descriptors},
-            crs='WGS84',
+            crs="WGS84",
             bbox=(-180, -90, 180, 90),
             spatial_res=0.25,
-            time_range=('1978-11-01', None),
+            time_range=("1978-11-01", None),
             time_period=self._aggregation_map[aggregation],
-            open_params_schema=self.get_open_data_params_schema(data_id)
+            open_params_schema=self.get_open_data_params_schema(data_id),
         )
