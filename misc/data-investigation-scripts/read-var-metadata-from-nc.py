@@ -18,7 +18,7 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input-dir', default='nc-single-var')
+    parser.add_argument("--input-dir", default="nc-single-var")
     args = parser.parse_args()
 
     param_table = []
@@ -28,21 +28,23 @@ def main():
     param_table.sort()
     json.dump(param_table, sys.stdout, indent=2)
 
-        
+
 def read_param_data(parent_dir, filename):
-    param_name_request = re.sub('[.]nc$', '', filename)
-    with xr.open_dataset(os.path.join(parent_dir, filename),
-                         decode_cf=True) as dataset:
+    param_name_request = re.sub("[.]nc$", "", filename)
+    with xr.open_dataset(
+        os.path.join(parent_dir, filename), decode_cf=True
+    ) as dataset:
         var_names_all = set(dataset.variables.keys())
-        var_names = var_names_all - {'latitude', 'longitude', 'time'}
+        var_names = var_names_all - {"latitude", "longitude", "time"}
         if len(var_names) != 1:
-            raise Exception(f'File must contain exactly one data variable, '
-                            f'not {len(var_names)}.')
-        (var_name, ) = var_names
+            raise Exception(
+                f"File must contain exactly one data variable, "
+                f"not {len(var_names)}."
+            )
+        (var_name,) = var_names
         attrs = dataset.variables[var_name].attrs
-    return (param_name_request, var_name, attrs['units'],
-            attrs['long_name'])
+    return (param_name_request, var_name, attrs["units"], attrs["long_name"])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -22,10 +22,10 @@
 
 DEFAULT_NUM_RETRIES = 200
 DEFAULT_TILE_SIZE = 1000
-DEFAULT_CRS = 'http://www.opengis.net/def/crs/EPSG/0/4326'
-DEFAULT_TIME_TOLERANCE = '10M'  # 10 minutes
+DEFAULT_CRS = "http://www.opengis.net/def/crs/EPSG/0/4326"
+DEFAULT_TIME_TOLERANCE = "10M"  # 10 minutes
 
 CDS_MAX_IMAGE_SIZE = 2500
 
-CDS_DATA_STORE_ID = 'cds'
-CDS_DATA_OPENER_ID = 'dataset:netcdf:cds'
+CDS_DATA_STORE_ID = "cds"
+CDS_DATA_OPENER_ID = "dataset:netcdf:cds"

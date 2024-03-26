@@ -20,16 +20,16 @@ import tarfile
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output-dir', default='nc-single-var')
-    parser.add_argument('variable_list')
-    parser.add_argument('request')
+    parser.add_argument("--output-dir", default="nc-single-var")
+    parser.add_argument("variable_list")
+    parser.add_argument("request")
     args = parser.parse_args()
 
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
 
     print(args)
-    with open(args.variable_list, 'r') as fh:
+    with open(args.variable_list, "r") as fh:
         variable_names = [line.strip() for line in fh.readlines()]
 
     with open(args.request) as fh:
@@ -37,30 +37,31 @@ def main():
 
     c = cdsapi.Client()
 
-    params = request_params['parameters']
-    suffix = {'netcdf': 'nc',
-              'tgz': 'tgz'}[params['format']]
+    params = request_params["parameters"]
+    suffix = {"netcdf": "nc", "tgz": "tgz"}[params["format"]]
     for var_name in variable_names:
         # We are only interested in the variable's metadata, so we
         # request a minimal amount of data: one product, one month,
         # one year, one hour, small area.
 
-        dataset_id = request_params['dataset']
-        params['variable'] = var_name
-        download_dest = args.output_dir + '/' + var_name + '.' + suffix
+        dataset_id = request_params["dataset"]
+        params["variable"] = var_name
+        download_dest = args.output_dir + "/" + var_name + "." + suffix
         c.retrieve(dataset_id, params, download_dest)
-        if suffix == 'tgz':
+        if suffix == "tgz":
             # For tar files, we assert that they only contain one file,
             # then extract it and give it an 'nc' suffix (under the assumption
             # that it's a NetCDF file).
             with tarfile.open(download_dest) as tf:
                 names = tf.getnames()
-                assert(len(names) == 1)
+                assert len(names) == 1
                 tf.extractall(args.output_dir)
-                os.rename(args.output_dir + '/' + names[0],
-                          args.output_dir + '/' + var_name + '.nc')
+                os.rename(
+                    args.output_dir + "/" + names[0],
+                    args.output_dir + "/" + var_name + ".nc",
+                )
                 os.remove(download_dest)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

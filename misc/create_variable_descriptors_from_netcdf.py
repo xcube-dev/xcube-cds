@@ -14,9 +14,9 @@ from netCDF4 import Dataset
 
 
 def main():
-    with Dataset(sys.argv[1], 'r') as ds:
+    with Dataset(sys.argv[1], "r") as ds:
         for vname, vinfo in ds.variables.items():
-            if '_CoordinateAxisType' not in vinfo.ncattrs():
+            if "_CoordinateAxisType" not in vinfo.ncattrs():
                 output_variable(vname, vinfo)
 
 
@@ -28,25 +28,26 @@ class VariableDescriptor:
         output = []
         for arg, value in self.kwargs.items():
             output.append(f"{arg}={self._fmt(value)}")
-        return 'VariableDescriptor(\n    ' + ',\n    '.join(output) + '\n),'
+        return "VariableDescriptor(\n    " + ",\n    ".join(output) + "\n),"
 
     @staticmethod
     def _fmt(value):
-        return repr(value) if type(value) in (tuple, dict, list) \
-            else f"'{value}'"
+        return (
+            repr(value) if type(value) in (tuple, dict, list) else f"'{value}'"
+        )
 
 
 def output_variable(vname, vinfo):
     attr_map = {}
-    for attr_name in 'units', 'long_name':
+    for attr_name in "units", "long_name":
         if attr_name in vinfo.ncattrs():
             attr_map[attr_name] = vinfo.getncattr(attr_name)
 
-    vd = VariableDescriptor(name=vname, dtype=vinfo.datatype,
-                            dims=vinfo.dimensions,
-                            attrs=attr_map)
+    vd = VariableDescriptor(
+        name=vname, dtype=vinfo.datatype, dims=vinfo.dimensions, attrs=attr_map
+    )
     print(vd.constructor_string())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -1,3 +1,8 @@
+## Changes in 0.9.3 (in development)
+
+ - Rename main repository branch from `master` to `main`.
+ - Reformat code using `black`
+
 ## Changes in 0.9.2
 
  - Update dataset handlers to deal with recent changes in the CDS

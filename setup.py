@@ -35,22 +35,24 @@ packages = find_packages(exclude=["test", "test.*"])
 
 # Same effect as "from xcube_cds import version" but avoids importing xcube_cds
 version = None
-with open('xcube_cds/version.py') as f:
+with open("xcube_cds/version.py") as f:
     exec(f.read())
 
 setup(
-    name='xcube_cds',
+    name="xcube_cds",
     version=version,
-    description='An xcube plugin to generate data cubes from the '
-                'Climate Data Store (CDS) API',
-    license='MIT',
-    author='xcube Development Team',
+    description="An xcube plugin to generate data cubes from the "
+    "Climate Data Store (CDS) API",
+    license="MIT",
+    author="xcube Development Team",
     packages=packages,
-    package_data={'xcube_cds.datasets': [
-        'reanalysis-era5-land.json',
-        'reanalysis-era5-land-monthly-means.json',
-        'reanalysis-era5-single-levels.json',
-        'reanalysis-era5-single-levels-monthly-means.json',
-    ]},
+    package_data={
+        "xcube_cds.datasets": [
+            "reanalysis-era5-land.json",
+            "reanalysis-era5-land-monthly-means.json",
+            "reanalysis-era5-single-levels.json",
+            "reanalysis-era5-single-levels-monthly-means.json",
+        ]
+    },
     install_requires=requirements,
 )

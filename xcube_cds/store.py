@@ -87,8 +87,7 @@ class CDSDatasetHandler(ABC):
         """
 
     @abstractmethod
-    def get_open_data_params_schema(self, data_id: str) -> \
-            JsonObjectSchema:
+    def get_open_data_params_schema(self, data_id: str) -> JsonObjectSchema:
         """Return the open parameters schema for a specified dataset.
 
         Note that the data_id is not optional here: CDSDataOpener handles
@@ -117,8 +116,9 @@ class CDSDatasetHandler(ABC):
         """
 
     @abstractmethod
-    def transform_params(self, opener_params: Dict, data_id: str) -> \
-            Tuple[str, Dict[str, Any]]:
+    def transform_params(
+        self, opener_params: Dict, data_id: str
+    ) -> Tuple[str, Dict[str, Any]]:
         """Transform opener parameters into CDS API parameters
 
         The caller is responsible for ensuring that all required parameters
@@ -133,10 +133,14 @@ class CDSDatasetHandler(ABC):
         """
 
     @abstractmethod
-    def read_file(self, dataset_name: str,
-                  open_params: Dict,
-                  cds_api_params: Dict[str, Union[str, List[str]]],
-                  file_path: str, temp_dir: str) -> xr.Dataset:
+    def read_file(
+        self,
+        dataset_name: str,
+        open_params: Dict,
+        cds_api_params: Dict[str, Union[str, List[str]]],
+        file_path: str,
+        temp_dir: str,
+    ) -> xr.Dataset:
         """Read a file downloaded via the CDS API as into an xarray Dataset
 
         :param dataset_name: the CDS name of the dataset (note that this
@@ -167,13 +171,17 @@ class CDSDatasetHandler(ABC):
             strings) and all other key-value pairs omitted
         """
         return {
-            k1: v1 for k1, v1 in [self.transform_time_param(k0, v0)
-                                  for k0, v0 in params.items()]
-            if k1 is not None}
+            k1: v1
+            for k1, v1 in [
+                self.transform_time_param(k0, v0) for k0, v0 in params.items()
+            ]
+            if k1 is not None
+        }
 
     @staticmethod
-    def transform_time_param(key: str, value: List[int]) -> \
-            Tuple[Optional[str], Optional[List[str]]]:
+    def transform_time_param(
+        key: str, value: List[int]
+    ) -> Tuple[Optional[str], Optional[List[str]]]:
         """Convert an hours/days/months/years time specifier to CDS form
 
         This method renames the pluralized keys to singular (hours -> hour,
@@ -187,20 +195,19 @@ class CDSDatasetHandler(ABC):
             (None, None) if the key was not recognized
         """
 
-        if key == 'hours':
-            return 'time', list(map(lambda x: f'{x:02d}:00', value))
-        if key == 'days':
-            return 'day', list(map(lambda x: f'{x:02d}', value))
-        elif key == 'months':
-            return 'month', list(map(lambda x: f'{x:02d}', value))
-        elif key == 'years':
-            return 'year', list(map(lambda x: f'{x:04d}', value))
+        if key == "hours":
+            return "time", list(map(lambda x: f"{x:02d}:00", value))
+        if key == "days":
+            return "day", list(map(lambda x: f"{x:02d}", value))
+        elif key == "months":
+            return "month", list(map(lambda x: f"{x:02d}", value))
+        elif key == "years":
+            return "year", list(map(lambda x: f"{x:04d}", value))
         else:
             return None, None
 
     @staticmethod
-    def convert_time_range(time_range: List[str]) -> \
-            Dict[str, List[int]]:
+    def convert_time_range(time_range: List[str]) -> Dict[str, List[int]]:
         """Convert a time range to a CDS-style time specification.
 
         This method converts a time range specification (i.e. a straightforward
@@ -226,25 +233,36 @@ class CDSDatasetHandler(ABC):
         # Python type hints don't support list lengths, so we check this
         # manually.
         if len(time_range) != 2:
-            raise ValueError(f'time_range must have a length of 2, '
-                             'not {len(time_range)}.')
+            raise ValueError(
+                f"time_range must have a length of 2, " "not {len(time_range)}."
+            )
 
         time0 = dateutil.parser.isoparse(time_range[0])
-        time1 = datetime.datetime.now() if time_range[1] is None \
+        time1 = (
+            datetime.datetime.now()
+            if time_range[1] is None
             else dateutil.parser.isoparse(time_range[1])
+        )
 
         # We use dateutil's recurrence rule features to enumerate the
         # hour / day / month numbers which intersect with the selected time
         # range.
 
-        hour0 = datetime.datetime(time0.year, time0.month, time0.day,
-                                  time0.hour, 0)
-        hour1 = datetime.datetime(time1.year, time1.month, time1.day,
-                                  time1.hour, 59)
+        hour0 = datetime.datetime(
+            time0.year, time0.month, time0.day, time0.hour, 0
+        )
+        hour1 = datetime.datetime(
+            time1.year, time1.month, time1.day, time1.hour, 59
+        )
         hour_max = hour0 + datetime.timedelta(hours=24)
-        hours = [dt.hour for dt in dateutil.rrule.rrule(
-            freq=dateutil.rrule.HOURLY,
-            dtstart=hour0, until=min(hour1, hour_max))]
+        hours = [
+            dt.hour
+            for dt in dateutil.rrule.rrule(
+                freq=dateutil.rrule.HOURLY,
+                dtstart=hour0,
+                until=min(hour1, hour_max),
+            )
+        ]
         hours = sorted(set(hours))
 
         day0 = datetime.datetime(time0.year, time0.month, time0.day, 0, 1)
@@ -253,17 +271,27 @@ class CDSDatasetHandler(ABC):
         # 31) ensures that we'll get a 31-day month if the specified time
         # span contains one.
         day_max = day0 + datetime.timedelta(days=100)
-        days = [dt.day for dt in dateutil.rrule.rrule(
-            freq=dateutil.rrule.DAILY, dtstart=day0, until=min(day1, day_max)
-        )]
+        days = [
+            dt.day
+            for dt in dateutil.rrule.rrule(
+                freq=dateutil.rrule.DAILY,
+                dtstart=day0,
+                until=min(day1, day_max),
+            )
+        ]
         days = sorted(set(days))
 
         month0 = datetime.datetime(time0.year, time0.month, 1)
         month1 = datetime.datetime(time1.year, time1.month, 28)
         month_max = month0 + datetime.timedelta(days=366)
-        months = [dt.month for dt in dateutil.rrule.rrule(
-            freq=dateutil.rrule.MONTHLY,
-            dtstart=month0, until=min(month1, month_max))]
+        months = [
+            dt.month
+            for dt in dateutil.rrule.rrule(
+                freq=dateutil.rrule.MONTHLY,
+                dtstart=month0,
+                until=min(month1, month_max),
+            )
+        ]
         months = sorted(set(months))
 
         years = list(range(time0.year, time1.year + 1))
@@ -283,7 +311,8 @@ class CDSDatasetHandler(ABC):
         """
         return {
             k: (v[0] if isinstance(v, list) and len(v) == 1 else v)
-            for k, v in dictionary.items()}
+            for k, v in dictionary.items()
+        }
 
     @staticmethod
     def combine_netcdf_time_limits(paths: List[str]) -> Dict[str, str]:
@@ -303,8 +332,8 @@ class CDSDatasetHandler(ABC):
                  'time_coverage_end'
         """
 
-        start_key = 'time_coverage_start'
-        end_key = 'time_coverage_end'
+        start_key = "time_coverage_start"
+        end_key = "time_coverage_end"
         starts, ends = [], []
         for path in paths:
             with xr.open_dataset(path) as ds:
@@ -319,11 +348,13 @@ class CDSDatasetHandler(ABC):
 class CDSDataOpener(DataOpener):
     """A data opener for the Copernicus Climate Data Store"""
 
-    def __init__(self,
-                 normalize_names: Optional[bool] = False,
-                 client_class=cdsapi.Client,
-                 endpoint_url=None,
-                 cds_api_key=None):
+    def __init__(
+        self,
+        normalize_names: Optional[bool] = False,
+        client_class=cdsapi.Client,
+        endpoint_url=None,
+        cds_api_key=None,
+    ):
         """Instantiate a CDS data opener.
 
         :param normalize_names: if True, all variable names in the returned
@@ -344,12 +375,17 @@ class CDSDataOpener(DataOpener):
         self._create_temporary_directory()
         self._handler_registry: Dict[str, CDSDatasetHandler] = {}
         from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
+
         self._register_dataset_handler(ERA5DatasetHandler())
-        from xcube_cds.datasets.satellite_soil_moisture \
-            import SoilMoistureHandler
+        from xcube_cds.datasets.satellite_soil_moisture import (
+            SoilMoistureHandler,
+        )
+
         self._register_dataset_handler(SoilMoistureHandler())
-        from xcube_cds.datasets.satellite_sea_ice_thickness \
-            import SeaIceThicknessHandler
+        from xcube_cds.datasets.satellite_sea_ice_thickness import (
+            SeaIceThicknessHandler,
+        )
+
         self._register_dataset_handler(SeaIceThicknessHandler())
         self._client_class = client_class
         self.cds_api_url = endpoint_url
@@ -381,53 +417,58 @@ class CDSDataOpener(DataOpener):
     ###########################################################################
     # DataOpener implementation
 
-    def get_open_data_params_schema(self, data_id: Optional[str] = None) -> \
-            JsonObjectSchema:
+    def get_open_data_params_schema(
+        self, data_id: Optional[str] = None
+    ) -> JsonObjectSchema:
         self._validate_data_id(data_id, allow_none=True)
-        return self._get_default_open_params_schema() \
-            if data_id is None \
-            else (self._handler_registry[data_id].
-                  get_open_data_params_schema(data_id))
+        return (
+            self._get_default_open_params_schema()
+            if data_id is None
+            else (
+                self._handler_registry[data_id].get_open_data_params_schema(
+                    data_id
+                )
+            )
+        )
 
     def _get_default_open_params_schema(self) -> JsonObjectSchema:
         params = dict(
             dataset_name=JsonStringSchema(
-                min_length=1,
-                enum=list(self._handler_registry.keys())),
+                min_length=1, enum=list(self._handler_registry.keys())
+            ),
             variable_names=JsonArraySchema(
-                items=(JsonStringSchema(min_length=0)),
-                unique_items=True
+                items=(JsonStringSchema(min_length=0)), unique_items=True
             ),
             crs=JsonStringSchema(),
             # W, S, E, N
-            bbox=JsonArraySchema(items=(
-                JsonNumberSchema(minimum=-180, maximum=180),
-                JsonNumberSchema(minimum=-90, maximum=90),
-                JsonNumberSchema(minimum=-180, maximum=180),
-                JsonNumberSchema(minimum=-90, maximum=90))),
+            bbox=JsonArraySchema(
+                items=(
+                    JsonNumberSchema(minimum=-180, maximum=180),
+                    JsonNumberSchema(minimum=-90, maximum=90),
+                    JsonNumberSchema(minimum=-180, maximum=180),
+                    JsonNumberSchema(minimum=-90, maximum=90),
+                )
+            ),
             spatial_res=JsonNumberSchema(),
             time_range=JsonDateSchema.new_range(),
             time_period=JsonStringSchema(),
         )
         required = [
-            'variable_names',
-            'bbox',
-            'spatial_res',
-            'time_range',
+            "variable_names",
+            "bbox",
+            "spatial_res",
+            "time_range",
         ]
-        return JsonObjectSchema(
-            properties=params,
-            required=required
-        )
+        return JsonObjectSchema(properties=params, required=required)
 
     def open_data(self, data_id: str, **open_params) -> xr.Dataset:
         print(f"xcube-cds version {version}", file=sys.stderr)
         # Unofficial parameters for testing, debugging, etc.
         # They're not in the schema so we remove them before validating.
-        read_file_from = open_params.pop('_read_file_from', None)
-        save_file_to = open_params.pop('_save_file_to', None)
-        save_zarr_to = open_params.pop('_save_zarr_to', None)
-        save_request_to = open_params.pop('_save_request_to', None)
+        read_file_from = open_params.pop("_read_file_from", None)
+        save_file_to = open_params.pop("_save_file_to", None)
+        save_zarr_to = open_params.pop("_save_zarr_to", None)
+        save_request_to = open_params.pop("_save_request_to", None)
 
         schema = self.get_open_data_params_schema(data_id)
         schema.validate_instance(open_params)
@@ -435,28 +476,36 @@ class CDSDataOpener(DataOpener):
 
         # Fill in defaults from the schema
         props = self.get_open_data_params_schema(data_id).properties
-        all_open_params = {k: props[k].default for k in props
-                           if props[k].default != UNDEFINED}
+        all_open_params = {
+            k: props[k].default for k in props if props[k].default != UNDEFINED
+        }
         all_open_params.update(open_params)
 
         # Disable PyCharm's inspection which thinks False and [] are equivalent
         # noinspection PySimplifyBooleanCheck
-        if all_open_params['variable_names'] == []:
+        if all_open_params["variable_names"] == []:
             # The CDS API requires at least one variable to be selected,
             # so in order to return an empty dataset we have to construct
             # it ourselves.
             dataset = self._create_empty_dataset(data_id, all_open_params)
         else:
-            dataset_name, cds_api_params = \
-                handler.transform_params(all_open_params, data_id)
+            dataset_name, cds_api_params = handler.transform_params(
+                all_open_params, data_id
+            )
             if save_request_to:
-                with open(save_request_to, 'w') as fh:
-                    json.dump({**dict(_dataset_name=dataset_name),
-                               **cds_api_params},
-                              fh)
+                with open(save_request_to, "w") as fh:
+                    json.dump(
+                        {**dict(_dataset_name=dataset_name), **cds_api_params},
+                        fh,
+                    )
             dataset = self._open_data_with_handler(
-                handler, dataset_name, all_open_params, cds_api_params,
-                read_file_from, save_file_to)
+                handler,
+                dataset_name,
+                all_open_params,
+                cds_api_params,
+                read_file_from,
+                save_file_to,
+            )
 
         if save_zarr_to:
             dataset.to_zarr(save_zarr_to)
@@ -472,18 +521,20 @@ class CDSDataOpener(DataOpener):
 
         store = CDSDataStore()
         data_descriptor = store.describe_data(data_id)
-        bbox = open_params.get('bbox', data_descriptor.bbox)
-        spatial_res = open_params.get('spatial_res',
-                                      data_descriptor.spatial_res)
+        bbox = open_params.get("bbox", data_descriptor.bbox)
+        spatial_res = open_params.get(
+            "spatial_res", data_descriptor.spatial_res
+        )
         # arange returns a half-open range, so we add *almost* a whole
         # spatial_res to the upper limit to make sure that it's included.
         lons = np.arange(bbox[0], bbox[2] + (spatial_res * 0.99), spatial_res)
         lats = np.arange(bbox[1], bbox[3] + (spatial_res * 0.99), spatial_res)
 
-        time_range = open_params['time_range']
-        times = self._create_time_range(time_range[0], time_range[1],
-                                        data_descriptor.time_period)
-        return xr.Dataset({}, coords={'time': times, 'lat': lats, 'lon': lons})
+        time_range = open_params["time_range"]
+        times = self._create_time_range(
+            time_range[0], time_range[1], data_descriptor.time_period
+        )
+        return xr.Dataset({}, coords={"time": times, "lat": lats, "lon": lons})
 
     @staticmethod
     def _create_time_range(t_start: str, t_end: str, t_interval: str):
@@ -503,51 +554,71 @@ class CDSDataOpener(DataOpener):
                  to the nearest whole month.
         """
         dt_start = dateutil.parser.isoparse(t_start)
-        dt_end = datetime.datetime.now() if t_end is None \
+        dt_end = (
+            datetime.datetime.now()
+            if t_end is None
             else dateutil.parser.isoparse(t_end)
-        period_number, period_unit = \
-            CDSDataOpener._parse_time_period(t_interval)
+        )
+        period_number, period_unit = CDSDataOpener._parse_time_period(
+            t_interval
+        )
         timedelta = np.timedelta64(period_number, period_unit)
-        relativedelta = CDSDataOpener._period_to_relativedelta(period_number,
-                                                               period_unit)
+        relativedelta = CDSDataOpener._period_to_relativedelta(
+            period_number, period_unit
+        )
         one_microsecond = dateutil.relativedelta.relativedelta(microseconds=1)
         # Months and years can be of variable length, so we need to reduce the
         # resolution of the start and end appropriately if the aggregation
         # period is in one of these units.
-        if period_unit in 'MY':
-            range_start = dt_start.strftime('%Y-%m')
-            range_end = (dt_end + relativedelta - one_microsecond). \
-                strftime('%Y-%m')
+        if period_unit in "MY":
+            range_start = dt_start.strftime("%Y-%m")
+            range_end = (dt_end + relativedelta - one_microsecond).strftime(
+                "%Y-%m"
+            )
         else:
             range_start = dt_start.isoformat()
             range_end = (dt_end + relativedelta - one_microsecond).isoformat()
 
-        return np.arange(range_start, range_end, timedelta,
-                         dtype=f'datetime64')
+        return np.arange(range_start, range_end, timedelta, dtype=f"datetime64")
 
     @staticmethod
     def _parse_time_period(specifier: str) -> Tuple[int, str]:
         """Convert a time period (e.g. '10D', 'Y') to a NumPy timedelta"""
-        time_match = re.match(r'^(\d+)([hmsDWMY])$',
-                              specifier)
+        time_match = re.match(r"^(\d+)([hmsDWMY])$", specifier)
         time_number_str = time_match.group(1)
-        time_number = 1 if time_number_str == '' else int(time_number_str)
+        time_number = 1 if time_number_str == "" else int(time_number_str)
         time_unit = time_match.group(2)
         return time_number, time_unit
 
     @staticmethod
-    def _period_to_relativedelta(number: int, unit: str) \
-            -> dateutil.relativedelta:
-        conversion = dict(Y='years', M='months', D='days', W='weeks',
-                          h='hours', m='minutes', s='seconds')
-        return dateutil.relativedelta. \
-            relativedelta(**{conversion[unit]: number})
+    def _period_to_relativedelta(
+        number: int, unit: str
+    ) -> dateutil.relativedelta:
+        conversion = dict(
+            Y="years",
+            M="months",
+            D="days",
+            W="weeks",
+            h="hours",
+            m="minutes",
+            s="seconds",
+        )
+        return dateutil.relativedelta.relativedelta(
+            **{conversion[unit]: number}
+        )
 
-    def _open_data_with_handler(self, handler, dataset_name, open_params,
-                                cds_api_params, read_file_from, save_file_to) \
-            -> xr.Dataset:
-        file_path = read_file_from or \
-                    self._fetch_file_via_cds_api(cds_api_params, dataset_name)
+    def _open_data_with_handler(
+        self,
+        handler,
+        dataset_name,
+        open_params,
+        cds_api_params,
+        read_file_from,
+        save_file_to,
+    ) -> xr.Dataset:
+        file_path = read_file_from or self._fetch_file_via_cds_api(
+            cds_api_params, dataset_name
+        )
         if save_file_to:
             shutil.copy2(file_path, save_file_to)
 
@@ -571,8 +642,9 @@ class CDSDataOpener(DataOpener):
         # deletion of the parent temporary directory.
         temp_subdir = tempfile.mkdtemp(dir=self._tempdir)
 
-        dataset = handler.read_file(dataset_name, open_params,
-                                    cds_api_params, file_path, temp_subdir)
+        dataset = handler.read_file(
+            dataset_name, open_params, cds_api_params, file_path, temp_subdir
+        )
         return self._normalize_dataset(dataset)
 
     def _fetch_file_via_cds_api(self, cds_api_params, dataset_name):
@@ -582,9 +654,9 @@ class CDSDataOpener(DataOpener):
             # be cdsapi.Client, but may be mocked for unit testing.
             args = {}
             if self.cds_api_url:
-                args['url'] = self.cds_api_url
+                args["url"] = self.cds_api_url
             if self.cds_api_key:
-                args['key'] = self.cds_api_key
+                args["key"] = self.cds_api_key
             self.last_instantiated_client = client = self._client_class(**args)
 
             # We can't generate a safe unique filename (since the file is
@@ -592,7 +664,7 @@ class CDSDataOpener(DataOpener):
             # creation won't be atomic). Instead we atomically create a
             # subdirectory of the temporary directory for the single file.
             subdir = tempfile.mkdtemp(dir=self._tempdir)
-            file_path = os.path.join(subdir, 'data')
+            file_path = os.path.join(subdir, "data")
 
             # This call returns a Result object, which at present we make
             # no use of.
@@ -616,16 +688,16 @@ class CDSDataOpener(DataOpener):
         # dataset = dataset.rename_vars({'longitude': 'lon', 'latitude': 'lat'})
         # dataset.transpose('time', ..., 'lat', 'lon')
 
-        dataset.coords['time'].attrs['standard_name'] = 'time'
+        dataset.coords["time"].attrs["standard_name"] = "time"
         # Correct units not entirely clear: cubespec document says
         # degrees_north / degrees_east for WGS84 Schema, but SH Plugin
         # had decimal_degrees.
-        if 'lat' in dataset.coords:
-            dataset.coords['lat'].attrs['standard_name'] = 'latitude'
-            dataset.coords['lat'].attrs['units'] = 'degrees_north'
-        if 'lon' in dataset.coords:
-            dataset.coords['lon'].attrs['standard_name'] = 'longitude'
-            dataset.coords['lon'].attrs['units'] = 'degrees_east'
+        if "lat" in dataset.coords:
+            dataset.coords["lat"].attrs["standard_name"] = "latitude"
+            dataset.coords["lat"].attrs["units"] = "degrees_north"
+        if "lon" in dataset.coords:
+            dataset.coords["lon"].attrs["standard_name"] = "longitude"
+            dataset.coords["lon"].attrs["units"] = "degrees_east"
 
         # TODO: Temporal coordinate variables MUST have units, standard_name,
         # and any others. standard_name MUST be "time", units MUST have
@@ -635,7 +707,7 @@ class CDSDataOpener(DataOpener):
         if self._normalize_names:
             rename_dict = {}
             for name in dataset.data_vars.keys():
-                normalized_name = re.sub(r'\W|^(?=\d)', '_', str(name))
+                normalized_name = re.sub(r"\W|^(?=\d)", "_", str(name))
                 if name != normalized_name:
                     rename_dict[name] = normalized_name
             dataset_renamed = dataset.rename_vars(rename_dict)
@@ -732,9 +804,9 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         Examples: "10D", "2M", "1Y".
     """
 
-    def __init__(self,
-                 num_retries: Optional[int] = DEFAULT_NUM_RETRIES,
-                 **kwargs):
+    def __init__(
+        self, num_retries: Optional[int] = DEFAULT_NUM_RETRIES, **kwargs
+    ):
         super().__init__(**kwargs)
         self.num_retries = num_retries
 
@@ -743,93 +815,92 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
 
     @classmethod
     def get_data_store_params_schema(cls) -> JsonObjectSchema:
-        params = dict(
-            normalize_names=JsonBooleanSchema(default=False)
-        )
+        params = dict(normalize_names=JsonBooleanSchema(default=False))
 
         # For now, let CDS API use defaults or environment variables for
         # most parameters.
         cds_params = dict(
-            num_retries=JsonIntegerSchema(default=DEFAULT_NUM_RETRIES,
-                                          minimum=0),
+            num_retries=JsonIntegerSchema(
+                default=DEFAULT_NUM_RETRIES, minimum=0
+            ),
             endpoint_url=JsonStringSchema(),
             cds_api_key=JsonStringSchema(),
         )
 
         params.update(cds_params)
         return JsonObjectSchema(
-            properties=params,
-            required=None,
-            additional_properties=False
+            properties=params, required=None, additional_properties=False
         )
 
     @classmethod
     def get_data_types(cls) -> Tuple[str, ...]:
-        return DATASET_TYPE.alias,
+        return (DATASET_TYPE.alias,)
 
     def get_data_types_for_data(self, data_id: str) -> Tuple[str, ...]:
         self._validate_data_id(data_id)
-        return DATASET_TYPE.alias,
+        return (DATASET_TYPE.alias,)
 
-    def get_data_ids(self,
-                     data_type: DataTypeLike = None,
-                     include_attrs: Container[str] = None) -> \
-            Union[Iterator[str], Iterator[Tuple[str, Dict[str, Any]]]]:
+    def get_data_ids(
+        self,
+        data_type: DataTypeLike = None,
+        include_attrs: Container[str] = None,
+    ) -> Union[Iterator[str], Iterator[Tuple[str, Dict[str, Any]]]]:
         if self._is_data_type_satisfied(data_type):
             # Only if the type specifier isn't compatible
             return_tuples = include_attrs is not None
             # TODO: respect names other than "title" in include_attrs
-            include_titles = return_tuples and 'title' in include_attrs
+            include_titles = return_tuples and "title" in include_attrs
 
             for data_id, handler in self._handler_registry.items():
                 if return_tuples:
                     if include_titles:
-                        yield data_id, \
-                              {'title':
-                               handler.get_human_readable_data_id(data_id)}
+                        yield data_id, {
+                            "title": handler.get_human_readable_data_id(data_id)
+                        }
                     else:
                         yield data_id, {}
                 else:
                     yield data_id
 
-    def has_data(self, data_id: str, data_type: Optional[str] = None) \
-            -> bool:
-        return self._is_data_type_satisfied(data_type) and \
-               data_id in self._handler_registry
+    def has_data(self, data_id: str, data_type: Optional[str] = None) -> bool:
+        return (
+            self._is_data_type_satisfied(data_type)
+            and data_id in self._handler_registry
+        )
 
-    def describe_data(self, data_id: str,
-                      data_type: Optional[str] = None) \
-            -> DatasetDescriptor:
+    def describe_data(
+        self, data_id: str, data_type: Optional[str] = None
+    ) -> DatasetDescriptor:
         self._validate_data_id(data_id)
         self._validate_data_type(data_type)
         return self._handler_registry[data_id].describe_data(data_id)
 
     # noinspection PyTypeChecker
-    def search_data(self, data_type: Optional[DataTypeLike] = None,
-                    **search_params) \
-            -> Iterator[DataDescriptor]:
+    def search_data(
+        self, data_type: Optional[DataTypeLike] = None, **search_params
+    ) -> Iterator[DataDescriptor]:
         self._validate_data_type(data_type)
-        return super().search_data(data_type=data_type,
-                                   **search_params)
+        return super().search_data(data_type=data_type, **search_params)
 
-    def get_data_opener_ids(self, data_id: Optional[str] = None,
-                            data_type: Optional[str] = None) \
-            -> Tuple[str, ...]:
+    def get_data_opener_ids(
+        self, data_id: Optional[str] = None, data_type: Optional[str] = None
+    ) -> Tuple[str, ...]:
         self._validate_data_type(data_type)
         self._validate_data_id(data_id, allow_none=True)
-        return CDS_DATA_OPENER_ID,
+        return (CDS_DATA_OPENER_ID,)
 
-    def get_open_data_params_schema(self, data_id: Optional[str] = None,
-                                    opener_id: Optional[str] = None) \
-            -> JsonObjectSchema:
+    def get_open_data_params_schema(
+        self, data_id: Optional[str] = None, opener_id: Optional[str] = None
+    ) -> JsonObjectSchema:
         # At present, there's only one opener ID available, so we do nothing
         # with it except to check that it was correct (or None).
         self._assert_valid_opener_id(opener_id)
         self._validate_data_id(data_id, allow_none=True)
         return super().get_open_data_params_schema(data_id)
 
-    def open_data(self, data_id: str, opener_id: Optional[str] = None,
-                  **open_params) -> xr.Dataset:
+    def open_data(
+        self, data_id: str, opener_id: Optional[str] = None, **open_params
+    ) -> xr.Dataset:
         self._assert_valid_opener_id(opener_id)
         self._validate_data_id(data_id)
         return super().open_data(data_id, **open_params)
@@ -841,13 +912,12 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
     def _validate_data_type(data_type: DataTypeLike):
         if not CDSDataStore._is_data_type_satisfied(data_type):
             raise DataStoreError(
-                f'Supplied data type {data_type!r} is not compatible'
+                f"Supplied data type {data_type!r} is not compatible"
                 f' with "{DATASET_TYPE!r}."'
             )
 
     @staticmethod
-    def _is_data_type_satisfied(
-            data_type: DataTypeLike) -> bool:
+    def _is_data_type_satisfied(data_type: DataTypeLike) -> bool:
         # At present, all datasets are available as cubes, so we simply check
         # against TYPE_SPECIFIER_CUBE. If more (non-cube) datasets are added,
         # the logic will have to be delegated to CDSDatasetHandler
@@ -861,4 +931,5 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         if opener_id is not None and opener_id != CDS_DATA_OPENER_ID:
             raise DataStoreError(
                 f'Data opener identifier must be "{CDS_DATA_OPENER_ID}"'
-                f'but got "{opener_id}"')
+                f'but got "{opener_id}"'
+            )
