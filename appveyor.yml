@@ -16,13 +16,15 @@ for:
       - image: macos
       - image: Previous macos  # not usually needed, but might use it while debugging
   install:
-    - '"${SHELL}" <(curl -L micro.mamba.pm/install.sh)'
+    - curl -Ls https://micro.mamba.pm/api/micromamba/osx-64/latest | tar -xvj bin/micromamba
+    - mv bin/micromamba ./micromamba
 -
   matrix:
     only:
       - image: Ubuntu2204
   install:
-    - '"${SHELL}" <(curl -L micro.mamba.pm/install.sh)'
+    - curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+    - mv bin/micromamba ./micromamba
 
 build_script:
   # Diagnostics
@@ -33,15 +35,14 @@ build_script:
   - ls
 
   # Set up micromamba
-  # 2024-06-10: commented out to determine whether this is still required
-#  - ./micromamba shell init -s bash -p ~/micromamba
-#  - source ~/.bashrc
-#  - source ~/.profile
-#  - hash -r
-#  - mkdir -p ~/micromamba/pkgs/
-#  - export MAMBA_ROOT_PREFIX=~/micromamba
-#  - export MAMBA_EXE=$(pwd)/micromamba
-#  - . $MAMBA_ROOT_PREFIX/etc/profile.d/micromamba.sh
+  - ./micromamba shell init -s bash -p ~/micromamba
+  - source ~/.bashrc
+  - source ~/.profile
+  - hash -r
+  - mkdir -p ~/micromamba/pkgs/
+  - export MAMBA_ROOT_PREFIX=~/micromamba
+  - export MAMBA_EXE=$(pwd)/micromamba
+  - . $MAMBA_ROOT_PREFIX/etc/profile.d/micromamba.sh
 
   # Clone xcube repository, install xcube dependencies with micromamba,
   # and install the latest version of xcube with setup.py.
