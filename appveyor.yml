@@ -50,7 +50,7 @@ build_script:
   - micromamba create --name xc --file $HOME/xcube/environment.yml
   - micromamba activate xc
   - cd $HOME/xcube
-  - python setup.py install
+  - pip install --no-deps .
 
   # Use micromamba to install all xcube-cds dependencies *except* xcube
   # (already manually installed), then install xcube-cds itself with setup.py.
