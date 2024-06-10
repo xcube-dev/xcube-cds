@@ -16,13 +16,13 @@ for:
       - image: macos
       - image: Previous macos  # not usually needed, but might use it while debugging
   install:
-    - "${SHELL}" <(curl -L micro.mamba.pm/install.sh)
+    - '"${SHELL}" <(curl -L micro.mamba.pm/install.sh)'
 -
   matrix:
     only:
       - image: Ubuntu2204
   install:
-    - "${SHELL}" <(curl -L micro.mamba.pm/install.sh)
+    - '"${SHELL}" <(curl -L micro.mamba.pm/install.sh)'
 
 build_script:
   # Diagnostics
