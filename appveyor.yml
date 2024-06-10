@@ -46,7 +46,7 @@ build_script:
 
   # Clone xcube repository, install xcube dependencies with micromamba,
   # and install the latest version of xcube with setup.py.
-  - git clone https://github.com/dcs4cop/xcube $HOME/xcube
+  - git clone https://github.com/xcube-dev/xcube $HOME/xcube
   - micromamba create --name xc --file $HOME/xcube/environment.yml
   - micromamba activate xc
   - cd $HOME/xcube
