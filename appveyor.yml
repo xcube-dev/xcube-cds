@@ -35,7 +35,7 @@ build_script:
   - ls
 
   # Set up micromamba
-  - ./micromamba shell init -s bash -p ~/micromamba
+  - ./micromamba shell init -s bash --root-prefix ~/micromamba
   - source ~/.bashrc
   - source ~/.profile
   - hash -r
