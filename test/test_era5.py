@@ -186,6 +186,9 @@ class CDSEra5Test(unittest.TestCase):
         self.assertEqual(361, len(dataset.variables["lon"]))
 
     def test_open_data_null_variables_list(self):
+        # As of 2024-07-26, fails with new CDS beta API, because it returns
+        # a Zip rather than a NetCDF for this particular parameter set.
+
         store = CDSDataStore(
             client_class=get_cds_client(),
             endpoint_url=_CDS_API_URL,
