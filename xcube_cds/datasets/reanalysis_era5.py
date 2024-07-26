@@ -43,8 +43,17 @@ from xcube_cds.store import CDSDatasetHandler
 
 
 class ERA5DatasetHandler(CDSDatasetHandler):
-    def __init__(self):
+
+    def __init__(self, api_version: int = 1):
+        """Instantiate a new ERA5 dataset handler
+
+        :param api_version: the API version to use when interfacing with the
+            backend CDS service. 1 indicates the original API version used
+            at launch. 2 indicates the new version introduced in 2024.
+        """
         self._read_dataset_info()
+        assert(api_version in {1, 2})
+        self._api_version = api_version
 
     def _read_dataset_info(self):
         """Read dataset information from JSON files"""
@@ -292,7 +301,8 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             # but is described at
             # https://confluence.ecmwf.int/display/CKB/ERA5%3A+Web+API+to+CDS+API
             "grid": [resolution, resolution],
-            "format": "netcdf",
+            # API versions 1 and 2 use different keys for format specifier.
+            {1: "format", 2: "data_format"}[self._api_version]: "netcdf",
         }
 
         if product_type is not None:

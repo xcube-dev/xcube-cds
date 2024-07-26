@@ -688,7 +688,16 @@ class CDSDataOpener(DataOpener):
         # dataset = dataset.rename_vars({'longitude': 'lon', 'latitude': 'lat'})
         # dataset.transpose('time', ..., 'lat', 'lon')
 
+        # With the new CDS backend introduced in 2024, the ERA5 time coordinate
+        # is called "valid_time" rather than "time".
+        if "valid_time" in dataset.coords and "time" not in dataset.coords:
+            dataset = dataset.rename({"valid_time": "time"})
+
+        # This assignment also conveniently asserts the expected presence of
+        # a time coordinate. This is a good place to fail if time is absent
+        # (e.g. due to a change in backend behaviour).
         dataset.coords["time"].attrs["standard_name"] = "time"
+
         # Correct units not entirely clear: cubespec document says
         # degrees_north / degrees_east for WGS84 Schema, but SH Plugin
         # had decimal_degrees.
