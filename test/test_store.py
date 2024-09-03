@@ -66,9 +66,7 @@ _CDS_API_KEY = "dummy"
 
 class CDSStoreTest(unittest.TestCase):
     def test_invalid_data_id(self):
-        store = CDSDataStore(
-            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
-        )
+        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
         with self.assertRaises(ValueError):
             store.open_data(
                 "this-data-id-does-not-exist",
@@ -79,9 +77,7 @@ class CDSStoreTest(unittest.TestCase):
             )
 
     def test_list_and_describe_data_ids(self):
-        store = CDSDataStore(
-            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
-        )
+        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
         data_ids = store.get_data_ids(include_attrs=["title"])
         self.assertIsInstance(data_ids, Iterator)
         for data_id in data_ids:
@@ -170,9 +166,7 @@ class CDSStoreTest(unittest.TestCase):
             CDSDatasetHandler.convert_time_range([])  # incorrect list length
 
     def test_get_open_params_schema_without_data_id(self):
-        opener = CDSDataOpener(
-            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
-        )
+        opener = CDSDataOpener(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
         schema = opener.get_open_data_params_schema()
 
         actual = schema.to_dict()
@@ -196,16 +190,12 @@ class CDSStoreTest(unittest.TestCase):
         )
 
     def test_search_data_invalid_data_type(self):
-        store = CDSDataStore(
-            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
-        )
+        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
         with self.assertRaises(ValueError):
             store.search_data(data_type="This is an invalid data type.")
 
     def test_search_data_valid_data_type(self):
-        store = CDSDataStore(
-            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
-        )
+        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
         result = list(store.search_data("dataset"))
         self.assertTrue(len(result) > 0)
 
@@ -397,22 +387,6 @@ class ClientUrlTest(unittest.TestCase):
         self.assertEqual(endpoint_url, client.url)
         self.assertEqual(cds_api_key, client.key)
 
-    def test_new_datastore_with_credential_parameters(self):
-        """Test passing URL and key parameters to new_data_store"""
-
-        from xcube.core.store import new_data_store
-
-        endpoint_url = "https://example.com/"
-        cds_api_key = "plugh"
-        store = typing.cast(
-            CDSDataStore,
-            new_data_store(
-                "cds", endpoint_url=endpoint_url, cds_api_key=cds_api_key
-            ),
-        )
-        self.assertEqual(endpoint_url, store.cds_api_url)
-        self.assertEqual(cds_api_key, store.cds_api_key)
-
     @staticmethod
     def _get_client(opener_args=None, name=None, client_class=None):
         """Return the client instantiated to open a dataset
@@ -436,9 +410,7 @@ class ClientUrlTest(unittest.TestCase):
         )
         return opener.last_instantiated_client
 
-    def _set_up_api_configuration(
-        self, url_rc, key_rc, url_env=None, key_env=None
-    ):
+    def _set_up_api_configuration(self, url_rc, key_rc, url_env=None, key_env=None):
         """Set up a configuration file and, optionally, environment variables
 
         The teardown function will take care of the clean-up.

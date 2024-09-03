@@ -4,7 +4,7 @@
 
 An [xcube plugin](https://xcube.readthedocs.io/en/latest/plugins.html)
 which can generate data cubes from the
-[Copernicus Climate Data Store (CDS) API](https://cds.climate.copernicus.eu/api-how-to).
+[Copernicus Climate Data Store (CDS) API](https://cds-beta.climate.copernicus.eu/how-to-api).
 
 ## Description
 
@@ -14,57 +14,44 @@ CDS.
 
 Currently supported datasets:
 
- - [ERA5 hourly data on single levels from 1979 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels)
- - [ERA5-Land hourly data from 1981 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land)
- - [ERA5 monthly averaged data on single levels from 1979 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels-monthly-means?tab=overview)
- - [ERA5-Land monthly averaged data from 1981 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-land-monthly-means)
- - [Soil moisture gridded data from 1978 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-soil-moisture)
- - [Sea ice thickness gridded data from 2002 to present](https://cds.climate.copernicus.eu/cdsapp#!/dataset/satellite-sea-ice-thickness)
+ - [ERA5 hourly data on single levels from 1940 to present](https://cds-beta.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview)
+ - [ERA5-Land hourly data from 1950 to present](https://cds-beta.climate.copernicus.eu/datasets/reanalysis-era5-land?tab=overview)
+ - [ERA5 monthly averaged data on single levels from 1940 to present](https://cds-beta.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-monthly-means?tab=overview)
+ - [ERA5-Land monthly averaged data from 1950 to present](https://cds-beta.climate.copernicus.eu/datasets/reanalysis-era5-land-monthly-means?tab=overview)
+ - [Soil moisture gridded data from 1978 to present](https://cds-beta.climate.copernicus.eu/datasets/satellite-soil-moisture?tab=overview)
+ - [Sea ice thickness gridded data from 2002 to present](https://cds-beta.climate.copernicus.eu/datasets/satellite-sea-ice-thickness?tab=overview)
 
 ## Setup
 
 ### Configuring access to the CDS API
 
 In order to use the CDS API via the xcube_cds plugin, you need to obtain a 
-CDS user ID (UID) and API key and write them to a configuration file.
+Personal Access Token and write them to a configuration file.
 Additionally, you need to use the CDS website to agree in advance to the terms
 of use for any datasets you want to acccess.
 
-#### Obtain a CDS API key
+#### Obtain a CDS Personal Access Token
 
-You can obtain the UID and API key as follows:
+You can obtain a CDS Personal Access Token as follows:
 
 1. Create a user account on the
-   [CDS Website](https://cds.climate.copernicus.eu/user/register).
-2. Log in to the website with your user name and password.
-3. Navigate to your [user page](https://cds.climate.copernicus.eu/user/)
-   on the website. Your API key is shown at the bottom of the page.
+   [CDS Website](https://cds-beta.climate.copernicus.eu/).
+2. Log in to the website with your username and password.
+3. Navigate to your [user page](https://cds-beta.climate.copernicus.eu/profile), 
+   where you can find your Personal Access Token.
 
 #### Configure CDS API access
 
-Your CDS API key must be made available to the CDS API library. You can do
-this by creating a file named `.cdsapirc` in your home directory, with the
-following format:
+Your CDS Personal Access Token must be made available to the CDS API library.
+You can do this by creating a file named `.cdsapirc` in your home directory,
+with the following format:
 
 ```
-url: https://cds.climate.copernicus.eu/api/v2
-key: <UID>:<API-KEY>
+url: https://cds-beta.climate.copernicus.eu/api
+key: <PERSONAL-ACCESS-TOKEN>
 ```
 
-Replace `<UID>` with your UID and `<API-KEY>` with your API key, as obtained
-from the CDS website.
-
-You can specify an alternative location for the CDS API configuration file
-using the `CDSAPI_RC` environment variable, or provide the URL and key
-without a configuration file by setting the `CDSAPI_URL` and `CDSAPI_KEY`
-environment variables. You can also pass the URL and key directly to the
-`CDSDataOpener` and `CDSDataStore` constructors using the named parameters
-`cds_api_url` and `cds_api_key`.
-
-> :warning: Note that the `key` value must contain the UID *and* the API key,
-> separated by a colon. If you get the error
-> [‘TypeError: 'tuple' object is not callable in python cdsapi’](https://stackoverflow.com/q/64422955/6947739),
-> check that the `key` value follows this format correctly.
+Replace `<PERSONAL-ACCESS-TOKEN>` with your Personal Access Token.
 
 #### Agree to the terms of use for the datasets you require
 
@@ -72,18 +59,16 @@ The datasets available through CDS have associated terms of use. Before
 accessing a dataset via the API, you must agree to its terms of use, which
 can only be done via the CDS website, as follows:
 
-1. [Log in](https://cds.climate.copernicus.eu/user/login) to the CDS website,
-   and use the
-   [search page](https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset)
-   to find the dataset you require.
-2. On the dataset's web page, select the ‘Download data’ tab.
+1. [Log in](https://cds-beta.climate.copernicus.eu) to the CDS website,
+   and go to 'Datasets' to find the dataset you require.
+2. On the dataset's web page, select the ‘Download’ tab.
 3. Scroll to the bottom of the page, and you will see a section titled
    ‘Terms of use’, which will contain either an ‘Accept terms’ button to
    allow you to accept the terms, or a confirmation that you have already
    accepted the terms.
 
 Once you have accepted the terms on the website, the dataset will also be
-made available to you (using the same user credentials) through the API.
+made available to you through the API.
 
 ### Installing the xcube-cds plugin
 

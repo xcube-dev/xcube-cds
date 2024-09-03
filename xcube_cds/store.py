@@ -43,6 +43,7 @@ import dateutil.parser
 import dateutil.relativedelta
 import dateutil.rrule
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 import xcube.core.normalize
@@ -248,12 +249,8 @@ class CDSDatasetHandler(ABC):
         # hour / day / month numbers which intersect with the selected time
         # range.
 
-        hour0 = datetime.datetime(
-            time0.year, time0.month, time0.day, time0.hour, 0
-        )
-        hour1 = datetime.datetime(
-            time1.year, time1.month, time1.day, time1.hour, 59
-        )
+        hour0 = datetime.datetime(time0.year, time0.month, time0.day, time0.hour, 0)
+        hour1 = datetime.datetime(time1.year, time1.month, time1.day, time1.hour, 59)
         hour_max = hour0 + datetime.timedelta(hours=24)
         hours = [
             dt.hour
@@ -424,11 +421,7 @@ class CDSDataOpener(DataOpener):
         return (
             self._get_default_open_params_schema()
             if data_id is None
-            else (
-                self._handler_registry[data_id].get_open_data_params_schema(
-                    data_id
-                )
-            )
+            else (self._handler_registry[data_id].get_open_data_params_schema(data_id))
         )
 
     def _get_default_open_params_schema(self) -> JsonObjectSchema:
@@ -522,9 +515,7 @@ class CDSDataOpener(DataOpener):
         store = CDSDataStore()
         data_descriptor = store.describe_data(data_id)
         bbox = open_params.get("bbox", data_descriptor.bbox)
-        spatial_res = open_params.get(
-            "spatial_res", data_descriptor.spatial_res
-        )
+        spatial_res = open_params.get("spatial_res", data_descriptor.spatial_res)
         # arange returns a half-open range, so we add *almost* a whole
         # spatial_res to the upper limit to make sure that it's included.
         lons = np.arange(bbox[0], bbox[2] + (spatial_res * 0.99), spatial_res)
@@ -559,9 +550,7 @@ class CDSDataOpener(DataOpener):
             if t_end is None
             else dateutil.parser.isoparse(t_end)
         )
-        period_number, period_unit = CDSDataOpener._parse_time_period(
-            t_interval
-        )
+        period_number, period_unit = CDSDataOpener._parse_time_period(t_interval)
         timedelta = np.timedelta64(period_number, period_unit)
         relativedelta = CDSDataOpener._period_to_relativedelta(
             period_number, period_unit
@@ -572,9 +561,7 @@ class CDSDataOpener(DataOpener):
         # period is in one of these units.
         if period_unit in "MY":
             range_start = dt_start.strftime("%Y-%m")
-            range_end = (dt_end + relativedelta - one_microsecond).strftime(
-                "%Y-%m"
-            )
+            range_end = (dt_end + relativedelta - one_microsecond).strftime("%Y-%m")
         else:
             range_start = dt_start.isoformat()
             range_end = (dt_end + relativedelta - one_microsecond).isoformat()
@@ -591,9 +578,7 @@ class CDSDataOpener(DataOpener):
         return time_number, time_unit
 
     @staticmethod
-    def _period_to_relativedelta(
-        number: int, unit: str
-    ) -> dateutil.relativedelta:
+    def _period_to_relativedelta(number: int, unit: str) -> dateutil.relativedelta:
         conversion = dict(
             Y="years",
             M="months",
@@ -603,9 +588,7 @@ class CDSDataOpener(DataOpener):
             m="minutes",
             s="seconds",
         )
-        return dateutil.relativedelta.relativedelta(
-            **{conversion[unit]: number}
-        )
+        return dateutil.relativedelta.relativedelta(**{conversion[unit]: number})
 
     def _open_data_with_handler(
         self,
@@ -693,6 +676,14 @@ class CDSDataOpener(DataOpener):
         if "valid_time" in dataset.coords and "time" not in dataset.coords:
             dataset = dataset.rename({"valid_time": "time"})
 
+        # With the new CDS backend introduced in 2024, the ERA5 time coordinate
+        # can be called "date" rather than "time".
+        if "date" in dataset.coords and "time" not in dataset.coords:
+            dataset = dataset.assign_coords(
+                {"date": pd.to_datetime(dataset.date.astype(str)).to_numpy()}
+            )
+            dataset = dataset.rename({"date": "time"})
+
         # This assignment also conveniently asserts the expected presence of
         # a time coordinate. This is a good place to fail if time is absent
         # (e.g. due to a change in backend behaviour).
@@ -737,38 +728,30 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
     CDSDataStore is a read-only xcube DataStore implementation which uses
     the Copernicus Climate Data Store (CDS) API as a backend.
 
-    In order to use the CDS API via the xcube_cds plugin, you need to obtain
-    a CDS user ID (UID) and API key and write them to a configuration file.
-    Additionally, you need to use the CDS website to agree in advance to the
-    terms of use for any datasets you want to acccess.
+    In order to use the CDS API via the xcube_cds plugin, you need to obtain a
+    Personal Access Key and write them to a configuration file.
+    Additionally, you need to use the CDS website to agree in advance to the terms
+    of use for any datasets you want to acccess.
 
-    You can obtain the UID and API key as follows:
+    You can obtain a CDS Personal Access Token as follows:
 
     1. Create a user account on the `CDS
-       Website <https://cds.climate.copernicus.eu/user/register>`__.
-    2. Log in to the website with your user name and password.
+       Website <https://cds-beta.climate.copernicus.eu/>`__.
+    2. Log in to the website with your username and password.
     3. Navigate to your `user
-       page <https://cds.climate.copernicus.eu/user/>`__ on the website.
-       Your API key is shown at the bottom of the page.
+       page <https://cds-beta.climate.copernicus.eu/profile>`__, where you
+       can find your Personal Access Token.
 
-    Your CDS API key must be made available to the CDS API library. You can
-    do this by creating a file named ``.cdsapirc`` in your home directory,
+    Your CDS Personal Access Token must be made available to the CDS API library.
+    You can do this by creating a file named ``.cdsapirc`` in your home directory,
     with the following format:
 
     .. code-block: text
 
-       url: https://cds.climate.copernicus.eu/api/v2
-       key: <UID>:<API-KEY>
+    url: https://cds-beta.climate.copernicus.eu/api
+    key: <PERSONAL-ACCESS-TOKEN>
 
-    Replace ``<UID>`` with your UID and ``<API-KEY>`` with your API key, as
-    obtained from the CDS website.
-
-    You can specify an alternative location for the CDS API configuration
-    file using the ``CDSAPI_RC`` environment variable, or provide the URL
-    and key without a configuration file by setting the ``CDSAPI_URL`` and
-    ``CDSAPI_KEY`` environment variables. You can also pass the URL and key
-    directly to the ``CDSDataOpener`` and ``CDSDataStore`` constructors
-    using the named parameters ``cds_api_url`` and ``cds_api_key``.
+    Replace `<PERSONAL-ACCESS-TOKEN>` with your Personal Access Token.
 
     The CDS provides access to a heterogeneous selection of datasets, so the
     available open parameters and their permitted values are heavily
@@ -813,9 +796,7 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         Examples: "10D", "2M", "1Y".
     """
 
-    def __init__(
-        self, num_retries: Optional[int] = DEFAULT_NUM_RETRIES, **kwargs
-    ):
+    def __init__(self, num_retries: Optional[int] = DEFAULT_NUM_RETRIES, **kwargs):
         super().__init__(**kwargs)
         self.num_retries = num_retries
 
@@ -829,9 +810,7 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
         # For now, let CDS API use defaults or environment variables for
         # most parameters.
         cds_params = dict(
-            num_retries=JsonIntegerSchema(
-                default=DEFAULT_NUM_RETRIES, minimum=0
-            ),
+            num_retries=JsonIntegerSchema(default=DEFAULT_NUM_RETRIES, minimum=0),
             endpoint_url=JsonStringSchema(),
             cds_api_key=JsonStringSchema(),
         )

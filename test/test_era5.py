@@ -82,9 +82,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertTrue("p54_162" in dataset.variables)
 
     def test_request_parameter_out_of_range(self):
-        store = CDSDataStore(
-            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
-        )
+        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
         with self.assertRaises(ValidationError):
             store.open_data(
                 "reanalysis-era5-single-levels:ensemble_mean",
@@ -171,9 +169,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertLessEqual(south, north)
 
     def test_era5_open_data_empty_variables_list(self):
-        store = CDSDataStore(
-            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
-        )
+        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             "reanalysis-era5-land-monthly-means:monthly_averaged_reanalysis",
             variable_names=[],
@@ -186,17 +182,13 @@ class CDSEra5Test(unittest.TestCase):
         self.assertEqual(361, len(dataset.variables["lon"]))
 
     def test_open_data_null_variables_list(self):
-        # As of 2024-07-26, fails with new CDS beta API, because it returns
-        # a Zip rather than a NetCDF for this particular parameter set.
-
         store = CDSDataStore(
             client_class=get_cds_client(),
             endpoint_url=_CDS_API_URL,
             cds_api_key=_CDS_API_KEY,
         )
         data_id = (
-            "reanalysis-era5-single-levels-monthly-means:"
-            "monthly_averaged_reanalysis"
+            "reanalysis-era5-single-levels-monthly-means:" "monthly_averaged_reanalysis"
         )
         schema = store.get_open_data_params_schema(data_id)
         n_vars = len(schema.properties["variable_names"].items.enum)
@@ -210,12 +202,8 @@ class CDSEra5Test(unittest.TestCase):
         self.assertEqual(n_vars, len(dataset.data_vars))
 
     def test_era5_describe_data(self):
-        store = CDSDataStore(
-            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
-        )
-        descriptor = store.describe_data(
-            "reanalysis-era5-single-levels:reanalysis"
-        )
+        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
+        descriptor = store.describe_data("reanalysis-era5-single-levels:reanalysis")
         self.assertEqual(265, len(descriptor.data_vars))
         self.assertEqual("WGS84", descriptor.crs)
         self.assertTupleEqual((-180, -90, 180, 90), descriptor.bbox)
