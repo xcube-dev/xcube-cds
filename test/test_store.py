@@ -387,6 +387,20 @@ class ClientUrlTest(unittest.TestCase):
         self.assertEqual(endpoint_url, client.url)
         self.assertEqual(cds_api_key, client.key)
 
+    def test_new_datastore_with_credential_parameters(self):
+        """Test passing URL and key parameters to new_data_store"""
+
+        from xcube.core.store import new_data_store
+
+        endpoint_url = "https://example.com/"
+        cds_api_key = "plugh"
+        store = typing.cast(
+            CDSDataStore,
+            new_data_store("cds", endpoint_url=endpoint_url, cds_api_key=cds_api_key),
+        )
+        self.assertEqual(endpoint_url, store.cds_api_url)
+        self.assertEqual(cds_api_key, store.cds_api_key)
+
     @staticmethod
     def _get_client(opener_args=None, name=None, client_class=None):
         """Return the client instantiated to open a dataset
