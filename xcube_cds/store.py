@@ -449,7 +449,6 @@ class CDSDataOpener(DataOpener):
         required = [
             "variable_names",
             "bbox",
-            "spatial_res",
             "time_range",
         ]
         return JsonObjectSchema(properties=params, required=required)

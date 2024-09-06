@@ -119,7 +119,6 @@ class CDSEra5Test(unittest.TestCase):
             "reanalysis-era5-single-levels:" "reanalysis",
             variable_names=["2m_temperature"],
             bbox=[9, 49, 11, 51],
-            spatial_res=0.25,
             time_range=["2015-01-01", "2015-01-02"],
         )
         self.assertIsNotNone(dataset)
@@ -196,7 +195,6 @@ class CDSEra5Test(unittest.TestCase):
             data_id,
             variable_names=None,
             bbox=[-1, -1, 1, 1],
-            spatial_res=0.25,
             time_range=["2015-10-15", "2015-10-15"],
         )
         self.assertEqual(n_vars, len(dataset.data_vars))

@@ -52,7 +52,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             at launch. 2 indicates the new version introduced in 2024.
         """
         self._read_dataset_info()
-        assert(api_version in {1, 2})
+        assert api_version in {1, 2}
         self._api_version = api_version
 
     def _read_dataset_info(self):
@@ -134,9 +134,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 # a suffix.
                 if ds_id not in blacklist:
                     self._valid_data_ids.append(ds_id)
-                    self._data_id_to_human_readable[ds_id] = ds_dict[
-                        "description"
-                    ]
+                    self._data_id_to_human_readable[ds_id] = ds_dict["description"]
             else:
                 for pt_id, pt_desc in product_types:
                     data_id = ds_id + ":" + pt_id
@@ -202,7 +200,6 @@ class ERA5DatasetHandler(CDSDatasetHandler):
         required = [
             "variable_names",
             "bbox",
-            "spatial_res",
             "time_range",
         ]
         return JsonObjectSchema(
@@ -247,12 +244,12 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 netcdf_name,
                 units,
                 long_name,
-            ) in self._dataset_dicts[dataset_id]["variables"]
+            ) in self._dataset_dicts[
+                dataset_id
+            ]["variables"]
         }
 
-    def transform_params(
-        self, plugin_params: Dict, data_id: str
-    ) -> Tuple[str, Dict]:
+    def transform_params(self, plugin_params: Dict, data_id: str) -> Tuple[str, Dict]:
         """Transform supplied parameters to CDS API format.
 
         :param plugin_params: parameters in form expected by this plugin
@@ -269,7 +266,11 @@ class ERA5DatasetHandler(CDSDatasetHandler):
 
         # Translate our parameters (excluding time parameters) to the CDS API
         # scheme.
-        resolution = plugin_params["spatial_res"]
+        if "spatial_res" in plugin_params:
+            resolution = plugin_params["spatial_res"]
+        else:
+            ds_info = self._dataset_dicts[data_id.split(":")[0]]
+            resolution = ds_info["spatial_res"]
 
         variable_names_param = plugin_params["variable_names"]
         # noinspection PySimplifyBooleanCheck
@@ -297,13 +298,15 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 y1 + resolution / 2,
                 x2 - resolution / 2,
             ],
-            # Note: the "grid" parameter is not exposed via the web interface,
-            # but is described at
-            # https://confluence.ecmwf.int/display/CKB/ERA5%3A+Web+API+to+CDS+API
-            "grid": [resolution, resolution],
             # API versions 1 and 2 use different keys for format specifier.
             {1: "format", 2: "data_format"}[self._api_version]: "netcdf",
         }
+
+        # Note: the "grid" parameter is not exposed via the web interface,
+        # but is described at
+        # https://confluence.ecmwf.int/display/CKB/ERA5%3A+Web+API+to+CDS+API
+        if "spatial_res" in plugin_params:
+            params_combined["grid"] = [resolution, resolution]
 
         if product_type is not None:
             params_combined["product_type"] = product_type

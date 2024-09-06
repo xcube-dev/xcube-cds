@@ -173,7 +173,7 @@ class CDSStoreTest(unittest.TestCase):
         self.assertCountEqual(["type", "properties", "required"], actual.keys())
         self.assertEqual("object", actual["type"])
         self.assertCountEqual(
-            ["bbox", "spatial_res", "variable_names", "time_range"],
+            ["bbox", "variable_names", "time_range"],
             actual["required"],
         )
         self.assertCountEqual(
