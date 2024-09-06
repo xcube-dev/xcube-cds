@@ -190,7 +190,6 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             spatial_res=JsonNumberSchema(
                 minimum=ds_info["spatial_res"],
                 maximum=10,
-                default=ds_info["spatial_res"],
                 description="spatial resolution",
             ),
             time_range=JsonDateSchema.new_range(),
