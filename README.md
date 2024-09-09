@@ -26,7 +26,7 @@ Currently supported datasets:
 ### Configuring access to the CDS API
 
 In order to use the CDS API via the xcube_cds plugin, you need to obtain a 
-Personal Access Token and write them to a configuration file.
+Personal Access Token and write it to a configuration file.
 Additionally, you need to use the CDS website to agree in advance to the terms
 of use for any datasets you want to acccess.
 
