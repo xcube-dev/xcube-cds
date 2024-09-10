@@ -679,7 +679,7 @@ class CDSDataOpener(DataOpener):
         # can be called "date" rather than "time".
         if "date" in dataset.coords and "time" not in dataset.coords:
             dataset = dataset.assign_coords(
-                {"date": pd.to_datetime(dataset.date.astype(str)).to_numpy()}
+                {"date": pd.to_datetime(dataset.date.astype(str).values).to_numpy()}
             )
             dataset = dataset.rename({"date": "time"})
 

@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import glob
 import json
 import os
 import pathlib
@@ -38,6 +39,7 @@ from xcube.util.jsonschema import JsonDateSchema
 from xcube.util.jsonschema import JsonNumberSchema
 from xcube.util.jsonschema import JsonObjectSchema
 from xcube.util.jsonschema import JsonStringSchema
+import zipfile
 
 from xcube_cds.store import CDSDatasetHandler
 
@@ -339,4 +341,12 @@ class ERA5DatasetHandler(CDSDatasetHandler):
         # decode_cf=True is the default and the netcdf4 engine should be
         # available and automatically selected, but it's safer and clearer to
         # be explicit.
-        return xr.open_dataset(file_path, engine="netcdf4", decode_cf=True)
+        if zipfile.is_zipfile(file_path):
+            path_temp = os.path.join(pathlib.Path(file_path).parent.resolve(), "temp")
+            with zipfile.ZipFile(file_path, "r") as zip_ref:
+                zip_ref.extractall(path_temp)
+            file_paths = glob.glob(f"{path_temp}/*")
+            ds = xr.open_mfdataset(file_paths, engine="netcdf4")
+        else:
+            ds = xr.open_dataset(file_path, engine="netcdf4", decode_cf=True)
+        return ds

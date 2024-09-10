@@ -199,6 +199,27 @@ class CDSEra5Test(unittest.TestCase):
         )
         self.assertEqual(n_vars, len(dataset.data_vars))
 
+    def test_open_data_different_dims(self):
+        # parameters of atmosphere and ocean are on a different grid;
+        # xarray.open_mfdataset can deal with it, if the coarser grid is a
+        # subset of the finer grid, which is the case here;
+        # the missing values are filled with nans.
+        store = CDSDataStore(
+            client_class=get_cds_client(),
+            endpoint_url=_CDS_API_URL,
+            cds_api_key=_CDS_API_KEY,
+        )
+        data_id = "reanalysis-era5-single-levels:reanalysis"
+        variable_names = ["2m_temperature", "air_density_over_the_oceans"]
+        dataset = store.open_data(
+            data_id,
+            variable_names=variable_names,
+            bbox=[-1, -1, 1, 1],
+            time_range=["2020-01-01", "2020-01-02"],
+        )
+        self.assertCountEqual(["t2m", "p140209"], list(dataset.data_vars))
+        self.assertTrue(dataset.p140209.isnull().any())
+
     def test_era5_describe_data(self):
         store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
         descriptor = store.describe_data("reanalysis-era5-single-levels:reanalysis")
