@@ -1,7 +1,10 @@
-## Changes in 0.9.3 (in development)
+## Changes in 0.9.3
 
- - Rename main repository branch from `master` to `main`.
- - Reformat code using `black`
+ - Updates to support new (2024) CDS backend API. (#84)
+ - Rename main repository branch from `master` to `main`. (#76)
+ - Reformat code using `black`. (#78)
+ - Update AppVeyor config for micromamba 2.0. (#82)
+ - Update AppVeyor config to use new xcube installation method. (#81)
 
 ## Changes in 0.9.2
 
