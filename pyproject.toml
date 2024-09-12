@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools >= 61.2.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xcube-cds"
+dynamic = ["version", "readme"]
+authors = [
+  {name = "xcube Development Team"}
+]
+description = """\
+  An xcube plugin to generate data cubes
+  from the Climate Data Store (CDS) API
+  """
+keywords = [
+  "analysis ready data", "data science",
+  "datacube", "xarray", "zarr"
+]
+license = {text = "MIT"}
+requires-python = ">=3.9"
+dependencies = [
+    # managed by conda
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development",
+  "Topic :: Scientific/Engineering",
+  "Typing :: Typed",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX",
+  "Operating System :: Unix",
+  "Operating System :: MacOS",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "xcube_cds.__version__"}
+readme = {file = "README.md", content-type = "text/markdown"}
+
+[tool.setuptools.packages.find]
+exclude = [
+  "test*",
+  "doc*"
+]
+
+[tool.setuptools.package-data]
+"xcube_cds.datasets" = [
+            "reanalysis-era5-land.json",
+            "reanalysis-era5-land-monthly-means.json",
+            "reanalysis-era5-single-levels.json",
+            "reanalysis-era5-single-levels-monthly-means.json",
+]
+
+[project.urls]
+Source = "https://github.com/xcube-dev/xcube-cds"
+Download = "https://github.com/xcube-dev/xcube-cds/releases"
+Tracker = "https://github.com/xcube-dev/xcube-cds/issues"
+"Release notes" = "https://github.com/xcube-dev/xcube-cds/releases"
+Changelog = "https://github.com/xcube-dev/xcube-cds/blob/main/CHANGES.md"
