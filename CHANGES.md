@@ -1,5 +1,9 @@
 ## Changes in 0.9.4 (in development)
 
+ - Move project configuration from `setup.py` to `pyproject.toml`. (#89)
+ - Remove `defaults` channel from environment configuration. (#86)
+ - Enforce PEP 440 versioning rather than Semver in unit test. (#87)
+
 ## Changes in 0.9.3
 
  - Updates to support new (2024) CDS backend API. (#84)
