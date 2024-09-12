@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2020-2021 Brockmann Consult GmbH
+# Copyright (c) 2020-2024 Brockmann Consult GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -48,6 +48,7 @@ import tempfile
 import typing
 import unittest
 from collections.abc import Iterator
+import packaging
 
 import xcube
 import xcube.core
@@ -278,19 +279,18 @@ class CDSStoreTest(unittest.TestCase):
             )
 
     def test_version_number(self):
-        # The official semver regex, from
-        # https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-        valid_version = re.compile(
-            r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\."
-            r"(?P<patch>0|[1-9]\d*)"
-            r"(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)"
-            r"(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
-            r"(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
+        version_re = re.compile(
+            r"^\s*" + packaging.version.VERSION_PATTERN + r"\s*$",
+            re.VERBOSE | re.IGNORECASE
         )
-        import xcube_cds.version
-
-        self.assertTrue(valid_version.match(xcube_cds.version))
-        self.assertTrue(valid_version.match(xcube_cds.__version__))
+        for varname in "version", "__version__":
+            exec(f"from xcube_cds import {varname}")
+            __version__ = 'lol'
+            value = eval(varname)
+            self.assertIsNotNone(
+                version_re.match(value),
+                msg=f'xcube_cds.{varname} == "{value}" is not PEP 440 compliant.'
+            )
 
 
 class ClientUrlTest(unittest.TestCase):
