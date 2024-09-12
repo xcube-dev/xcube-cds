@@ -285,7 +285,6 @@ class CDSStoreTest(unittest.TestCase):
         )
         for varname in "version", "__version__":
             exec(f"from xcube_cds import {varname}")
-            __version__ = 'lol'
             value = eval(varname)
             self.assertIsNotNone(
                 version_re.match(value),
