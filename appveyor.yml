@@ -42,7 +42,7 @@ build_script:
   - mkdir -p ~/micromamba/pkgs/
   - export MAMBA_ROOT_PREFIX=~/micromamba
   - export MAMBA_EXE=$(pwd)/micromamba
-  - . $MAMBA_ROOT_PREFIX/etc/profile.d/micromamba.sh
+  - . $MAMBA_ROOT_PREFIX/etc/profile.d/mamba.sh
 
   # Clone xcube repository, install xcube dependencies with micromamba,
   # and install the latest version of xcube with setup.py.
@@ -56,7 +56,7 @@ build_script:
   # (already manually installed), then install xcube-cds itself with setup.py.
   - cd $APPVEYOR_BUILD_FOLDER
   - grep -v "^  - xcube" environment.yml > env_no_xcube.yml
-  - micromamba update --yes --name xc --file env_no_xcube.yml
+  - micromamba install --yes --name xc --file env_no_xcube.yml
   - pip install --no-deps .
 
   # Make sure pytest is installed
