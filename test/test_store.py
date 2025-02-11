@@ -284,8 +284,7 @@ class CDSStoreTest(unittest.TestCase):
             re.VERBOSE | re.IGNORECASE
         )
         for varname in "version", "__version__":
-            exec(f"from xcube_cds import {varname}")
-            value = eval(varname)
+            value = getattr(__import__("xcube_cds"), varname)
             self.assertIsNotNone(
                 version_re.match(value),
                 msg=f'xcube_cds.{varname} == "{value}" is not PEP 440 compliant.'
