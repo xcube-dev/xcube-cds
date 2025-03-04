@@ -46,7 +46,7 @@ from xcube_cds.store import CDSDatasetHandler
 
 class ERA5DatasetHandler(CDSDatasetHandler):
 
-    def __init__(self, api_version: int = 1):
+    def __init__(self, api_version: int = 2):
         """Instantiate a new ERA5 dataset handler
 
         :param api_version: the API version to use when interfacing with the
