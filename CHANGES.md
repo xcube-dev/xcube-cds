@@ -3,6 +3,7 @@
  - Move project configuration from `setup.py` to `pyproject.toml`. (#89)
  - Remove `defaults` channel from environment configuration. (#86)
  - Enforce PEP 440 versioning rather than Semver in unit test. (#87)
+ - Set `api_version=2` in `ERA5DatasetHandler`
 
 ## Changes in 0.9.3
 
