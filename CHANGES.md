@@ -2,6 +2,7 @@
 
  - Rename main repository branch from `master` to `main`.
  - Reformat code using `black`
+ - Set default `api_versio=2` in `ERA5DatasetHandler`
 
 ## Changes in 0.9.2
 
