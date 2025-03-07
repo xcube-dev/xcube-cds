@@ -9,6 +9,6 @@
             1, -1, -1,
             1
         ],
-        "format": "netcdf"
+        "data_format": "netcdf"
     }
 }

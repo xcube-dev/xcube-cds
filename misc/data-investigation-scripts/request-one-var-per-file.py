@@ -38,7 +38,7 @@ def main():
     c = cdsapi.Client()
 
     params = request_params["parameters"]
-    suffix = {"netcdf": "nc", "tgz": "tgz"}[params["format"]]
+    suffix = {"netcdf": "nc", "tgz": "tgz"}[params["data_format"]]
     for var_name in variable_names:
         # We are only interested in the variable's metadata, so we
         # request a minimal amount of data: one product, one month,
