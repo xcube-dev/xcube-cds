@@ -6,6 +6,6 @@
      "day": "01",
      "time": "00:00",
      "area": [ 1, -1, -1, 1 ],
-     "format": "netcdf"
+     "data_format": "netcdf"
  }
 }
