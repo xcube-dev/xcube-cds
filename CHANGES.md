@@ -1,4 +1,4 @@
-## Changes in 0.9.4 (in development)
+## Changes in 1.0.0
 
  - Move project configuration from `setup.py` to `pyproject.toml`. (#89)
  - Remove `defaults` channel from environment configuration. (#86)

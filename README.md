@@ -35,9 +35,9 @@ of use for any datasets you want to acccess.
 You can obtain a CDS Personal Access Token as follows:
 
 1. Create a user account on the
-   [CDS Website](https://cds-beta.climate.copernicus.eu/).
+   [CDS Website](https://cds.climate.copernicus.eu/).
 2. Log in to the website with your username and password.
-3. Navigate to your [user page](https://cds-beta.climate.copernicus.eu/profile), 
+3. Navigate to your [user page](https://cds.climate.copernicus.eu/profile), 
    where you can find your Personal Access Token.
 
 #### Configure CDS API access
@@ -59,7 +59,7 @@ The datasets available through CDS have associated terms of use. Before
 accessing a dataset via the API, you must agree to its terms of use, which
 can only be done via the CDS website, as follows:
 
-1. [Log in](https://cds-beta.climate.copernicus.eu) to the CDS website,
+1. [Log in](https://cds.climate.copernicus.eu) to the CDS website,
    and go to 'Datasets' to find the dataset you require.
 2. On the dataset's web page, select the ‘Download’ tab.
 3. Scroll to the bottom of the page, and you will see a section titled
