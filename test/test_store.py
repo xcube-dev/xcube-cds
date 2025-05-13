@@ -292,14 +292,19 @@ class CDSStoreTest(unittest.TestCase):
             self.assertTrue("title" in attrs)
 
     def test_get_data_ids_include_attrs_empty(self):
-        for id_, attrs in list(self._get_ids([])):
+        for id_, attrs in self._get_ids([]):
             self.assertIsInstance(id_, str)
             self.assertEqual(attrs, {})
 
     def test_get_data_ids_include_attrs_title(self):
-        for id_, attrs in list(self._get_ids(["title"])):
+        for id_, attrs in self._get_ids(["title"]):
             self.assertIsInstance(id_, str)
             self.assertTrue("title" in attrs)
+
+    def test_get_data_ids_include_attrs_invalid(self):
+        for value in None, CDSDatasetHandler, 666:
+            with self.assertRaises(ValueError):
+                self._get_ids(None)
 
     def test_era5_transform_params_empty_variable_list(self):
         handler = ERA5DatasetHandler()
