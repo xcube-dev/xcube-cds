@@ -1,3 +1,8 @@
+## Changes in 1.1.0 (in development)
+
+ - Support boolean-valued `include_attrs` in `get_data_ids` in accordance
+   with API update in xcube 1.8.0 (#100)
+
 ## Changes in 1.0.0
 
  - Move project configuration from `setup.py` to `pyproject.toml`. (#89)
