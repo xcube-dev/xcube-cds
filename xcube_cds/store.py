@@ -30,7 +30,8 @@ import sys
 import tempfile
 from abc import ABC
 from abc import abstractmethod
-from typing import Any, Container
+from typing import Any
+from collections.abc import Container
 from typing import Dict
 from typing import Iterator
 from typing import List
@@ -830,13 +831,20 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
     def get_data_ids(
         self,
         data_type: DataTypeLike = None,
-        include_attrs: Container[str] = None,
-    ) -> Union[Iterator[str], Iterator[Tuple[str, Dict[str, Any]]]]:
+        include_attrs: Container[str] | bool = False,
+    ) -> Iterator[str] | Iterator[Tuple[str, Dict[str, Any]]]:
         if self._is_data_type_satisfied(data_type):
-            # Only if the type specifier isn't compatible
-            return_tuples = include_attrs is not None
-            # TODO: respect names other than "title" in include_attrs
-            include_titles = return_tuples and "title" in include_attrs
+            match include_attrs:
+                case bool():
+                    return_tuples = include_attrs
+                    include_titles = True
+                case Container():
+                    return_tuples = True
+                    include_titles = "title" in include_attrs
+                case _:
+                    raise ValueError(
+                        f"Invalid type {type(include_attrs)} for include attrs"
+                    )
 
             for data_id, handler in self._handler_registry.items():
                 if return_tuples:

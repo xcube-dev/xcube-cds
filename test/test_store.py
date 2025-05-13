@@ -253,11 +253,7 @@ class CDSStoreTest(unittest.TestCase):
         )
 
     def test_get_data_ids(self):
-        store = CDSDataStore(
-            client_class=get_cds_client(),
-            endpoint_url=_CDS_API_URL,
-            cds_api_key=_CDS_API_KEY,
-        )
+        store = self._create_store()
         with self.assertRaises(ValueError):
             list(store.get_data_ids(data_type="unsupported_data_type"))
 
@@ -269,6 +265,41 @@ class CDSStoreTest(unittest.TestCase):
         self.assertGreater(
             len(list(store.get_data_ids("dataset"))), minimum_expected_datasets
         )
+
+    def _create_store(self):
+        return CDSDataStore(
+            client_class=get_cds_client(),
+            endpoint_url=_CDS_API_URL,
+            cds_api_key=_CDS_API_KEY,
+        )
+
+    def _get_ids(self, include_attrs):
+        return list(
+            self._create_store().get_data_ids(
+                data_type="dataset",
+                include_attrs=include_attrs
+            )
+        )
+
+    def test_get_data_ids_include_attrs_false(self):
+        result = self._get_ids(False)
+        self.assertTrue(all(isinstance(id_, str) for id_ in result))
+
+    def test_get_data_ids_include_attrs_true(self):
+        for id_, attrs in self._get_ids(True):
+            self.assertIsInstance(id_, str)
+            self.assertIsInstance(attrs, dict)
+            self.assertTrue("title" in attrs)
+
+    def test_get_data_ids_include_attrs_empty(self):
+        for id_, attrs in list(self._get_ids([])):
+            self.assertIsInstance(id_, str)
+            self.assertEqual(attrs, {})
+
+    def test_get_data_ids_include_attrs_title(self):
+        for id_, attrs in list(self._get_ids(["title"])):
+            self.assertIsInstance(id_, str)
+            self.assertTrue("title" in attrs)
 
     def test_era5_transform_params_empty_variable_list(self):
         handler = ERA5DatasetHandler()
