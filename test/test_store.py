@@ -252,20 +252,6 @@ class CDSStoreTest(unittest.TestCase):
             xcube.util.jsonschema.JsonObjectSchema,
         )
 
-    def test_get_data_ids(self):
-        store = self._create_store()
-        with self.assertRaises(ValueError):
-            list(store.get_data_ids(data_type="unsupported_data_type"))
-
-        # The number of available datasets is expected to increase over time,
-        # so to avoid overfitting the test we just check that more than a few
-        # datasets and/or cubes are available. "a few" is semi-arbitrarily
-        # defined to be 5.
-        minimum_expected_datasets = 5
-        self.assertGreater(
-            len(list(store.get_data_ids("dataset"))), minimum_expected_datasets
-        )
-
     def _create_store(self):
         return CDSDataStore(
             client_class=get_cds_client(),
@@ -279,6 +265,20 @@ class CDSStoreTest(unittest.TestCase):
                 data_type="dataset",
                 include_attrs=include_attrs
             )
+        )
+
+    def test_get_data_ids(self):
+        store = self._create_store()
+        with self.assertRaises(ValueError):
+            list(store.get_data_ids(data_type="unsupported_data_type"))
+
+        # The number of available datasets is expected to increase over time,
+        # so to avoid overfitting the test we just check that more than a few
+        # datasets and/or cubes are available. "a few" is semi-arbitrarily
+        # defined to be 5.
+        minimum_expected_datasets = 5
+        self.assertGreater(
+            len(list(store.get_data_ids("dataset"))), minimum_expected_datasets
         )
 
     def test_get_data_ids_include_attrs_false(self):
