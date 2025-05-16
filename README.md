@@ -4,7 +4,7 @@
 
 An [xcube plugin](https://xcube.readthedocs.io/en/latest/plugins.html)
 which can generate data cubes from the
-[Copernicus Climate Data Store (CDS) API](https://cds-beta.climate.copernicus.eu/how-to-api).
+[Copernicus Climate Data Store (CDS) API](https://cds.climate.copernicus.eu/how-to-api).
 
 ## Description
 
@@ -14,12 +14,12 @@ CDS.
 
 Currently supported datasets:
 
- - [ERA5 hourly data on single levels from 1940 to present](https://cds-beta.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview)
- - [ERA5-Land hourly data from 1950 to present](https://cds-beta.climate.copernicus.eu/datasets/reanalysis-era5-land?tab=overview)
- - [ERA5 monthly averaged data on single levels from 1940 to present](https://cds-beta.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-monthly-means?tab=overview)
- - [ERA5-Land monthly averaged data from 1950 to present](https://cds-beta.climate.copernicus.eu/datasets/reanalysis-era5-land-monthly-means?tab=overview)
- - [Soil moisture gridded data from 1978 to present](https://cds-beta.climate.copernicus.eu/datasets/satellite-soil-moisture?tab=overview)
- - [Sea ice thickness gridded data from 2002 to present](https://cds-beta.climate.copernicus.eu/datasets/satellite-sea-ice-thickness?tab=overview)
+ - [ERA5 hourly data on single levels from 1940 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=overview)
+ - [ERA5-Land hourly data from 1950 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land?tab=overview)
+ - [ERA5 monthly averaged data on single levels from 1940 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-monthly-means?tab=overview)
+ - [ERA5-Land monthly averaged data from 1950 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land-monthly-means?tab=overview)
+ - [Soil moisture gridded data from 1978 to present](https://cds.climate.copernicus.eu/datasets/satellite-soil-moisture?tab=overview)
+ - [Sea ice thickness gridded data from 2002 to present](https://cds.climate.copernicus.eu/datasets/satellite-sea-ice-thickness?tab=overview)
 
 ## Setup
 
@@ -37,8 +37,9 @@ You can obtain a CDS Personal Access Token as follows:
 1. Create a user account on the
    [CDS Website](https://cds.climate.copernicus.eu/).
 2. Log in to the website with your username and password.
-3. Navigate to your [user page](https://cds.climate.copernicus.eu/profile), 
-   where you can find your Personal Access Token.
+3. Navigate to the [CDSAPI setup
+   page](https://cds.climate.copernicus.eu/profile), where you can find your
+   Personal Access Token.
 
 #### Configure CDS API access
 
@@ -47,7 +48,7 @@ You can do this by creating a file named `.cdsapirc` in your home directory,
 with the following format:
 
 ```
-url: https://cds-beta.climate.copernicus.eu/api
+url: https://cds.climate.copernicus.eu/api
 key: <PERSONAL-ACCESS-TOKEN>
 ```
 

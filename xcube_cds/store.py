@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2020–2024 Brockmann Consult GmbH
+# Copyright (c) 2020–2025 Brockmann Consult GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -735,11 +735,11 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
 
     You can obtain a CDS Personal Access Token as follows:
 
-    1. Create a user account on the `CDS
-       Website <https://cds-beta.climate.copernicus.eu/>`__.
+    1. Create a user account via the `CDS
+       Website <https://cds.climate.copernicus.eu/>`__.
     2. Log in to the website with your username and password.
-    3. Navigate to your `user
-       page <https://cds-beta.climate.copernicus.eu/profile>`__, where you
+    3. Navigate to the `CDSAPI setup
+       page <https://cds.climate.copernicus.eu/how-to-api>`__, where you
        can find your Personal Access Token.
 
     Your CDS Personal Access Token must be made available to the CDS API library.
@@ -748,7 +748,7 @@ class CDSDataStore(DefaultSearchMixin, CDSDataOpener, DataStore):
 
     .. code-block: text
 
-    url: https://cds-beta.climate.copernicus.eu/api
+    url: https://cds.climate.copernicus.eu/api
     key: <PERSONAL-ACCESS-TOKEN>
 
     Replace `<PERSONAL-ACCESS-TOKEN>` with your Personal Access Token.
