@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-""" Unit tests for ERA5 dataset in the CDS Store
+"""Unit tests for ERA5 dataset in the CDS Store
 
 See test_store.py for further documentation.
 """
@@ -42,6 +42,15 @@ _CDS_API_KEY = "dummy"
 
 
 class CDSEra5Test(unittest.TestCase):
+
+    @staticmethod
+    def create_store():
+        return CDSDataStore(
+            client_class=get_cds_client(),
+            endpoint_url=_CDS_API_URL,
+            cds_api_key=_CDS_API_KEY,
+        )
+
     def test_open(self):
         opener = CDSDataOpener(
             client_class=get_cds_client(),
@@ -82,7 +91,9 @@ class CDSEra5Test(unittest.TestCase):
         self.assertTrue("p54_162" in dataset.variables)
 
     def test_request_parameter_out_of_range(self):
-        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
+        store = CDSDataStore(
+            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
+        )
         with self.assertRaises(ValidationError):
             store.open_data(
                 "reanalysis-era5-single-levels:ensemble_mean",
@@ -93,13 +104,9 @@ class CDSEra5Test(unittest.TestCase):
             )
 
     def test_era5_land_monthly(self):
-        store = CDSDataStore(
-            client_class=get_cds_client(),
-            endpoint_url=_CDS_API_URL,
-            cds_api_key=_CDS_API_KEY,
-        )
-        dataset = store.open_data(
-            "reanalysis-era5-land-monthly-means:" "monthly_averaged_reanalysis",
+        dataset = self.create_store().open_data(
+            "reanalysis-era5-land-monthly-means:"
+            "monthly_averaged_reanalysis",
             variable_names=["2m_temperature", "10m_u_component_of_wind"],
             bbox=[9.5, 49.5, 10.5, 50.5],
             spatial_res=0.1,
@@ -110,12 +117,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertTrue("u10" in dataset.variables)
 
     def test_era5_single_levels_hourly(self):
-        store = CDSDataStore(
-            client_class=get_cds_client(),
-            endpoint_url=_CDS_API_URL,
-            cds_api_key=_CDS_API_KEY,
-        )
-        dataset = store.open_data(
+        dataset = self.create_store().open_data(
             "reanalysis-era5-single-levels:" "reanalysis",
             variable_names=["2m_temperature"],
             bbox=[9, 49, 11, 51],
@@ -126,12 +128,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertEqual(48, len(dataset.variables["time"]))
 
     def test_era5_land_hourly(self):
-        store = CDSDataStore(
-            client_class=get_cds_client(),
-            endpoint_url=_CDS_API_URL,
-            cds_api_key=_CDS_API_KEY,
-        )
-        dataset = store.open_data(
+        dataset = self.create_store().open_data(
             "reanalysis-era5-land",
             variable_names=["2m_temperature"],
             bbox=[9.5, 49.5, 10.5, 50.5],
@@ -168,7 +165,9 @@ class CDSEra5Test(unittest.TestCase):
         self.assertLessEqual(south, north)
 
     def test_era5_open_data_empty_variables_list(self):
-        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
+        store = CDSDataStore(
+            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
+        )
         dataset = store.open_data(
             "reanalysis-era5-land-monthly-means:monthly_averaged_reanalysis",
             variable_names=[],
@@ -181,13 +180,10 @@ class CDSEra5Test(unittest.TestCase):
         self.assertEqual(361, len(dataset.variables["lon"]))
 
     def test_open_data_null_variables_list(self):
-        store = CDSDataStore(
-            client_class=get_cds_client(),
-            endpoint_url=_CDS_API_URL,
-            cds_api_key=_CDS_API_KEY,
-        )
+        store = self.create_store()
         data_id = (
-            "reanalysis-era5-single-levels-monthly-means:" "monthly_averaged_reanalysis"
+            "reanalysis-era5-single-levels-monthly-means:"
+            "monthly_averaged_reanalysis"
         )
         schema = store.get_open_data_params_schema(data_id)
         n_vars = len(schema.properties["variable_names"].items.enum)
@@ -204,14 +200,9 @@ class CDSEra5Test(unittest.TestCase):
         # xarray.open_mfdataset can deal with it, if the coarser grid is a
         # subset of the finer grid, which is the case here;
         # the missing values are filled with nans.
-        store = CDSDataStore(
-            client_class=get_cds_client(),
-            endpoint_url=_CDS_API_URL,
-            cds_api_key=_CDS_API_KEY,
-        )
         data_id = "reanalysis-era5-single-levels:reanalysis"
         variable_names = ["2m_temperature", "air_density_over_the_oceans"]
-        dataset = store.open_data(
+        dataset = self.create_store().open_data(
             data_id,
             variable_names=variable_names,
             bbox=[-1, -1, 1, 1],
@@ -221,8 +212,12 @@ class CDSEra5Test(unittest.TestCase):
         self.assertTrue(dataset.p140209.isnull().any())
 
     def test_era5_describe_data(self):
-        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
-        descriptor = store.describe_data("reanalysis-era5-single-levels:reanalysis")
+        store = CDSDataStore(
+            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
+        )
+        descriptor = store.describe_data(
+            "reanalysis-era5-single-levels:reanalysis"
+        )
         self.assertEqual(265, len(descriptor.data_vars))
         self.assertEqual("WGS84", descriptor.crs)
         self.assertTupleEqual((-180, -90, 180, 90), descriptor.bbox)
@@ -232,7 +227,9 @@ class CDSEra5Test(unittest.TestCase):
             name="u100",
             dtype="float32",
             dims=("time", "latitude", "longitude"),
-            attrs=dict(units="m s**-1", long_name="100 metre U wind component"),
+            attrs=dict(
+                units="m s**-1", long_name="100 metre U wind component"
+            ),
         )
         self.assertDictEqual(
             expected_vd.__dict__, descriptor.data_vars["u100"].__dict__
