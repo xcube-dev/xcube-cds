@@ -247,3 +247,23 @@ class CDSEra5Test(unittest.TestCase):
 
     def test_has_data_true(self):
         self.assertTrue(CDSDataStore().has_data("reanalysis-era5-land"))
+
+    def test_month_boundary(self):
+        bbox = [31, 31, 32, 32]
+        ds = self.create_store().open_data(
+            "reanalysis-era5-land",
+            "dataset:netcdf:cds",
+            variable_names=["2m_dewpoint_temperature"],
+            bbox=bbox,
+            spatial_res=0.1,
+            time_range=["2017-02-28", "2017-03-01"],
+        )
+        self.assertSequenceEqual(
+            list(map(str, ds.time.values)),
+            [
+                f"2017-{m:02}-{d:02}T{h:02}:00:00.000000000"
+                for m in [2, 3]
+                for d in [1, 28]
+                for h in range(24)
+            ],
+        )
