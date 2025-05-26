@@ -1,8 +1,10 @@
 ## Changes in 1.1.0 (in development)
 
  - Support boolean-valued `include_attrs` in `get_data_ids` in accordance
-   with API update in xcube 1.8.0 (#100)
- - Update CDS store URLs in documentation (#101)
+   with API update in xcube 1.8.0. (#100)
+ - Update CDS store URLs in documentation. (#101)
+ - Update some unit tests to match changed behaviour of CDS API.
+ - Restrict ERA5 datasets to user-specified time range. (#99)
 
 ## Changes in 1.0.0
 
