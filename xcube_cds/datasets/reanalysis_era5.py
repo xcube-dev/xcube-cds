@@ -349,4 +349,9 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             ds = xr.open_mfdataset(file_paths, engine="netcdf4")
         else:
             ds = xr.open_dataset(file_path, engine="netcdf4", decode_cf=True)
+        if "time_range" in open_params:
+            start_time, end_time = open_params["time_range"]
+            for time_var_name in "time", "valid_time":
+                if time_var_name in ds.coords:
+                    ds = ds.sel({time_var_name: slice(start_time, end_time)})
         return ds
