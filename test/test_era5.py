@@ -66,10 +66,9 @@ class CDSEra5Test(unittest.TestCase):
             time_range=["2015-10-15", "2016-02-02"],
         )
         self.assertIsNotNone(dataset)
-        # We expect the closest representable time selection corresponding
-        # to the requested range: months 10-12 and 1-2 for years 2015 and 2016,
-        # thus (3 + 2) * 2 = 10 time-points in total.
-        self.assertEqual(10, len(dataset.variables["time"]))
+        # Monthly data is timestamped at the first of the month, so we expect
+        # four time co-ordinates (November to February inclusive).
+        self.assertEqual(4, len(dataset.variables["time"]))
 
     def test_normalize_variable_names(self):
         store = CDSDataStore(
@@ -88,7 +87,7 @@ class CDSEra5Test(unittest.TestCase):
             time_range=["2019-01-01", "2020-12-31"],
         )
         self.assertIsNotNone(dataset)
-        self.assertTrue("p54_162" in dataset.variables)
+        self.assertTrue("vit" in dataset.variables)
 
     def test_request_parameter_out_of_range(self):
         store = CDSDataStore(
@@ -208,8 +207,8 @@ class CDSEra5Test(unittest.TestCase):
             bbox=[-1, -1, 1, 1],
             time_range=["2020-01-01", "2020-01-02"],
         )
-        self.assertCountEqual(["t2m", "p140209"], list(dataset.data_vars))
-        self.assertTrue(dataset.p140209.isnull().any())
+        self.assertCountEqual(["t2m", "rhoao"], list(dataset.data_vars))
+        self.assertTrue(dataset.rhoao.isnull().any())
 
     def test_era5_describe_data(self):
         store = CDSDataStore(
@@ -249,12 +248,11 @@ class CDSEra5Test(unittest.TestCase):
         self.assertTrue(CDSDataStore().has_data("reanalysis-era5-land"))
 
     def test_month_boundary(self):
-        bbox = [31, 31, 32, 32]
         ds = self.create_store().open_data(
             "reanalysis-era5-land",
             "dataset:netcdf:cds",
             variable_names=["2m_dewpoint_temperature"],
-            bbox=bbox,
+            bbox=[31, 31, 32, 32],
             spatial_res=0.1,
             time_range=["2017-02-28", "2017-03-01"],
         )
@@ -262,8 +260,7 @@ class CDSEra5Test(unittest.TestCase):
             list(map(str, ds.time.values)),
             [
                 f"2017-{m:02}-{d:02}T{h:02}:00:00.000000000"
-                for m in [2, 3]
-                for d in [1, 28]
+                for m, d in [(2, 28), (3, 1)]
                 for h in range(24)
             ],
         )
