@@ -2,6 +2,7 @@
 
  - Support boolean-valued `include_attrs` in `get_data_ids` in accordance
    with API update in xcube 1.8.0 (#100)
+ - Update CDS store URLs in documentation (#101)
 
 ## Changes in 1.0.0
 
