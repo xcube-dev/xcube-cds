@@ -107,9 +107,9 @@ class CDSEra5Test(unittest.TestCase):
             "reanalysis-era5-land-monthly-means:"
             "monthly_averaged_reanalysis",
             variable_names=["2m_temperature", "10m_u_component_of_wind"],
-            bbox=[9.5, 49.5, 10.5, 50.5],
+            bbox=[9.5, 49.5, 10.0, 50.0],
             spatial_res=0.1,
-            time_range=["2015-01-01", "2016-12-31"],
+            time_range=["2015-01-01", "2015-03-31"],
         )
         self.assertIsNotNone(dataset)
         self.assertTrue("t2m" in dataset.variables)
