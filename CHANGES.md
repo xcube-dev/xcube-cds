@@ -1,3 +1,5 @@
+## Changes in 1.1.1 (in development)
+
 ## Changes in 1.1.0
 
  - Support boolean-valued `include_attrs` in `get_data_ids` in accordance
