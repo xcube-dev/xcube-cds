@@ -114,7 +114,12 @@ def get_cds_client(dirname=None):
         # for future mocking. As above, ignore passed-in credentials.
         if dirname is None:
             # Default directory name is name of calling function.
-            dirname = inspect.currentframe().f_back.f_code.co_name
+            frame = inspect.currentframe().f_back
+            if frame.f_code.co_name == "create_store":
+                # If the utility function create_store is the calling function,
+                # use the name of *its* calling function instead.
+                frame = frame.f_back
+            dirname = frame.f_code.co_name
         resource_path = os.path.join(os.path.dirname(__file__), "mock_results")
         path = os.path.join(resource_path, dirname)
 
