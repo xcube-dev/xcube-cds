@@ -1,5 +1,7 @@
 ## Changes in 1.1.1 (in development)
 
+ - Adjust time range in ERA5 demo notebook. (#106)
+
 ## Changes in 1.1.0
 
  - Support boolean-valued `include_attrs` in `get_data_ids` in accordance
