@@ -26,7 +26,7 @@ import pathlib
 
 import pandas as pd
 import xarray as xr
-from xcube.core.store import DatasetDescriptor
+from xcube.core.store import DatasetDescriptor, VariableDescriptor
 from xcube.util.jsonschema import JsonArraySchema
 from xcube.util.jsonschema import JsonDateSchema
 from xcube.util.jsonschema import JsonNumberSchema
@@ -106,9 +106,27 @@ class DroughtIndicesDatasetHandler(CDSDatasetHandler):
         return self._data_id_map[data_id]
 
     def describe_data(self, data_id: str) -> DatasetDescriptor:
-        # ToDo add VariableDescriptors to data_vars
+        mapping_varname_attrs = dict()
+        for var_name in self._variable_names:
+            for accum_period in self._accumulation_periods:
+                ds_varname = self._get_varname(var_name, accum_period)
+                mapping_varname_attrs[ds_varname] = self._get_attrs(
+                    var_name, accum_period
+                )
+
+        variable_descriptors = []
+        for var_name, attrs in mapping_varname_attrs.items():
+            variable_descriptors.append(
+                VariableDescriptor(
+                    name=var_name,
+                    dtype="float64",
+                    dims=("time", "lat", "lon"),
+                    attrs=attrs,
+                )
+            )
         return DatasetDescriptor(
             data_id=data_id,
+            data_vars={desc.name: desc for desc in variable_descriptors},
             crs="EPSG:4326",
             bbox=self._bbox,
             spatial_res=self._spatial_res,
@@ -201,6 +219,43 @@ class DroughtIndicesDatasetHandler(CDSDatasetHandler):
             return patterns[var_name]
         except KeyError:
             raise ValueError(f"Unknown var_name: {var_name}")
+
+    @staticmethod
+    def _get_attrs(var_name: str, accum_period: int) -> dict:
+        mapping_attrs = {
+            "standardised_precipitation_index": {
+                "long_name": f"Standardized Drought Index (SPI{accum_period})"
+            },
+            "standardised_precipitation_evapotranspiration_index": {
+                "long_name": f"Standardized Drought Index (SPEI{accum_period})"
+            },
+            "probability_of_zero_precipitation_spi": {
+                "long_name": (
+                    "Number of months with zero precipitation during the reference "
+                    "period expressed as the fraction of the total number of months"
+                ),
+                "unit": 1,
+            },
+            "test_for_normality_spi": {
+                "long_name": (
+                    "Quality flag that indicates the acceptance of a Shapiro-Wilks "
+                    "test for normality using the derived standardized indices during "
+                    "the reference period; 1 indicates significant values and 0 "
+                    "indicates non-significant values at the alpha=0.05 level."
+                ),
+                "unit": 1,
+            },
+            "test_for_normality_spei": {
+                "long_name": (
+                    "Quality flag that indicates the acceptance of a Shapiro-Wilks "
+                    "test for normality using the derived standardized indices during "
+                    "the reference period; 1 indicates significant values and 0 "
+                    "indicates non-significant values at the alpha=0.05 level."
+                ),
+                "unit": 1,
+            },
+        }
+        return mapping_attrs[var_name]
 
     @staticmethod
     def _get_varname(var_name: str, accum_period: int) -> str:
