@@ -137,8 +137,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
             tgz_file.extractall(path=temp_dir)
 
         paths = [
-            os.path.join(temp_dir, filename)
-            for filename in next(os.walk(temp_dir))[2]
+            os.path.join(temp_dir, filename) for filename in next(os.walk(temp_dir))[2]
         ]
 
         # I'm not sure if xr.open_mfdataset calls through to
@@ -148,7 +147,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
         # §1, p. 12) states that the data are in Classic format,
         # and inspection of some downloaded files confirms it.
         ds = xr.open_mfdataset(
-            paths, combine="by_coords", engine="netcdf4", decode_cf=True
+            paths, combine="by_coords", engine="netcdf4", chunks="auto", decode_cf=True
         )
         ds.attrs.update(self.combine_netcdf_time_limits(paths))
 
@@ -321,9 +320,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
         ]
 
         descriptors = descriptors_common + (
-            descriptors_daily
-            if aggregation == "daily"
-            else descriptors_aggregated
+            descriptors_daily if aggregation == "daily" else descriptors_aggregated
         )
 
         return DatasetDescriptor(

@@ -1,6 +1,7 @@
 ## Changes in 1.1.1 (in development)
 
  - Adjust time range in ERA5 demo notebook. (#106)
+ - Support chunking of returned datasets. (#110)
 
 ## Changes in 1.1.0
 
