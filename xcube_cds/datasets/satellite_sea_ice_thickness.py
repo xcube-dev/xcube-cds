@@ -75,9 +75,7 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
             # It has been announced that in future versions the selection of
             # individual variables will be supported
             variable_names=JsonArraySchema(
-                items=(
-                    JsonStringSchema(min_length=0, enum=["all"], default="all")
-                ),
+                items=(JsonStringSchema(min_length=0, enum=["all"], default="all")),
                 unique_items=True,
                 default=["all"],
             ),
@@ -123,9 +121,7 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
 
         # If no climate data record type is specified in the opener parameters,
         # it is determined from the data ID
-        cdr_type = opener_params.get(
-            "type_of_record", variable_properties.cdr_types[0]
-        )
+        cdr_type = opener_params.get("type_of_record", variable_properties.cdr_types[0])
 
         satellites = {"cryosat-2": "cryosat_2", "envisat": "envisat"}
 
@@ -170,12 +166,11 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
             tgz_file.extractall(path=temp_dir)
 
         paths = [
-            os.path.join(temp_dir, filename)
-            for filename in next(os.walk(temp_dir))[2]
+            os.path.join(temp_dir, filename) for filename in next(os.walk(temp_dir))[2]
         ]
 
         ds = xr.open_mfdataset(
-            paths, combine="by_coords", engine="netcdf4", decode_cf=True
+            paths, combine="by_coords", engine="netcdf4", chunks="auto", decode_cf=True
         )
         ds.attrs.update(self.combine_netcdf_time_limits(paths))
 
@@ -194,9 +189,7 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
                 dtype="float32",
                 dims=("time", "yc", "xc"),
                 attrs={
-                    "ancillary_variables": "uncertainty "
-                    "status_flag "
-                    "quality_flag",
+                    "ancillary_variables": "uncertainty " "status_flag " "quality_flag",
                     "comment": "this field is the primary sea ice thickness "
                     "estimate for this climate data record",
                     "coordinates": "time lat lon",

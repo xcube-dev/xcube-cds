@@ -346,9 +346,11 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             with zipfile.ZipFile(file_path, "r") as zip_ref:
                 zip_ref.extractall(path_temp)
             file_paths = glob.glob(f"{path_temp}/*")
-            ds = xr.open_mfdataset(file_paths, engine="netcdf4")
+            ds = xr.open_mfdataset(file_paths, engine="netcdf4", chunks="auto")
         else:
-            ds = xr.open_dataset(file_path, engine="netcdf4", decode_cf=True)
+            ds = xr.open_dataset(
+                file_path, engine="netcdf4", chunks="auto", decode_cf=True
+            )
         if "time_range" in open_params:
             start_time, end_time = open_params["time_range"]
             for time_var_name in "time", "valid_time":

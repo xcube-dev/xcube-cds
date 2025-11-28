@@ -334,7 +334,7 @@ class CDSDatasetHandler(ABC):
         end_key = "time_coverage_end"
         starts, ends = [], []
         for path in paths:
-            with xr.open_dataset(path) as ds:
+            with xr.open_dataset(path, chunks="auto") as ds:
                 starts.append(ds.attrs[start_key])
                 ends.append(ds.attrs[end_key])
 
