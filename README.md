@@ -18,6 +18,7 @@ Currently supported datasets:
  - [ERA5-Land hourly data from 1950 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land?tab=overview)
  - [ERA5 monthly averaged data on single levels from 1940 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-monthly-means?tab=overview)
  - [ERA5-Land monthly averaged data from 1950 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land-monthly-means?tab=overview)
+ - [Monthly drought indices from 1940 to present derived from ERA5 reanalysis](https://cds.climate.copernicus.eu/datasets/derived-drought-historical-monthly?tab=overview)
  - [Soil moisture gridded data from 1978 to present](https://cds.climate.copernicus.eu/datasets/satellite-soil-moisture?tab=overview)
  - [Sea ice thickness gridded data from 2002 to present](https://cds.climate.copernicus.eu/datasets/satellite-sea-ice-thickness?tab=overview)
 

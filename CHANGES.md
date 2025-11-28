@@ -1,6 +1,7 @@
 ## Changes in 1.1.1 (in development)
 
  - Adjust time range in ERA5 demo notebook. (#106)
+ - Add data access for [monthly drought indices from 1940 to present derived from ERA5 reanalysis](https://cds.climate.copernicus.eu/datasets/derived-drought-historical-monthly?tab=overview). (#109)
 
 ## Changes in 1.1.0
 
