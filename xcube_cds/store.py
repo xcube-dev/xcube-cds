@@ -385,6 +385,12 @@ class CDSDataOpener(DataOpener):
         )
 
         self._register_dataset_handler(SeaIceThicknessHandler())
+        from xcube_cds.datasets.drought_indices_era5 import (
+            DroughtIndicesDatasetHandler,
+        )
+
+        self._register_dataset_handler(DroughtIndicesDatasetHandler())
+
         self._client_class = client_class
         self.cds_api_url = endpoint_url
         self.cds_api_key = cds_api_key
