@@ -41,10 +41,11 @@ class CDSDroughtIndicesDatasetHandlerTest(unittest.TestCase):
     def setUp(self) -> None:
         self.drought_idx_handler = DroughtIndicesDatasetHandler()
         self.data_id_reanalysis = "derived-drought-historical-monthly:reanalysis"
+        self.data_id_ensemble = "derived-drought-historical-monthly:ensemble_members"
 
     def test_get_supported_data_ids(self):
         ids = self.drought_idx_handler.get_supported_data_ids()
-        self.assertCountEqual([self.data_id_reanalysis], ids)
+        self.assertCountEqual([self.data_id_reanalysis, self.data_id_ensemble], ids)
 
     def test_get_human_readable_data_id(self):
         self.assertEqual(
@@ -77,7 +78,7 @@ class CDSDroughtIndicesDatasetHandlerTest(unittest.TestCase):
         self.assertEqual("2025-12-31", descriptor.time_range[1])
         self.assertEqual("1M", descriptor.time_period)
 
-    def test_open_data(self):
+    def test_open_data_reanalysis(self):
         opener = CDSDataOpener(
             client_class=get_cds_client(),
             endpoint_url=_CDS_API_URL,
@@ -99,6 +100,39 @@ class CDSDroughtIndicesDatasetHandlerTest(unittest.TestCase):
         self.assertEqual(
             [4, 7, 7],
             [dataset.sizes["time"], dataset.sizes["lat"], dataset.sizes["lon"]],
+        )
+        self.assertCountEqual(
+            ["spi1", "spi3", "spi1_significance", "spi3_significance"],
+            dataset.data_vars,
+        )
+
+    def test_open_data_ensemble(self):
+        opener = CDSDataOpener(
+            client_class=get_cds_client(),
+            endpoint_url=_CDS_API_URL,
+            cds_api_key=_CDS_API_KEY,
+        )
+        dataset = opener.open_data(
+            self.data_id_ensemble,
+            variable_names=[
+                "standardised_precipitation_index",
+                "test_for_normality_spi",
+            ],
+            accumulation_periods=[1, 3],
+            bbox=[-1, -1, 1, 1],
+            time_range=["2015-10-15", "2016-02-02"],
+        )
+        self.assertIsNotNone(dataset)
+        # Monthly data is timestamped at the first of the month, so we expect
+        # four time co-ordinates (November to February inclusive).
+        self.assertEqual(
+            [4, 10, 7, 7],
+            [
+                dataset.sizes["time"],
+                dataset.sizes["number"],
+                dataset.sizes["lat"],
+                dataset.sizes["lon"],
+            ],
         )
         self.assertCountEqual(
             ["spi1", "spi3", "spi1_significance", "spi3_significance"],
