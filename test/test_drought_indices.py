@@ -68,7 +68,7 @@ class CDSDroughtIndicesDatasetHandlerTest(unittest.TestCase):
             schema.required,
         )
 
-    def test_describe_data(self):
+    def test_describe_data_reanalsis(self):
         descriptor = self.drought_idx_handler.describe_data(self.data_id_reanalysis)
         self.assertEqual(self.data_id_reanalysis, descriptor.data_id)
         self.assertEqual("EPSG:4326", descriptor.crs)
@@ -77,6 +77,20 @@ class CDSDroughtIndicesDatasetHandlerTest(unittest.TestCase):
         self.assertEqual("1940-01-01", descriptor.time_range[0])
         self.assertEqual("2025-12-31", descriptor.time_range[1])
         self.assertEqual("1M", descriptor.time_period)
+        self.assertEqual(("time", "lat", "lon"), descriptor.data_vars["spi1"].dims)
+
+    def test_describe_data_ensemble(self):
+        descriptor = self.drought_idx_handler.describe_data(self.data_id_ensemble)
+        self.assertEqual(self.data_id_ensemble, descriptor.data_id)
+        self.assertEqual("EPSG:4326", descriptor.crs)
+        self.assertEqual((-180.0, -90.0, 180.0, 90.0), descriptor.bbox)
+        self.assertEqual(0.25, descriptor.spatial_res)
+        self.assertEqual("1940-01-01", descriptor.time_range[0])
+        self.assertEqual("2025-12-31", descriptor.time_range[1])
+        self.assertEqual("1M", descriptor.time_period)
+        self.assertEqual(
+            ("time", "number", "lat", "lon"), descriptor.data_vars["spi1"].dims
+        )
 
     def test_open_data_reanalysis(self):
         opener = CDSDataOpener(

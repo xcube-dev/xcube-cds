@@ -119,13 +119,18 @@ class DroughtIndicesDatasetHandler(CDSDatasetHandler):
                     var_name, accum_period
                 )
 
+        if data_id.endswith("reanalysis"):
+            dims = ("time", "lat", "lon")
+        else:
+            dims = ("time", "number", "lat", "lon")
+
         variable_descriptors = []
         for var_name, attrs in mapping_varname_attrs.items():
             variable_descriptors.append(
                 VariableDescriptor(
                     name=var_name,
                     dtype="float64",
-                    dims=("time", "lat", "lon"),
+                    dims=dims,
                     attrs=attrs,
                 )
             )
