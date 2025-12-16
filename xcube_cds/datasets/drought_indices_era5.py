@@ -227,6 +227,10 @@ class DroughtIndicesDatasetHandler(CDSDatasetHandler):
                     for path in file_sel:
                         ds = xr.open_dataset(path, engine="netcdf4", chunks="auto")
                         time_axis = ds.time
+                        # The data from the backend uses the confusing name `time` for the
+                        # ensemble member index. We rename it to `number` to be consistent
+                        # with other ERA5 datasets, and to free up the name `time` for the actual
+                        # time.
                         ds = ds.rename({"time": "number"})
                         ds = ds.assign_coords(number=np.arange(10))
                         ds = ds.expand_dims(time=[time_axis[0].values])
