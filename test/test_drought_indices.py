@@ -68,7 +68,7 @@ class CDSDroughtIndicesDatasetHandlerTest(unittest.TestCase):
             schema.required,
         )
 
-    def test_describe_data_reanalsis(self):
+    def test_describe_data_reanalysis(self):
         descriptor = self.drought_idx_handler.describe_data(self.data_id_reanalysis)
         self.assertEqual(self.data_id_reanalysis, descriptor.data_id)
         self.assertEqual("EPSG:4326", descriptor.crs)
