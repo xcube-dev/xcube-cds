@@ -1,0 +1,110 @@
+{
+  "identifier": "reanalysis-era5-single-levels-timeseries",
+  "description": "ERA5 hourly time-series data on single levels from 1940 to present",
+  "product_types": [],
+  "crs": "WGS84",
+  "bbox": [
+    -180,
+    -90,
+    180,
+    90
+  ],
+  "spatial_ref": null,
+  "time_range": [
+    "1940-01-01",
+    null
+  ],
+  "time_period": "1H",
+  "variables": [
+    [
+      "100m_u_component_of_wind",
+      "u100",
+      "m s**-1",
+      "100 metre U wind component"
+    ],
+    [
+      "100m_v_component_of_wind",
+      "v100",
+      "m s**-1",
+      "100 metre V wind component"
+    ],
+    [
+      "10m_u_component_of_wind",
+      "u10",
+      "m s**-1",
+      "10 metre U wind component"
+    ],
+    [
+      "10m_v_component_of_wind",
+      "v10",
+      "m s**-1",
+      "10 metre V wind component"
+    ],
+    [
+      "2m_dewpoint_temperature",
+      "d2m",
+      "K",
+      "2 metre dewpoint temperature"
+    ],
+    [
+      "2m_temperature",
+      "t2m",
+      "K",
+      "2 metre temperature"
+    ],
+    [
+      "mean_sea_level_pressure",
+      "msl",
+      "Pa",
+      "Mean sea level pressure"
+    ],
+    [
+      "mean_wave_direction",
+      "mwd",
+      "Degree true",
+      "Mean wave direction"
+    ],
+    [
+      "mean_wave_period",
+      "mwp",
+      "s",
+      "Mean wave period"
+    ],
+    [
+      "sea_surface_temperature",
+      "sst",
+      "K",
+      "Sea surface temperature"
+    ],
+    [
+      "significant_height_of_combined_wind_waves_and_swell",
+      "swh",
+      "m",
+      "Significant height of combined wind waves and swell"
+    ],
+    [
+      "skin_temperature",
+      "skt",
+      "K",
+      "Skin temperature"
+    ],
+    [
+      "surface_pressure",
+      "sp",
+      "Pa",
+      "Surface pressure"
+    ],
+    [
+      "surface_solar_radiation_downwards",
+      "ssrd",
+      "J m**-2",
+      "Surface solar radiation downwards"
+    ],
+    [
+      "surface_thermal_radiation_downwards",
+      "strd",
+      "J m**-2",
+      "Surface thermal radiation downwards"
+    ]
+  ]
+}

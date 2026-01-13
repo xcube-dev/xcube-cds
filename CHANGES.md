@@ -1,3 +1,8 @@
+## Changes in 1.1.2 (under development)
+
+ - Add data access for [ERA5 hourly time-series data on single levels from 1940 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-timeseries?tab=overview). (#111)
+
+
 ## Changes in 1.1.1
 
  - Adjust time range in ERA5 demo notebook. (#106)

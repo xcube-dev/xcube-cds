@@ -375,6 +375,9 @@ class CDSDataOpener(DataOpener):
         from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
 
         self._register_dataset_handler(ERA5DatasetHandler())
+        from xcube_cds.datasets.reanalysis_era5 import ERA5TimeseriesDatasetHandler
+
+        self._register_dataset_handler(ERA5TimeseriesDatasetHandler())
         from xcube_cds.datasets.satellite_soil_moisture import (
             SoilMoistureHandler,
         )
