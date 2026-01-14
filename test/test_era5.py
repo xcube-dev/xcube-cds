@@ -102,7 +102,7 @@ class CDSEra5Test(unittest.TestCase):
 
     def test_era5_land_monthly(self):
         dataset = self.create_store().open_data(
-            "reanalysis-era5-land-monthly-means:" "monthly_averaged_reanalysis",
+            "reanalysis-era5-land-monthly-means:monthly_averaged_reanalysis",
             variable_names=["2m_temperature", "10m_u_component_of_wind"],
             bbox=[9.5, 49.5, 10.0, 50.0],
             spatial_res=0.1,
@@ -114,7 +114,7 @@ class CDSEra5Test(unittest.TestCase):
 
     def test_era5_single_levels_hourly(self):
         dataset = self.create_store().open_data(
-            "reanalysis-era5-single-levels:" "reanalysis",
+            "reanalysis-era5-single-levels:reanalysis",
             variable_names=["2m_temperature"],
             bbox=[9, 49, 11, 51],
             time_range=["2015-01-01", "2015-01-02"],
@@ -176,7 +176,7 @@ class CDSEra5Test(unittest.TestCase):
     def test_open_data_null_variables_list(self):
         store = self.create_store()
         data_id = (
-            "reanalysis-era5-single-levels-monthly-means:" "monthly_averaged_reanalysis"
+            "reanalysis-era5-single-levels-monthly-means:monthly_averaged_reanalysis"
         )
         schema = store.get_open_data_params_schema(data_id)
         n_vars = len(schema.properties["variable_names"].items.enum)
