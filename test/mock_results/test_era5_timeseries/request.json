@@ -1,0 +1,1 @@
+{"_dataset_name": "reanalysis-era5-single-levels-timeseries", "variable": ["2m_temperature", "mean_wave_direction"], "location": {"longitude": 10.0, "latitude": 53.5}, "date": ["1940-01-01/2025-12-31"], "data_format": "netcdf", "description": ["surface", "wave"]}

@@ -90,9 +90,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertTrue("vit" in dataset.variables)
 
     def test_request_parameter_out_of_range(self):
-        store = CDSDataStore(
-            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
-        )
+        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
         with self.assertRaises(ValidationError):
             store.open_data(
                 "reanalysis-era5-single-levels:ensemble_mean",
@@ -104,8 +102,7 @@ class CDSEra5Test(unittest.TestCase):
 
     def test_era5_land_monthly(self):
         dataset = self.create_store().open_data(
-            "reanalysis-era5-land-monthly-means:"
-            "monthly_averaged_reanalysis",
+            "reanalysis-era5-land-monthly-means:" "monthly_averaged_reanalysis",
             variable_names=["2m_temperature", "10m_u_component_of_wind"],
             bbox=[9.5, 49.5, 10.0, 50.0],
             spatial_res=0.1,
@@ -164,9 +161,7 @@ class CDSEra5Test(unittest.TestCase):
         self.assertLessEqual(south, north)
 
     def test_era5_open_data_empty_variables_list(self):
-        store = CDSDataStore(
-            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
-        )
+        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
         dataset = store.open_data(
             "reanalysis-era5-land-monthly-means:monthly_averaged_reanalysis",
             variable_names=[],
@@ -181,8 +176,7 @@ class CDSEra5Test(unittest.TestCase):
     def test_open_data_null_variables_list(self):
         store = self.create_store()
         data_id = (
-            "reanalysis-era5-single-levels-monthly-means:"
-            "monthly_averaged_reanalysis"
+            "reanalysis-era5-single-levels-monthly-means:" "monthly_averaged_reanalysis"
         )
         schema = store.get_open_data_params_schema(data_id)
         n_vars = len(schema.properties["variable_names"].items.enum)
@@ -211,12 +205,8 @@ class CDSEra5Test(unittest.TestCase):
         self.assertTrue(dataset.rhoao.isnull().any())
 
     def test_era5_describe_data(self):
-        store = CDSDataStore(
-            endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY
-        )
-        descriptor = store.describe_data(
-            "reanalysis-era5-single-levels:reanalysis"
-        )
+        store = CDSDataStore(endpoint_url=_CDS_API_URL, cds_api_key=_CDS_API_KEY)
+        descriptor = store.describe_data("reanalysis-era5-single-levels:reanalysis")
         self.assertEqual(265, len(descriptor.data_vars))
         self.assertEqual("WGS84", descriptor.crs)
         self.assertTupleEqual((-180, -90, 180, 90), descriptor.bbox)
@@ -226,9 +216,7 @@ class CDSEra5Test(unittest.TestCase):
             name="u100",
             dtype="float32",
             dims=("time", "latitude", "longitude"),
-            attrs=dict(
-                units="m s**-1", long_name="100 metre U wind component"
-            ),
+            attrs=dict(units="m s**-1", long_name="100 metre U wind component"),
         )
         self.assertDictEqual(
             expected_vd.__dict__, descriptor.data_vars["u100"].__dict__
@@ -264,3 +252,46 @@ class CDSEra5Test(unittest.TestCase):
                 for h in range(24)
             ],
         )
+
+
+class CDSEra5TimeseriesTest(unittest.TestCase):
+    data_id = "reanalysis-era5-single-levels-timeseries"
+    store = CDSDataStore(
+        client_class=get_cds_client(),
+        endpoint_url=_CDS_API_URL,
+        cds_api_key=_CDS_API_KEY,
+    )
+
+    def test_open_data_null_variables_list(self):
+        schema = self.store.get_open_data_params_schema(self.data_id)
+        self.assertIn("location", schema.properties)
+        self.assertIn("time_range", schema.properties)
+        self.assertIn("variable_names", schema.properties)
+        self.assertIn("location", schema.required)
+        self.assertIn("time_range", schema.required)
+        self.assertIn("variable_names", schema.required)
+        self.assertNotIn("bbox", schema.properties)
+
+    def test_describe_era5_timeseries(self):
+        descriptor = self.store.describe_data(self.data_id)
+        self.assertEqual(self.data_id, descriptor.data_id)
+        self.assertEqual("WGS84", descriptor.crs)
+        self.assertEqual((-180.0, -90.0, 180.0, 90.0), descriptor.bbox)
+        self.assertIsNone(descriptor.spatial_res)
+        self.assertEqual("1940-01-01", descriptor.time_range[0])
+        self.assertIsNone(descriptor.time_range[1])
+        self.assertEqual("1H", descriptor.time_period)
+        self.assertEqual(("time",), descriptor.data_vars["t2m"].dims)
+
+    def test_era5_timeseries(self):
+        dataset = self.store.open_data(
+            "reanalysis-era5-single-levels-timeseries",
+            variable_names=["2m_temperature", "mean_wave_direction"],
+            location=(10.01, 53.51),
+            time_range=["1940-01-01", "2025-12-31"],
+        )
+        self.assertIsNotNone(dataset)
+        self.assertTrue("t2m" in dataset.variables)
+        self.assertEqual(753888, len(dataset.time))
+        self.assertEqual(53.5, dataset.latitude.values)
+        self.assertEqual(10.0, dataset.longitude.values)

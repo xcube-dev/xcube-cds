@@ -61,7 +61,6 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 "reanalysis-era5-land-monthly-means.json",
                 "reanalysis-era5-single-levels.json",
                 "reanalysis-era5-single-levels-monthly-means.json",
-                "reanalysis-era5-single-levels-timeseries.json",
             ]
         else:
             self._json_pathnames = json_pathnames
@@ -223,7 +222,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             data_vars=self._create_variable_descriptors(data_id),
             crs=ds_info["crs"],
             bbox=tuple(ds_info["bbox"]),
-            spatial_res=ds_info["spatial_res"],
+            spatial_res=ds_info.get("spatial_res"),
             time_range=tuple(ds_info["time_range"]),
             time_period=ds_info["time_period"],
             open_params_schema=self.get_open_data_params_schema(data_id),
@@ -444,14 +443,8 @@ class ERA5TimeseriesDatasetHandler(ERA5DatasetHandler):
         :param data_id: the ID of the requested dataset
         :return: parameters in form expected by the CDS API
         """
-        variable_names = plugin_params["variable_names"]
-        if not variable_names:
-            # The "empty list of variables" case should be handled by the main
-            # store class; if an empty list gets this far, something's wrong.
-            raise ValueError("variable_names may not be an empty list.")
-
         params_combined = {
-            "variable": variable_names,
+            "variable": plugin_params["variable_names"],
             "location": {
                 "longitude": round(plugin_params["location"][0] * 4) / 4,
                 "latitude": round(plugin_params["location"][1] * 4) / 4,
