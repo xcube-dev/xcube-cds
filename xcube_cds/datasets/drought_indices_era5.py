@@ -23,17 +23,19 @@
 import glob
 import os
 import pathlib
+import zipfile
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from xcube.core.store import DatasetDescriptor, VariableDescriptor
-from xcube.util.jsonschema import JsonArraySchema
-from xcube.util.jsonschema import JsonDateSchema
-from xcube.util.jsonschema import JsonNumberSchema
-from xcube.util.jsonschema import JsonObjectSchema
-from xcube.util.jsonschema import JsonStringSchema
-import zipfile
+from xcube.util.jsonschema import (
+    JsonArraySchema,
+    JsonDateSchema,
+    JsonNumberSchema,
+    JsonObjectSchema,
+    JsonStringSchema,
+)
 
 from xcube_cds.store import CDSDatasetHandler
 

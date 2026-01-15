@@ -28,16 +28,9 @@ import re
 import shutil
 import sys
 import tempfile
-from abc import ABC
-from abc import abstractmethod
-from typing import Any
+from abc import ABC, abstractmethod
 from collections.abc import Container
-from typing import Dict
-from typing import Iterator
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import cdsapi
 import dateutil.parser
@@ -46,26 +39,29 @@ import dateutil.rrule
 import numpy as np
 import pandas as pd
 import xarray as xr
-
 import xcube.core.normalize
-from xcube.core.store import DATASET_TYPE
-from xcube.core.store import DataDescriptor
-from xcube.core.store import DataOpener
-from xcube.core.store import DataStore
-from xcube.core.store import DataStoreError
-from xcube.core.store import DataTypeLike
-from xcube.core.store import DatasetDescriptor
-from xcube.core.store import DefaultSearchMixin
-from xcube.util.jsonschema import JsonArraySchema
-from xcube.util.jsonschema import JsonBooleanSchema
-from xcube.util.jsonschema import JsonDateSchema
-from xcube.util.jsonschema import JsonIntegerSchema
-from xcube.util.jsonschema import JsonNumberSchema
-from xcube.util.jsonschema import JsonObjectSchema
-from xcube.util.jsonschema import JsonStringSchema
+from xcube.core.store import (
+    DATASET_TYPE,
+    DataDescriptor,
+    DataOpener,
+    DatasetDescriptor,
+    DataStore,
+    DataStoreError,
+    DataTypeLike,
+    DefaultSearchMixin,
+)
+from xcube.util.jsonschema import (
+    JsonArraySchema,
+    JsonBooleanSchema,
+    JsonDateSchema,
+    JsonIntegerSchema,
+    JsonNumberSchema,
+    JsonObjectSchema,
+    JsonStringSchema,
+)
 from xcube.util.undefined import UNDEFINED
-from xcube_cds.constants import CDS_DATA_OPENER_ID
-from xcube_cds.constants import DEFAULT_NUM_RETRIES
+
+from xcube_cds.constants import CDS_DATA_OPENER_ID, DEFAULT_NUM_RETRIES
 from xcube_cds.version import version
 
 
@@ -236,7 +232,7 @@ class CDSDatasetHandler(ABC):
         # manually.
         if len(time_range) != 2:
             raise ValueError(
-                f"time_range must have a length of 2, " "not {len(time_range)}."
+                "time_range must have a length of 2, " "not {len(time_range)}."
             )
 
         time0 = dateutil.parser.isoparse(time_range[0])
@@ -378,9 +374,8 @@ class CDSDataOpener(DataOpener):
         from xcube_cds.datasets.reanalysis_era5 import ERA5TimeseriesDatasetHandler
 
         self._register_dataset_handler(ERA5TimeseriesDatasetHandler())
-        from xcube_cds.datasets.satellite_soil_moisture import (
-            SoilMoistureHandler,
-        )
+        from xcube_cds.datasets.satellite_soil_moisture import SoilMoistureHandler
+        from xcube_cds.datasets.satellite_soil_moisture import SoilMoistureHandler
 
         self._register_dataset_handler(SoilMoistureHandler())
         from xcube_cds.datasets.satellite_sea_ice_thickness import (
@@ -388,11 +383,13 @@ class CDSDataOpener(DataOpener):
         )
 
         self._register_dataset_handler(SeaIceThicknessHandler())
-        from xcube_cds.datasets.drought_indices_era5 import (
-            DroughtIndicesDatasetHandler,
-        )
+        from xcube_cds.datasets.drought_indices_era5 import DroughtIndicesDatasetHandler
 
         self._register_dataset_handler(DroughtIndicesDatasetHandler())
+
+        from xcube_cds.datasets.land_cover import LandCoverDatasetHandler
+
+        self._register_dataset_handler(LandCoverDatasetHandler())
 
         self._client_class = client_class
         self.cds_api_url = endpoint_url
@@ -485,7 +482,7 @@ class CDSDataOpener(DataOpener):
 
         # Disable PyCharm's inspection which thinks False and [] are equivalent
         # noinspection PySimplifyBooleanCheck
-        if all_open_params["variable_names"] == []:
+        if "variable_names" in props and all_open_params["variable_names"] == []:
             # The CDS API requires at least one variable to be selected,
             # so in order to return an empty dataset we have to construct
             # it ourselves.
@@ -575,7 +572,7 @@ class CDSDataOpener(DataOpener):
             range_start = dt_start.isoformat()
             range_end = (dt_end + relativedelta - one_microsecond).isoformat()
 
-        return np.arange(range_start, range_end, timedelta, dtype=f"datetime64")
+        return np.arange(range_start, range_end, timedelta, dtype="datetime64")
 
     @staticmethod
     def _parse_time_period(specifier: str) -> Tuple[int, str]:

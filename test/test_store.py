@@ -48,18 +48,16 @@ import tempfile
 import typing
 import unittest
 from collections.abc import Iterator
-import packaging
+from test.mocks import CDSClientMock, get_cds_client
 
+import packaging
 import xcube
 import xcube.core
-from test.mocks import get_cds_client, CDSClientMock
-from xcube.core.store import DATASET_TYPE
-from xcube.core.store import DataDescriptor
+from xcube.core.store import DATASET_TYPE, DataDescriptor
+
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
-from xcube_cds.store import CDSDataOpener
-from xcube_cds.store import CDSDataStore
-from xcube_cds.store import CDSDatasetHandler
+from xcube_cds.store import CDSDataOpener, CDSDatasetHandler, CDSDataStore
 
 _CDS_API_URL = "dummy"
 _CDS_API_KEY = "dummy"

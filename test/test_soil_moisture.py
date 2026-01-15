@@ -28,8 +28,8 @@ See test_store.py for further documentation.
 import os
 import tempfile
 import unittest
-
 from test.mocks import get_cds_client
+
 from xcube_cds.store import CDSDataStore
 
 _CDS_API_URL = "dummy"
