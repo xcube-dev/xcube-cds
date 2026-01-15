@@ -20,12 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from xcube.constants import EXTENSION_POINT_DATA_OPENERS
-from xcube.constants import EXTENSION_POINT_DATA_STORES
+from xcube.constants import EXTENSION_POINT_DATA_OPENERS, EXTENSION_POINT_DATA_STORES
 from xcube.util import extension
 
-from xcube_cds.constants import CDS_DATA_OPENER_ID
-from xcube_cds.constants import CDS_DATA_STORE_ID
+from xcube_cds.constants import CDS_DATA_OPENER_ID, CDS_DATA_STORE_ID
 
 
 def init_plugin(ext_registry: extension.ExtensionRegistry):
@@ -40,6 +38,5 @@ def init_plugin(ext_registry: extension.ExtensionRegistry):
         loader=extension.import_component("xcube_cds.store:CDSDataOpener"),
         point=EXTENSION_POINT_DATA_OPENERS,
         name=CDS_DATA_OPENER_ID,
-        description="xarray.Dataset in NetCDF format "
-        "from Climate Data Store API",
+        description="xarray.Dataset in NetCDF format " "from Climate Data Store API",
     )

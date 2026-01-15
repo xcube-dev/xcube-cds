@@ -20,28 +20,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import glob
 import json
 import os
 import pathlib
-from typing import Dict
-from typing import List
-from typing import Mapping
-from typing import Optional
-from typing import Tuple
+from typing import Dict, List, Mapping, Optional, Tuple
 
-import xarray as xr
-from xcube.core.store import DataDescriptor
-from xcube.core.store import DatasetDescriptor
-from xcube.core.store import VariableDescriptor
-from xcube.util.jsonschema import JsonArraySchema
-from xcube.util.jsonschema import JsonDateSchema
-from xcube.util.jsonschema import JsonNumberSchema
-from xcube.util.jsonschema import JsonObjectSchema
-from xcube.util.jsonschema import JsonStringSchema
-import zipfile
+from xcube.core.store import DataDescriptor, DatasetDescriptor, VariableDescriptor
+from xcube.util.jsonschema import (
+    JsonArraySchema,
+    JsonDateSchema,
+    JsonNumberSchema,
+    JsonObjectSchema,
+    JsonStringSchema,
+)
 
 from xcube_cds.store import CDSDatasetHandler
+from xcube_cds.utils import _read_file
 
 
 class ERA5DatasetHandler(CDSDatasetHandler):
@@ -338,19 +332,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
         file_path: str,
         temp_dir: str,
     ):
-        # decode_cf=True is the default and the netcdf4 engine should be
-        # available and automatically selected, but it's safer and clearer to
-        # be explicit.
-        if zipfile.is_zipfile(file_path):
-            path_temp = os.path.join(pathlib.Path(file_path).parent.resolve(), "temp")
-            with zipfile.ZipFile(file_path, "r") as zip_ref:
-                zip_ref.extractall(path_temp)
-            file_paths = glob.glob(f"{path_temp}/*")
-            ds = xr.open_mfdataset(file_paths, engine="netcdf4", chunks="auto")
-        else:
-            ds = xr.open_dataset(
-                file_path, engine="netcdf4", chunks="auto", decode_cf=True
-            )
+        ds = _read_file(file_path)
         if "time_range" in open_params:
             start_time, end_time = open_params["time_range"]
             for time_var_name in "time", "valid_time":

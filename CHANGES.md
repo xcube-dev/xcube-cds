@@ -1,3 +1,8 @@
+## Changes in 1.1.2 (under development)
+
+- Add data access for [Land cover classification gridded maps from 1992 to present derived from satellite observations](https://cds.climate.copernicus.eu/datasets/satellite-land-cover?tab=overview)
+
+
 ## Changes in 1.1.1
 
  - Adjust time range in ERA5 demo notebook. (#106)

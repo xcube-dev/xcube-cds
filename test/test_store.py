@@ -48,18 +48,16 @@ import tempfile
 import typing
 import unittest
 from collections.abc import Iterator
-import packaging
+from test.mocks import CDSClientMock, get_cds_client
 
+import packaging
 import xcube
 import xcube.core
-from test.mocks import get_cds_client, CDSClientMock
-from xcube.core.store import DATASET_TYPE
-from xcube.core.store import DataDescriptor
+from xcube.core.store import DATASET_TYPE, DataDescriptor
+
 from xcube_cds.constants import CDS_DATA_OPENER_ID
 from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
-from xcube_cds.store import CDSDataOpener
-from xcube_cds.store import CDSDataStore
-from xcube_cds.store import CDSDatasetHandler
+from xcube_cds.store import CDSDataOpener, CDSDatasetHandler, CDSDataStore
 
 _CDS_API_URL = "dummy"
 _CDS_API_KEY = "dummy"
@@ -262,8 +260,7 @@ class CDSStoreTest(unittest.TestCase):
     def _get_ids(self, include_attrs):
         return list(
             self._create_store().get_data_ids(
-                data_type="dataset",
-                include_attrs=include_attrs
+                data_type="dataset", include_attrs=include_attrs
             )
         )
 
@@ -317,13 +314,13 @@ class CDSStoreTest(unittest.TestCase):
     def test_version_number(self):
         version_re = re.compile(
             r"^\s*" + packaging.version.VERSION_PATTERN + r"\s*$",
-            re.VERBOSE | re.IGNORECASE
+            re.VERBOSE | re.IGNORECASE,
         )
         for varname in "version", "__version__":
             value = getattr(__import__("xcube_cds"), varname)
             self.assertIsNotNone(
                 version_re.match(value),
-                msg=f'xcube_cds.{varname} == "{value}" is not PEP 440 compliant.'
+                msg=f'xcube_cds.{varname} == "{value}" is not PEP 440 compliant.',
             )
 
 

@@ -1,9 +1,9 @@
+import enum
+import inspect
 import json
+import os
 import pathlib
 import shutil
-import os
-import inspect
-import enum
 
 import cdsapi
 
