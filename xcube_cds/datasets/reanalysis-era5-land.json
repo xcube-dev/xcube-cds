@@ -1,6 +1,6 @@
 {
   "identifier": "reanalysis-era5-land",
-  "description": "ERA5-Land hourly data from 1981 to present",
+  "description": "ERA5-Land hourly data from 1950 to present",
   "product_types": [],
   "crs": "WGS84",
   "bbox": [
@@ -11,7 +11,7 @@
   ],
   "spatial_res": 0.1,
   "time_range": [
-    "1981-01-01",
+    "1950-01-01",
     null
   ],
   "time_period": "1H",

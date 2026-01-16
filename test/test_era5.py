@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2020–2025 Brockmann Consult GmbH
+# Copyright (c) 2020–2026 Brockmann Consult GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -250,3 +250,46 @@ class CDSEra5Test(unittest.TestCase):
                 for h in range(24)
             ],
         )
+
+
+class CDSEra5TimeseriesTest(unittest.TestCase):
+    data_id = "reanalysis-era5-single-levels-timeseries"
+    store = CDSDataStore(
+        client_class=get_cds_client(),
+        endpoint_url=_CDS_API_URL,
+        cds_api_key=_CDS_API_KEY,
+    )
+
+    def test_open_data_null_variables_list(self):
+        schema = self.store.get_open_data_params_schema(self.data_id)
+        self.assertIn("location", schema.properties)
+        self.assertIn("time_range", schema.properties)
+        self.assertIn("variable_names", schema.properties)
+        self.assertIn("location", schema.required)
+        self.assertIn("time_range", schema.required)
+        self.assertIn("variable_names", schema.required)
+        self.assertNotIn("bbox", schema.properties)
+
+    def test_describe_era5_timeseries(self):
+        descriptor = self.store.describe_data(self.data_id)
+        self.assertEqual(self.data_id, descriptor.data_id)
+        self.assertEqual("WGS84", descriptor.crs)
+        self.assertEqual((-180.0, -90.0, 180.0, 90.0), descriptor.bbox)
+        self.assertIsNone(descriptor.spatial_res)
+        self.assertEqual("1940-01-01", descriptor.time_range[0])
+        self.assertIsNone(descriptor.time_range[1])
+        self.assertEqual("1H", descriptor.time_period)
+        self.assertEqual(("time",), descriptor.data_vars["t2m"].dims)
+
+    def test_era5_timeseries(self):
+        dataset = self.store.open_data(
+            "reanalysis-era5-single-levels-timeseries",
+            variable_names=["2m_temperature", "mean_wave_direction"],
+            location=(10.01, 53.51),
+            time_range=["1940-01-01", "2025-12-31"],
+        )
+        self.assertIsNotNone(dataset)
+        self.assertTrue("t2m" in dataset.variables)
+        self.assertEqual(753888, len(dataset.time))
+        self.assertEqual(53.5, dataset.latitude.values)
+        self.assertEqual(10.0, dataset.longitude.values)

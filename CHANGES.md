@@ -1,7 +1,7 @@
-## Changes in 1.1.2 (under development)
+## Changes in 1.2.0 (under development)
 
-- Add data access for [Land cover classification gridded maps from 1992 to present derived from satellite observations](https://cds.climate.copernicus.eu/datasets/satellite-land-cover?tab=overview)
-
+- Add data access for [ERA5 hourly time-series data on single levels from 1940 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-timeseries?tab=overview). (#112)
+- Add data access for [Land cover classification gridded maps from 1992 to present derived from satellite observations](https://cds.climate.copernicus.eu/datasets/satellite-land-cover?tab=overview) (#113)
 
 ## Changes in 1.1.1
 

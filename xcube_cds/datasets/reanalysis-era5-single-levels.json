@@ -1,6 +1,6 @@
 {
   "identifier": "reanalysis-era5-single-levels",
-  "description": "ERA5 hourly data on single levels from 1979 to present",
+  "description": "ERA5 hourly data on single levels from 1940 to present",
   "product_types": [
     [
       "ensemble_mean",
@@ -28,7 +28,7 @@
   ],
   "spatial_res": 0.25,
   "time_range": [
-    "1979-01-01",
+    "1940-01-01",
     null
   ],
   "time_period": "1H",

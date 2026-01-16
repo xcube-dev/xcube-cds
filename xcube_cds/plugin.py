@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2020–2025 Brockmann Consult GmbH
+# Copyright (c) 2020–2026 Brockmann Consult GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -38,5 +38,5 @@ def init_plugin(ext_registry: extension.ExtensionRegistry):
         loader=extension.import_component("xcube_cds.store:CDSDataOpener"),
         point=EXTENSION_POINT_DATA_OPENERS,
         name=CDS_DATA_OPENER_ID,
-        description="xarray.Dataset in NetCDF format " "from Climate Data Store API",
+        description="xarray.Dataset in NetCDF format from Climate Data Store API",
     )

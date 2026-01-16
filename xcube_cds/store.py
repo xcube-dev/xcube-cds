@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2020–2025 Brockmann Consult GmbH
+# Copyright (c) 2020–2026 Brockmann Consult GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -371,8 +371,10 @@ class CDSDataOpener(DataOpener):
         from xcube_cds.datasets.reanalysis_era5 import ERA5DatasetHandler
 
         self._register_dataset_handler(ERA5DatasetHandler())
-        from xcube_cds.datasets.satellite_soil_moisture import SoilMoistureHandler
+        from xcube_cds.datasets.reanalysis_era5 import ERA5TimeseriesDatasetHandler
 
+        self._register_dataset_handler(ERA5TimeseriesDatasetHandler())
+        from xcube_cds.datasets.satellite_soil_moisture import SoilMoistureHandler
         self._register_dataset_handler(SoilMoistureHandler())
         from xcube_cds.datasets.satellite_sea_ice_thickness import (
             SeaIceThicknessHandler,
