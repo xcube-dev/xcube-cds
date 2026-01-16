@@ -56,6 +56,7 @@ exclude = [
             "reanalysis-era5-land-monthly-means.json",
             "reanalysis-era5-single-levels.json",
             "reanalysis-era5-single-levels-monthly-means.json",
+            "reanalysis-era5-single-levels-timeseries.json",
 ]
 
 [project.urls]

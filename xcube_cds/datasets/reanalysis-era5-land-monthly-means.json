@@ -1,6 +1,6 @@
 {
   "identifier": "reanalysis-era5-land-monthly-means",
-  "description": "ERA5-Land monthly averaged data from 1981 to present",
+  "description": "ERA5-Land monthly averaged data from 1950 to present",
   "product_types": [
     [
       "monthly_averaged_reanalysis",
@@ -20,7 +20,7 @@
   ],
   "spatial_res": 0.1,
   "time_range": [
-    "1981-01-01",
+    "1950-01-01",
     null
   ],
   "time_period": "1M",

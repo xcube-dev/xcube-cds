@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2020–2025 Brockmann Consult GmbH
+# Copyright (c) 2020–2026 Brockmann Consult GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -46,13 +46,24 @@ from xcube_cds.store import CDSDatasetHandler
 
 class ERA5DatasetHandler(CDSDatasetHandler):
 
-    def __init__(self, api_version: int = 2):
+    def __init__(self, api_version: int = 2, json_pathnames: list[str] = None):
         """Instantiate a new ERA5 dataset handler
 
         :param api_version: the API version to use when interfacing with the
             backend CDS service. 1 indicates the original API version used
             at launch. 2 indicates the new version introduced in 2024.
+        :param json_pathnames: list of json path names containing further product
+            parameters for supported dataset by this handler.
         """
+        if not json_pathnames:
+            self._json_pathnames = [
+                "reanalysis-era5-land.json",
+                "reanalysis-era5-land-monthly-means.json",
+                "reanalysis-era5-single-levels.json",
+                "reanalysis-era5-single-levels-monthly-means.json",
+            ]
+        else:
+            self._json_pathnames = json_pathnames
         self._read_dataset_info()
         assert api_version in {1, 2}
         self._api_version = api_version
@@ -93,16 +104,9 @@ class ERA5DatasetHandler(CDSDatasetHandler):
         # 4. "long name" from NetCDF attributes
 
         ds_info_path = pathlib.Path(__file__).parent
-        all_pathnames = [
-            os.path.join(ds_info_path, leafname)
-            for leafname in os.listdir(ds_info_path)
-        ]
-        pathnames = filter(
-            lambda p: os.path.isfile(p) and p.endswith(".json"), all_pathnames
-        )
         self._dataset_dicts = {}
-        for pathname in pathnames:
-            with open(pathname, "r") as fh:
+        for pathname in self._json_pathnames:
+            with open(os.path.join(ds_info_path, pathname), "r") as fh:
                 ds_dict = json.load(fh)
                 _, leafname = os.path.split(pathname)
                 self._dataset_dicts[leafname[:-5]] = ds_dict
@@ -218,7 +222,7 @@ class ERA5DatasetHandler(CDSDatasetHandler):
             data_vars=self._create_variable_descriptors(data_id),
             crs=ds_info["crs"],
             bbox=tuple(ds_info["bbox"]),
-            spatial_res=ds_info["spatial_res"],
+            spatial_res=ds_info.get("spatial_res"),
             time_range=tuple(ds_info["time_range"]),
             time_period=ds_info["time_period"],
             open_params_schema=self.get_open_data_params_schema(data_id),
@@ -357,3 +361,99 @@ class ERA5DatasetHandler(CDSDatasetHandler):
                 if time_var_name in ds.coords:
                     ds = ds.sel({time_var_name: slice(start_time, end_time)})
         return ds
+
+
+class ERA5TimeseriesDatasetHandler(ERA5DatasetHandler):
+
+    def __init__(self):
+        """Instantiate a new ERA5 time-series dataset handler."""
+        json_pathnames = ["reanalysis-era5-single-levels-timeseries.json"]
+        super().__init__(json_pathnames=json_pathnames)
+
+    def get_open_data_params_schema(
+        self, data_id: Optional[str] = None
+    ) -> JsonObjectSchema:
+        ds_info = self._dataset_dicts[data_id]
+        variable_info_table = ds_info["variables"]
+        bbox = ds_info["bbox"]
+
+        params = dict(
+            variable_names=JsonArraySchema(
+                items=(
+                    JsonStringSchema(
+                        min_length=0,
+                        enum=[
+                            cds_api_name
+                            for cds_api_name, _, _, _ in variable_info_table
+                        ],
+                    )
+                ),
+                unique_items=True,
+                nullable=True,
+                description="identifiers of the requested variables",
+            ),
+            location=JsonArraySchema(
+                items=(
+                    JsonNumberSchema(
+                        minimum=bbox[0],
+                        maximum=bbox[2],
+                        description="Longitude in degrees",
+                    ),
+                    JsonNumberSchema(
+                        minimum=bbox[1],
+                        maximum=bbox[3],
+                        description="Latitude in degrees",
+                    ),
+                ),
+                description=(
+                    "Point location as (longitude, latitude) in degrees; "
+                    "values will be rounded to 0.25° resolution"
+                ),
+            ),
+            time_range=JsonDateSchema.new_range(),
+        )
+        required = [
+            "variable_names",
+            "location",
+            "time_range",
+        ]
+        return JsonObjectSchema(
+            properties=params, required=required, additional_properties=False
+        )
+
+    def _create_variable_descriptors(
+        self, data_id: str
+    ) -> Mapping[str, VariableDescriptor]:
+        return {
+            netcdf_name: VariableDescriptor(
+                name=netcdf_name,
+                dtype="float32",
+                dims=("time",),
+                attrs=dict(units=units, long_name=long_name),
+            )
+            for (api_name, netcdf_name, units, long_name) in self._dataset_dicts[
+                data_id
+            ]["variables"]
+        }
+
+    def transform_params(self, plugin_params: Dict, data_id: str) -> Tuple[str, Dict]:
+        """Transform supplied parameters to CDS API format.
+
+        :param plugin_params: parameters in form expected by this plugin
+        :param data_id: the ID of the requested dataset
+        :return: parameters in form expected by the CDS API
+        """
+        params_combined = {
+            "variable": plugin_params["variable_names"],
+            "location": {
+                "longitude": round(plugin_params["location"][0] * 4) / 4,
+                "latitude": round(plugin_params["location"][1] * 4) / 4,
+            },
+            "date": [
+                f"{plugin_params['time_range'][0]}/{plugin_params['time_range'][1]}"
+            ],
+            "data_format": "netcdf",
+            "description": ["surface", "wave"],
+        }
+
+        return data_id, params_combined

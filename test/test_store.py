@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2020–2025 Brockmann Consult GmbH
+# Copyright (c) 2020–2026 Brockmann Consult GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -262,8 +262,7 @@ class CDSStoreTest(unittest.TestCase):
     def _get_ids(self, include_attrs):
         return list(
             self._create_store().get_data_ids(
-                data_type="dataset",
-                include_attrs=include_attrs
+                data_type="dataset", include_attrs=include_attrs
             )
         )
 
@@ -317,13 +316,13 @@ class CDSStoreTest(unittest.TestCase):
     def test_version_number(self):
         version_re = re.compile(
             r"^\s*" + packaging.version.VERSION_PATTERN + r"\s*$",
-            re.VERBOSE | re.IGNORECASE
+            re.VERBOSE | re.IGNORECASE,
         )
         for varname in "version", "__version__":
             value = getattr(__import__("xcube_cds"), varname)
             self.assertIsNotNone(
                 version_re.match(value),
-                msg=f'xcube_cds.{varname} == "{value}" is not PEP 440 compliant.'
+                msg=f'xcube_cds.{varname} == "{value}" is not PEP 440 compliant.',
             )
 
 
