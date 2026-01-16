@@ -40,5 +40,5 @@ def init_plugin(ext_registry: extension.ExtensionRegistry):
         loader=extension.import_component("xcube_cds.store:CDSDataOpener"),
         point=EXTENSION_POINT_DATA_OPENERS,
         name=CDS_DATA_OPENER_ID,
-        description="xarray.Dataset in NetCDF format " "from Climate Data Store API",
+        description="xarray.Dataset in NetCDF format from Climate Data Store API",
     )
