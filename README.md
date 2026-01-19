@@ -22,6 +22,7 @@ Currently supported datasets:
  - [Monthly drought indices from 1940 to present derived from ERA5 reanalysis](https://cds.climate.copernicus.eu/datasets/derived-drought-historical-monthly?tab=overview)
  - [Soil moisture gridded data from 1978 to present](https://cds.climate.copernicus.eu/datasets/satellite-soil-moisture?tab=overview)
  - [Sea ice thickness gridded data from 2002 to present](https://cds.climate.copernicus.eu/datasets/satellite-sea-ice-thickness?tab=overview)
+ - [Land cover classification gridded maps from 1992 to present derived from satellite observations](https://cds.climate.copernicus.eu/datasets/satellite-land-cover?tab=overview)
 
 ## Setup
 

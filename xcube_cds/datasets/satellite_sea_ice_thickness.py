@@ -23,18 +23,16 @@
 import collections
 import os
 import tarfile
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Any, Dict, List, Tuple
 
 import xarray as xr
-from xcube.core.store import DatasetDescriptor
-from xcube.core.store import VariableDescriptor
-from xcube.util.jsonschema import JsonArraySchema
-from xcube.util.jsonschema import JsonDateSchema
-from xcube.util.jsonschema import JsonObjectSchema
-from xcube.util.jsonschema import JsonStringSchema
+from xcube.core.store import DatasetDescriptor, VariableDescriptor
+from xcube.util.jsonschema import (
+    JsonArraySchema,
+    JsonDateSchema,
+    JsonObjectSchema,
+    JsonStringSchema,
+)
 
 from xcube_cds.store import CDSDatasetHandler
 

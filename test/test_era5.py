@@ -26,16 +26,14 @@ See test_store.py for further documentation.
 """
 
 import unittest
-
-from jsonschema import ValidationError
+from test.mocks import get_cds_client
 
 import xcube
 import xcube.core
-from test.mocks import get_cds_client
-from xcube.core.store import DATASET_TYPE
-from xcube.core.store import VariableDescriptor
-from xcube_cds.store import CDSDataOpener
-from xcube_cds.store import CDSDataStore
+from jsonschema import ValidationError
+from xcube.core.store import DATASET_TYPE, VariableDescriptor
+
+from xcube_cds.store import CDSDataOpener, CDSDataStore
 
 _CDS_API_URL = "dummy"
 _CDS_API_KEY = "dummy"

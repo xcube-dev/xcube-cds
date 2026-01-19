@@ -26,11 +26,10 @@ See test_store.py for further documentation.
 """
 
 import unittest
-
 from test.mocks import get_cds_client
-from xcube_cds.store import CDSDataOpener
-from xcube_cds.datasets.drought_indices_era5 import DroughtIndicesDatasetHandler
 
+from xcube_cds.datasets.drought_indices_era5 import DroughtIndicesDatasetHandler
+from xcube_cds.store import CDSDataOpener
 
 _CDS_API_URL = "dummy"
 _CDS_API_KEY = "dummy"
