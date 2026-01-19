@@ -232,7 +232,7 @@ class CDSDatasetHandler(ABC):
         # manually.
         if len(time_range) != 2:
             raise ValueError(
-                "time_range must have a length of 2, " "not {len(time_range)}."
+                "time_range must have a length of 2, not {len(time_range)}."
             )
 
         time0 = dateutil.parser.isoparse(time_range[0])
