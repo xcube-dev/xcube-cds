@@ -389,6 +389,9 @@ class CDSDataOpener(DataOpener):
 
         self._register_dataset_handler(LandCoverDatasetHandler())
 
+        from xcube_cds.datasets.land_surface_temperature import LandSurfaceTemperatureDatasetHandler
+        self._register_dataset_handler(LandSurfaceTemperatureDatasetHandler())
+
         self._client_class = client_class
         self.cds_api_url = endpoint_url
         self.cds_api_key = cds_api_key
