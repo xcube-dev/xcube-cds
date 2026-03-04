@@ -28,15 +28,16 @@ import zipfile
 import xarray as xr
 
 
-def _read_file(file_path: str):
+def _read_file(file_path: str, temp_dir: str = None):
     # decode_cf=True is the default and the netcdf4 engine should be
     # available and automatically selected, but it's safer and clearer to
     # be explicit.
     if zipfile.is_zipfile(file_path):
-        path_temp = os.path.join(pathlib.Path(file_path).parent.resolve(), "temp")
+        if not temp_dir:
+            temp_dir = os.path.join(pathlib.Path(file_path).parent.resolve(), "temp")
         with zipfile.ZipFile(file_path, "r") as zip_ref:
-            zip_ref.extractall(path_temp)
-        file_paths = glob.glob(f"{path_temp}/*")
+            zip_ref.extractall(temp_dir)
+        file_paths = glob.glob(f"{temp_dir}/*")
         ds = xr.open_mfdataset(
             file_paths, engine="netcdf4", chunks="auto", decode_cf=True
         )
