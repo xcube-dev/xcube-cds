@@ -69,15 +69,16 @@ class LandSurfaceTemperatureDatasetHandler(CDSDatasetHandler):
             time_range=JsonDateSchema.new_range(
                 min_date=self._min_date, max_date=self._max_date
             ),
-            observation_time=JsonStringSchema(
-                enum=["day", "night"],
+            observation_time=JsonArraySchema(
+                items=(JsonStringSchema(enum=["day", "night"])),
+                unique_items=True,
                 title="Observation Time",
                 description=(
                     "The land surface temperature data are split into day and night products using the "
                     "solar zenith angle (daytime when solar zenith angle < 90° "
                     "and nighttime when solar zenith angle > 90°). "
                 ),
-                default="day",
+                default=["day"],
             ),
         )
         required = ["time_range"]
