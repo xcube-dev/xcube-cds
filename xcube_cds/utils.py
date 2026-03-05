@@ -39,7 +39,7 @@ def _read_file(file_path: str, temp_dir: str = None):
             zip_ref.extractall(temp_dir)
         file_paths = glob.glob(f"{temp_dir}/*")
         ds = xr.open_mfdataset(
-            file_paths, engine="netcdf4", chunks="auto", decode_cf=True
+            file_paths, engine="netcdf4", chunks="auto", decode_cf=True, decode_timedelta=True
         )
     else:
         ds = xr.open_dataset(file_path, engine="netcdf4", chunks="auto", decode_cf=True)
