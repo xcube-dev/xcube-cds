@@ -1,3 +1,7 @@
+## Changes in 1.3 (in development)
+
+- Add data access for [Land surface temperature monthly gridded data from 1995 to present derived from satellite observations](https://cds.climate.copernicus.eu/datasets/satellite-land-surface-temperature?tab=overview). (#114)
+
 ## Changes in 1.2.0
 
 - Add data access for [ERA5 hourly time-series data on single levels from 1940 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-timeseries?tab=overview). (#112)
