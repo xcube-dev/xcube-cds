@@ -1,6 +1,8 @@
 import unittest
 
+from test.mocks import get_cds_client
 from xcube_cds.datasets.land_surface_temperature import LandSurfaceTemperatureDatasetHandler
+from xcube_cds.store import CDSDataOpener
 
 
 class LandSurfaceTemperatureDatasetHandlerTest(unittest.TestCase):
@@ -38,3 +40,43 @@ class LandSurfaceTemperatureDatasetHandlerTest(unittest.TestCase):
             human_readable_data_id
         )
 
+    def test_describe_data(self):
+        descriptor = self._lst_handler.describe_data("satellite-land-surface-temperature")
+        self.assertEqual("satellite-land-surface-temperature", descriptor.data_id)
+        self.assertEqual("WGS84", descriptor.crs)
+        self.assertEqual((-180.0, -90.0, 180.0, 90.0), descriptor.bbox)
+        self.assertEqual(0.01, descriptor.spatial_res)
+        self.assertEqual("1995-06-01", descriptor.time_range[0])
+        self.assertEqual("2025-06-30", descriptor.time_range[1])
+        self.assertEqual("1M", descriptor.time_period)
+        self.assertEqual(
+            {'dtime', 'lcc', 'lst', 'lst_unc_loc_atm', 'lst_unc_loc_cor', 'lst_unc_loc_sfc', 'lst_unc_ran',
+             'lst_unc_sys', 'lst_uncertainty', 'n', 'sataz', 'satze', 'solaz', 'solze'},
+            set(descriptor.data_vars.keys())
+        )
+        self.assertEqual(
+            ("time", "lat", "lon"), descriptor.data_vars["lst"].dims
+        )
+
+    def test_open_data(self):
+        opener = CDSDataOpener(
+            client_class=get_cds_client(),
+            endpoint_url="dummy",
+            cds_api_key="dummy",
+        )
+        dataset = opener.open_data(
+            "satellite-land-surface-temperature",
+            bbox=[-1, -1, 1, 1],
+            time_range=["2015-02-01", "2015-03-31"],
+            observation_time=["day", "night"]
+        )
+        self.assertIsNotNone(dataset)
+        self.assertEqual(
+            [2, 200, 200],
+            [dataset.sizes["time"], dataset.sizes["lat"], dataset.sizes["lon"]],
+        )
+        self.assertEqual(
+            {'dtime', 'lcc', 'lst', 'lst_unc_loc_atm', 'lst_unc_loc_cor', 'lst_unc_loc_sfc', 'lst_unc_ran',
+             'lst_unc_sys', 'lst_uncertainty', 'n', 'sataz', 'satze', 'solaz', 'solze'},
+            set(dataset.data_vars.keys())
+        )
