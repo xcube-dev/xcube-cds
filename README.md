@@ -23,6 +23,7 @@ Currently supported datasets:
  - [Soil moisture gridded data from 1978 to present](https://cds.climate.copernicus.eu/datasets/satellite-soil-moisture?tab=overview)
  - [Sea ice thickness gridded data from 2002 to present](https://cds.climate.copernicus.eu/datasets/satellite-sea-ice-thickness?tab=overview)
  - [Land cover classification gridded maps from 1992 to present derived from satellite observations](https://cds.climate.copernicus.eu/datasets/satellite-land-cover?tab=overview)
+ - [Land surface temperature monthly gridded data from 1995 to present derived from satellite observations](https://cds.climate.copernicus.eu/datasets/satellite-land-surface-temperature?tab=overview)
 
 ## Setup
 
