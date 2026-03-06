@@ -1,4 +1,4 @@
-## Changes in 1.3 (in development)
+## Changes in 1.3
 
 - Add data access for [Land surface temperature monthly gridded data from 1995 to present derived from satellite observations](https://cds.climate.copernicus.eu/datasets/satellite-land-surface-temperature?tab=overview). (#114)
 
