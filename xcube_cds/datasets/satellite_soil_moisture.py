@@ -204,14 +204,14 @@ class SoilMoistureHandler(CDSDatasetHandler):
                 default="cdr",
             ),
             version=JsonStringSchema(
-                enum=["v201706", "v201812", "v201912", "v202012"],
+                enum=["v202505"],
                 title="Data version",
                 description=(
                     "Product version, in the format vYYYYMM, where YYYY"
                     "represents a year number and MM a two-digit month number"
                     "(with leading zero if required)."
                 ),
-                default="v202012",
+                default="v202505",
             ),
         )
 
