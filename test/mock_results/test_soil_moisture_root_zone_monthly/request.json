@@ -1,0 +1,1 @@
+{"_dataset_name": "satellite-soil-moisture", "variable": "root_zone_soil_moisture_volumetric", "time_aggregation": "month_average", "type_of_record": "cdr", "version": "v202505", "format": "tgz", "day": "01", "month": ["01", "02"], "year": "2015"}
