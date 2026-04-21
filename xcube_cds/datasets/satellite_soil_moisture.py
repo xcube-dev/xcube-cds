@@ -37,7 +37,7 @@ from xcube.util.jsonschema import (
 from xcube_cds.store import CDSDatasetHandler
 
 VariableProperties = collections.namedtuple(
-    "VariableProperties", ["variables", "sensor_types"]
+    "VariableProperties", ["variables", "sensor_types", "start_time"]
 )
 
 
@@ -53,10 +53,11 @@ class SoilMoistureHandler(CDSDatasetHandler):
 
     # Map second component of data ID to variable and sensor type information
     _var_map = {
-        "saturation": VariableProperties(["surface_soil_moisture"], ["active"]),
+        "saturation": VariableProperties(["surface_soil_moisture_saturation"], ["active"], "1991-08-05"),
         "volumetric": VariableProperties(
-            ["volumetric_surface_soil_moisture"],
-            ["combined_passive_and_active", "passive"],
+            ["surface_soil_moisture_volumetric"],
+            ["combined", "passive"],
+            "1978-11-01"
         ),
     }
 
@@ -83,7 +84,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
         # Aggregation period is not an opener parameter, since it's already
         # specified as part of the data_id.
         cds_aggregation_specifier = {
-            "daily": "day_average",
+            "daily": "daily",
             "10-day": "10_day_average",
             "monthly": "month_average",
         }[aggregation]
@@ -204,7 +205,8 @@ class SoilMoistureHandler(CDSDatasetHandler):
                 default="cdr",
             ),
             version=JsonStringSchema(
-                enum=["v202505"],
+                enum=["v202505", "v201706", "v201812", "v201912.1", "v202012",
+                      "v202212", "v202312"],
                 title="Data version",
                 description=(
                     "Product version, in the format vYYYYMM, where YYYY"
@@ -237,6 +239,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
 
     def describe_data(self, data_id: str) -> DatasetDescriptor:
         _, variable_spec, aggregation = data_id.split(":")
+        variable_properties = self._var_map[variable_spec]
 
         sm_attrs = dict(
             saturation=("percent", "Percent of Saturation Soil Moisture"),
@@ -327,7 +330,7 @@ class SoilMoistureHandler(CDSDatasetHandler):
             crs="WGS84",
             bbox=(-180, -90, 180, 90),
             spatial_res=0.25,
-            time_range=("1978-11-01", None),
+            time_range=(variable_properties.start_time, None),
             time_period=self._aggregation_map[aggregation],
             open_params_schema=self.get_open_data_params_schema(data_id),
         )

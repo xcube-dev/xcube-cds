@@ -88,8 +88,8 @@ class CDSSoilMoistureTest(unittest.TestCase):
         )
         self.assertTrue("sm" in dataset.variables)
         self.assertEqual(4, len(dataset.variables["time"]))
-        self.assertEqual("19910805T000000Z", dataset.attrs["time_coverage_start"])
-        self.assertEqual("20201231T235959Z", dataset.attrs["time_coverage_end"])
+        self.assertEqual("20160301T000000Z", dataset.attrs["time_coverage_start"])
+        self.assertEqual("20160304T235959Z", dataset.attrs["time_coverage_end"])
         description = store.describe_data(data_id)
         self.assertCountEqual(description.data_vars.keys(), map(str, dataset.data_vars))
 
@@ -121,8 +121,8 @@ class CDSSoilMoistureTest(unittest.TestCase):
         data_id = "satellite-soil-moisture:volumetric:monthly"
         dataset = store.open_data(
             data_id,
-            variable_names=["volumetric_surface_soil_moisture"],
-            type_of_sensor="combined_passive_and_active",
+            variable_names=["surface_soil_moisture_volumetric"],
+            type_of_sensor="combined",
             time_range=["2015-01-01", "2015-02-28"],
         )
         self.assertTrue("sm" in dataset.variables)
@@ -159,7 +159,7 @@ class CDSSoilMoistureTest(unittest.TestCase):
                 _save_request_to=request_path,
                 _save_file_to=result_path,
                 _save_zarr_to=zarr_path,
-                variable_names=["volumetric_surface_soil_moisture"],
+                variable_names=["surface_soil_moisture_volumetric"],
                 time_range=["2015-01-01", "2015-02-28"],
             )
             self.assertTrue(os.path.isfile(request_path))

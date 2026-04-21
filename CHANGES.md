@@ -1,5 +1,7 @@
 ## Changes in 1.3.1 (in development)
 
+- Adjusted Soil Moisture Dataset after breaking API changes (now supports version v202505)
+
 ## Changes in 1.3.0
 
 - Add data access for [Land surface temperature monthly gridded data from 1995 to present derived from satellite observations](https://cds.climate.copernicus.eu/datasets/satellite-land-surface-temperature?tab=overview). (#114)
