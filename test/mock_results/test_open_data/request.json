@@ -1,0 +1,1 @@
+{"_dataset_name": "satellite-land-surface-temperature", "variable": "land_surface_temperature", "observation_time": ["day", "night"], "year": "2015", "month": ["02", "03"], "version": "v3_00", "area": [1, -1, -1, 1]}

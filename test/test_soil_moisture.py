@@ -88,8 +88,8 @@ class CDSSoilMoistureTest(unittest.TestCase):
         )
         self.assertTrue("sm" in dataset.variables)
         self.assertEqual(4, len(dataset.variables["time"]))
-        self.assertEqual("19910805T000000Z", dataset.attrs["time_coverage_start"])
-        self.assertEqual("20201231T235959Z", dataset.attrs["time_coverage_end"])
+        self.assertEqual("20160301T000000Z", dataset.attrs["time_coverage_start"])
+        self.assertEqual("20160304T235959Z", dataset.attrs["time_coverage_end"])
         description = store.describe_data(data_id)
         self.assertCountEqual(description.data_vars.keys(), map(str, dataset.data_vars))
 
@@ -121,14 +121,68 @@ class CDSSoilMoistureTest(unittest.TestCase):
         data_id = "satellite-soil-moisture:volumetric:monthly"
         dataset = store.open_data(
             data_id,
-            variable_names=["volumetric_surface_soil_moisture"],
-            type_of_sensor="combined_passive_and_active",
+            variable_names=["surface_soil_moisture_volumetric"],
+            type_of_sensor="combined",
             time_range=["2015-01-01", "2015-02-28"],
         )
         self.assertTrue("sm" in dataset.variables)
         self.assertEqual(2, len(dataset.variables["time"]))
         self.assertEqual("2014-12-31T12:00:00Z", dataset.attrs["time_coverage_start"])
         self.assertEqual("2015-02-28T12:00:00Z", dataset.attrs["time_coverage_end"])
+        description = store.describe_data(data_id)
+        self.assertCountEqual(description.data_vars.keys(), map(str, dataset.data_vars))
+
+    def test_soil_moisture_root_zone_daily(self):
+        store = CDSDataStore(
+            client_class=get_cds_client(),
+            endpoint_url=_CDS_API_URL,
+            cds_api_key=_CDS_API_KEY,
+        )
+        data_id = "satellite-soil-moisture:root-zone-volumetric:daily"
+        dataset = store.open_data(
+            data_id,
+            time_range=["2016-03-01", "2016-03-04"],
+        )
+        self.assertTrue("uncertainty_2" in dataset.variables)
+        self.assertEqual(4, len(dataset.variables["time"]))
+        self.assertEqual("20160301T000000Z", dataset.attrs["time_coverage_start"])
+        self.assertEqual("20160304T235959Z", dataset.attrs["time_coverage_end"])
+        description = store.describe_data(data_id)
+        self.assertCountEqual(description.data_vars.keys(), map(str, dataset.data_vars))
+
+    def test_soil_moisture_root_zone_monthly(self):
+        store = CDSDataStore(
+            client_class=get_cds_client(),
+            endpoint_url=_CDS_API_URL,
+            cds_api_key=_CDS_API_KEY,
+        )
+        data_id = "satellite-soil-moisture:root-zone-volumetric:monthly"
+        dataset = store.open_data(
+            data_id,
+            time_range=["2015-01-01", "2015-02-28"],
+        )
+        self.assertTrue("nobs_1m" in dataset.variables)
+        self.assertEqual(2, len(dataset.variables["time"]))
+        self.assertEqual("2014-12-31T12:00:00Z", dataset.attrs["time_coverage_start"])
+        self.assertEqual("2015-02-28T12:00:00Z", dataset.attrs["time_coverage_end"])
+        description = store.describe_data(data_id)
+        self.assertCountEqual(description.data_vars.keys(), map(str, dataset.data_vars))
+
+    def test_soil_moisture_freeze_thaw(self):
+        store = CDSDataStore(
+            client_class=get_cds_client(),
+            endpoint_url=_CDS_API_URL,
+            cds_api_key=_CDS_API_KEY,
+        )
+        data_id = "satellite-soil-moisture:freeze-thaw:daily"
+        dataset = store.open_data(
+            data_id,
+            time_range=["2016-03-01", "2016-03-04"],
+        )
+        self.assertTrue("ft" in dataset.variables)
+        self.assertEqual(4, len(dataset.variables["time"]))
+        self.assertEqual("20160301T000000Z", dataset.attrs["time_coverage_start"])
+        self.assertEqual("20160304T235959Z", dataset.attrs["time_coverage_end"])
         description = store.describe_data(data_id)
         self.assertCountEqual(description.data_vars.keys(), map(str, dataset.data_vars))
 
@@ -159,7 +213,7 @@ class CDSSoilMoistureTest(unittest.TestCase):
                 _save_request_to=request_path,
                 _save_file_to=result_path,
                 _save_zarr_to=zarr_path,
-                variable_names=["volumetric_surface_soil_moisture"],
+                variable_names=["surface_soil_moisture_volumetric"],
                 time_range=["2015-01-01", "2015-02-28"],
             )
             self.assertTrue(os.path.isfile(request_path))

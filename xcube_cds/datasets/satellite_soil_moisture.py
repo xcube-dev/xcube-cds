@@ -37,9 +37,11 @@ from xcube.util.jsonschema import (
 from xcube_cds.store import CDSDatasetHandler
 
 VariableProperties = collections.namedtuple(
-    "VariableProperties", ["variables", "sensor_types"]
+    "VariableProperties", ["variables", "sensor_types", "start_time", "versions"]
 )
 
+_ALL_VERSIONS = ["v202505", "v201706", "v201812", "v201912.1", "v202012", "v202212", "v202312"]
+_LATEST_VERSION = "v202505"
 
 class SoilMoistureHandler(CDSDatasetHandler):
     _data_id_map = {
@@ -49,15 +51,23 @@ class SoilMoistureHandler(CDSDatasetHandler):
         "satellite-soil-moisture:volumetric:daily": "Soil moisture (volumetric, daily)",
         "satellite-soil-moisture:volumetric:10-day": "Soil moisture (volumetric, 10-day)",
         "satellite-soil-moisture:volumetric:monthly": "Soil moisture (volumetric, monthly)",
+        "satellite-soil-moisture:root-zone-volumetric:daily": "Soil moisture (root zone volumetric, daily)",
+        "satellite-soil-moisture:root-zone-volumetric:10-day": "Soil moisture (root zone volumetric, 10-day)",
+        "satellite-soil-moisture:root-zone-volumetric:monthly": "Soil moisture (root zone volumetric, monthly)",
+        "satellite-soil-moisture:freeze-thaw:daily": "Soil moisture (freeze thaw classification, daily)",
     }
 
     # Map second component of data ID to variable and sensor type information
     _var_map = {
-        "saturation": VariableProperties(["surface_soil_moisture"], ["active"]),
+        "saturation": VariableProperties(["surface_soil_moisture_saturation"], ["active"], "1991-08-05", _ALL_VERSIONS),
         "volumetric": VariableProperties(
-            ["volumetric_surface_soil_moisture"],
-            ["combined_passive_and_active", "passive"],
+            ["surface_soil_moisture_volumetric"],
+            ["combined", "passive"],
+            "1978-11-01",
+            _ALL_VERSIONS
         ),
+        "root-zone-volumetric": VariableProperties(["root_zone_soil_moisture_volumetric"], [], "1978-11-01", [_LATEST_VERSION]),
+        "freeze-thaw": VariableProperties(["freeze_thaw_classification"], [], "1978-11-01", [_LATEST_VERSION]),
     }
 
     # Map third component of data ID to time period in CDS API format
@@ -83,26 +93,27 @@ class SoilMoistureHandler(CDSDatasetHandler):
         # Aggregation period is not an opener parameter, since it's already
         # specified as part of the data_id.
         cds_aggregation_specifier = {
-            "daily": "day_average",
+            "daily": "daily",
             "10-day": "10_day_average",
             "monthly": "month_average",
         }[aggregation]
 
-        # The sensor type is only available as an opener parameter for datasets
-        # with more than one sensor type available. If no sensor type is
-        # specified in the opener parameters, it's determined from the data ID.
-        type_of_sensor = opener_params.get(
-            "type_of_sensor", variable_properties.sensor_types[0]
-        )
-
         cds_params = dict(
             variable=variable,
-            type_of_sensor=type_of_sensor,
             time_aggregation=cds_aggregation_specifier,
             type_of_record=opener_params["type_of_record"],
             version=opener_params["version"],
             format="tgz",
         )
+
+        # The sensor type is only available as an opener parameter for datasets
+        # with more than one sensor type available. If no sensor type is
+        # specified in the opener parameters, it's determined from the data ID.
+        if len(variable_properties.sensor_types) > 0:
+            type_of_sensor = opener_params.get(
+                "type_of_sensor", variable_properties.sensor_types[0]
+            )
+            cds_params["type_of_sensor"] = type_of_sensor
 
         time_selectors = self.transform_time_params(
             self.convert_time_range(opener_params["time_range"])
@@ -204,14 +215,14 @@ class SoilMoistureHandler(CDSDatasetHandler):
                 default="cdr",
             ),
             version=JsonStringSchema(
-                enum=["v201706", "v201812", "v201912", "v202012"],
+                enum=variable_properties.versions,
                 title="Data version",
                 description=(
                     "Product version, in the format vYYYYMM, where YYYY"
                     "represents a year number and MM a two-digit month number"
                     "(with leading zero if required)."
                 ),
-                default="v202012",
+                default=_LATEST_VERSION,
             ),
         )
 
@@ -237,7 +248,27 @@ class SoilMoistureHandler(CDSDatasetHandler):
 
     def describe_data(self, data_id: str) -> DatasetDescriptor:
         _, variable_spec, aggregation = data_id.split(":")
+        variable_properties = self._var_map[variable_spec]
 
+        if variable_spec == "root-zone-volumetric":
+            descriptors = self._get_rzsm_descriptors(aggregation)
+        elif variable_spec == "freeze-thaw":
+            descriptors = self._get_ft_descriptors()
+        else:
+            descriptors = self._get_standard_descriptors(variable_spec, aggregation)
+
+        return DatasetDescriptor(
+            data_id=data_id,
+            data_vars={desc.name: desc for desc in descriptors},
+            crs="WGS84",
+            bbox=(-180, -90, 180, 90),
+            spatial_res=0.25,
+            time_range=(variable_properties.start_time, None),
+            time_period=self._aggregation_map[aggregation],
+            open_params_schema=self.get_open_data_params_schema(data_id),
+        )
+
+    def _get_standard_descriptors(self, variable_spec: str, aggregation: str):
         sm_attrs = dict(
             saturation=("percent", "Percent of Saturation Soil Moisture"),
             volumetric=("m3 m-3", "Volumetric Soil Moisture"),
@@ -320,14 +351,148 @@ class SoilMoistureHandler(CDSDatasetHandler):
         descriptors = descriptors_common + (
             descriptors_daily if aggregation == "daily" else descriptors_aggregated
         )
+        return descriptors
 
-        return DatasetDescriptor(
-            data_id=data_id,
-            data_vars={desc.name: desc for desc in descriptors},
-            crs="WGS84",
-            bbox=(-180, -90, 180, 90),
-            spatial_res=0.25,
-            time_range=("1978-11-01", None),
-            time_period=self._aggregation_map[aggregation],
-            open_params_schema=self.get_open_data_params_schema(data_id),
+    def _get_rzsm_descriptors(self, aggregation: str):
+        descriptors_common = [
+            VariableDescriptor(
+                name="rzsm_1",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={"units": "m3 m-3", "long_name": "Root Zone Soil Moisture at 0-10 cm"},
+            ),
+            VariableDescriptor(
+                name="rzsm_2",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={"units": "m3 m-3", "long_name": "Root Zone Soil Moisture at 10-40 cm"},
+            ),
+            VariableDescriptor(
+                name="rzsm_3",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={"units": "m3 m-3", "long_name": "Root Zone Soil Moisture at 40-100 cm"},
+            ),
+            VariableDescriptor(
+                name="rzsm_1m",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={"units": "m3 m-3", "long_name": "Root Zone Soil Moisture at 0-1 m"},
+            ),
+        ]
+
+        descriptors_daily = [
+            VariableDescriptor(
+                name="uncertainty_1",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={
+                    "units": "m3 m-3",
+                    "long_name": "Root Zone Soil Moisture uncertainty at 0-10 cm",
+                },
+            ),
+            VariableDescriptor(
+                name="uncertainty_2",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={
+                    "units": "m3 m-3",
+                    "long_name": "Root Zone Soil Moisture uncertainty at 10-40 cm",
+                },
+            ),
+            VariableDescriptor(
+                name="uncertainty_3",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={
+                    "units": "m3 m-3",
+                    "long_name": "Root Zone Soil Moisture uncertainty at 40-100 cm",
+                },
+            ),
+        ]
+        descriptors_aggregated = [
+            VariableDescriptor(
+                name="nobs_1",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Number of averaged daily observations for the "
+                                    "Root Zone Soil Moisture at 0-10cm (rzsm_1) layer"},
+            ),
+            VariableDescriptor(
+                name="nobs_2",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Number of averaged daily observations for the "
+                                    "Root Zone Soil Moisture at 10-40cm (rzsm_2) layer"},
+            ),
+            VariableDescriptor(
+                name="nobs_3",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Number of averaged daily observations for the "
+                                    "Root Zone Soil Moisture at 40-100cm (rzsm_3) layer"},
+            ),
+            VariableDescriptor(
+                name="nobs_1m",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Number of averaged daily observations for the "
+                                    "Root Zone Soil Moisture at 0-1m (rzsm_1m) layer"},
+            ),
+        ]
+
+        descriptors = descriptors_common + (
+            descriptors_daily if aggregation == "daily" else descriptors_aggregated
         )
+        return descriptors
+
+    def _get_ft_descriptors(self):
+        descriptors = [
+            VariableDescriptor(
+                name="dnflag",
+                dtype="int8",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Day / Night Flag"},
+            ),
+            VariableDescriptor(
+                name="mode",
+                dtype="int8",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Satellite  Mode"},
+            ),
+            VariableDescriptor(
+                name="sensor",
+                dtype="int8",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Sensor"},
+            ),
+            VariableDescriptor(
+                name="ft",
+                dtype="int8",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Soil moisture freeze-thaw state"},
+            ),
+            VariableDescriptor(
+                name="ft_agreement",
+                dtype="float32",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Soil moisture freeze-thaw state",
+                       "description": "Classification agreement between available sensors. "
+                                      "1 means that the frozen/unfrozen classification was the same "
+                                      "for all merged sensors. "
+                                      "The number decreases as the classification results contradict."},
+            ),
+            VariableDescriptor(
+                name="sensor_count",
+                dtype="uint8",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Sensor count total"},
+            ),
+            VariableDescriptor(
+                name="sensor_count_frozen",
+                dtype="uint8",
+                dims=("time", "lat", "lon"),
+                attrs={"long_name": "Sensor count frozen"},
+            ),
+        ]
+        return descriptors
