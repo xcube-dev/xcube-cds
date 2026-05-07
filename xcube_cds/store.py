@@ -392,6 +392,9 @@ class CDSDataOpener(DataOpener):
         from xcube_cds.datasets.land_surface_temperature import LandSurfaceTemperatureDatasetHandler
         self._register_dataset_handler(LandSurfaceTemperatureDatasetHandler())
 
+        from xcube_cds.datasets.satellite_albedo import AlbedoHandler
+        self._register_dataset_handler(AlbedoHandler())
+
         self._client_class = client_class
         self.cds_api_url = endpoint_url
         self.cds_api_key = cds_api_key

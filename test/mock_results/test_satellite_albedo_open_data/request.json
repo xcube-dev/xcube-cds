@@ -1,0 +1,1 @@
+{"_dataset_name": "satellite-albedo", "variable": "albb_dh", "sensor": "vgt", "satellite": "spot", "year": "2009", "month": ["01", "02"], "product_version": "v2", "horizontal_resolution": "1km", "nominal_day": ["10", "20", "28", "31"], "area": [1, -1, -1, 1]}

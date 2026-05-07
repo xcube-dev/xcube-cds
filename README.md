@@ -24,6 +24,7 @@ Currently supported datasets:
  - [Sea ice thickness gridded data from 2002 to present](https://cds.climate.copernicus.eu/datasets/satellite-sea-ice-thickness?tab=overview)
  - [Land cover classification gridded maps from 1992 to present derived from satellite observations](https://cds.climate.copernicus.eu/datasets/satellite-land-cover?tab=overview)
  - [Land surface temperature monthly gridded data from 1995 to present derived from satellite observations](https://cds.climate.copernicus.eu/datasets/satellite-land-surface-temperature?tab=overview)
+ - [Surface albedo 10-daily gridded data from 1981 to present](https://cds.climate.copernicus.eu/datasets/satellite-albedo?tab=overview)
 
 ## Setup
 
