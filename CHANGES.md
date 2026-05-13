@@ -1,8 +1,8 @@
 ## Changes in 1.4.0 (in development)
 
 - Add data access for [Surface albedo 10-daily gridded data from 1981 to present](https://cds.climate.copernicus.eu/datasets/satellite-albedo?tab=overview)
-
 - Adjusted Soil Moisture Dataset after breaking API changes (now supports version v202505)
+- Adjusted Drought Indices Dataset after breaking API changes (#119)
 
 ## Changes in 1.3.0
 
