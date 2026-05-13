@@ -88,7 +88,7 @@ class CDSDroughtIndicesDatasetHandlerTest(unittest.TestCase):
         self.assertEqual("2025-12-31", descriptor.time_range[1])
         self.assertEqual("1M", descriptor.time_period)
         self.assertEqual(
-            ("time", "number", "lat", "lon"), descriptor.data_vars["spi1"].dims
+            ("time", "realization", "lat", "lon"), descriptor.data_vars["spi1"].dims
         )
 
     def test_open_data_reanalysis(self):
@@ -142,7 +142,7 @@ class CDSDroughtIndicesDatasetHandlerTest(unittest.TestCase):
             [4, 10, 7, 7],
             [
                 dataset.sizes["time"],
-                dataset.sizes["number"],
+                dataset.sizes["realization"],
                 dataset.sizes["lat"],
                 dataset.sizes["lon"],
             ],

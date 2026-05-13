@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import datetime
 import glob
 import os
 import pathlib
@@ -124,7 +125,7 @@ class DroughtIndicesDatasetHandler(CDSDatasetHandler):
         if data_id.endswith("reanalysis"):
             dims = ("time", "lat", "lon")
         else:
-            dims = ("time", "number", "lat", "lon")
+            dims = ("time", "realization", "lat", "lon")
 
         variable_descriptors = []
         for var_name, attrs in mapping_varname_attrs.items():
@@ -202,23 +203,11 @@ class DroughtIndicesDatasetHandler(CDSDatasetHandler):
                         chunks="auto",
                         combine_attrs="drop_conflicts",
                     )
-                    if "standardised_precipitation" in var_name:
-                        ds = ds.sel(
-                            time=slice(
-                                open_params["time_range"][0],
-                                open_params["time_range"][1],
-                            )
-                        )
-                    else:
-                        ds = self._resample_quality_ds(ds, open_params["time_range"])
+                    ds = ds.assign_coords({"time": ds.time.dt.floor("D")})
                     assert len(ds.data_vars) == 1
                     ds_varname = self._get_varname(var_name, accum_period)
                     ds = ds.rename({list(ds.data_vars.keys())[0]: ds_varname})
                     dss.append(ds)
-            ds_final = xr.merge(dss, join="outer", combine_attrs="drop_conflicts")
-            ds_final = ds_final.sel(
-                time=slice(open_params["time_range"][0], open_params["time_range"][1])
-            )
         else:
             for var_name in open_params["variable_names"]:
                 for accum_period in open_params["accumulation_periods"]:
@@ -228,33 +217,22 @@ class DroughtIndicesDatasetHandler(CDSDatasetHandler):
                     dss_inner = []
                     for path in file_sel:
                         ds = xr.open_dataset(path, engine="netcdf4", chunks="auto")
-                        time_axis = ds.time
-                        # The data from the backend uses the confusing name `time` for the
-                        # ensemble member index. We rename it to `number` to be consistent
-                        # with other ERA5 datasets, and to free up the name `time` for the actual
-                        # time.
-                        ds = ds.rename({"time": "number"})
-                        ds = ds.assign_coords(number=np.arange(10))
-                        ds = ds.expand_dims(time=[time_axis[0].values])
+                        if "standardised_precipitation" in var_name:
+                            ds = ds.assign_coords({"time": ds.time.dt.floor("D")})
+                        else:
+                            time_axis = ds.time.dt.floor("D")
+                            ds = ds.rename({"time": "realization"})
+                            ds = ds.assign_coords(realization=np.arange(1, 11))
+                            ds = ds.expand_dims(time=time_axis[:1])
                         dss_inner.append(ds)
                     ds = xr.concat(dss_inner, "time", combine_attrs="drop_conflicts")
-                    if "standardised_precipitation" in var_name:
-                        ds = ds.sel(
-                            time=slice(
-                                open_params["time_range"][0],
-                                open_params["time_range"][1],
-                            )
-                        )
-                    else:
-                        ds = self._resample_quality_ds(ds, open_params["time_range"])
                     assert len(ds.data_vars) == 1
                     ds_varname = self._get_varname(var_name, accum_period)
                     ds = ds.rename({list(ds.data_vars.keys())[0]: ds_varname})
                     dss.append(ds)
-            ds_final = xr.merge(dss, join="outer", combine_attrs="drop_conflicts")
-            ds_final = ds_final.sel(
-                time=slice(open_params["time_range"][0], open_params["time_range"][1])
-            )
+        ds_final = xr.merge(dss, join="outer", combine_attrs="drop_conflicts")
+        start, end = open_params["time_range"]
+        ds_final = ds_final.sel(time=slice(start, end))
         return ds_final
 
     @staticmethod
@@ -321,19 +299,3 @@ class DroughtIndicesDatasetHandler(CDSDatasetHandler):
             return ds_varnames[var_name]
         except KeyError:
             raise ValueError(f"Unknown var_name: {var_name}")
-
-    @staticmethod
-    def _resample_quality_ds(ds: xr.Dataset, time_range: tuple[str, str]) -> xr.Dataset:
-        time_target = xr.date_range(
-            start=time_range[0], end=time_range[1], freq="MS"
-        ) + pd.Timedelta(hours=6)
-        target_months = time_target.to_period("M").month
-        ds = ds.assign_coords(month=ds["time"].dt.month).swap_dims({"time": "month"})
-        ds_resampled = ds.sel(month=target_months)
-        ds_resampled = ds_resampled.drop_vars("time")
-        ds_resampled = ds_resampled.rename({"month": "time"})
-        ds_resampled = ds_resampled.drop_vars("time")
-        ds_resampled = ds_resampled.assign_coords(
-            time=time_target.values.astype("datetime64[ns]")
-        )
-        return ds_resampled
