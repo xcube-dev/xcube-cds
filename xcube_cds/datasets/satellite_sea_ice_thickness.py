@@ -37,7 +37,8 @@ from xcube.util.jsonschema import (
 from xcube_cds.store import CDSDatasetHandler
 
 VariableProperties = collections.namedtuple(
-    "VariableProperties", ["cdr_types", "start_date", "end_date"]
+    "VariableProperties",
+    ["processing_level", "temporal_resolution", "versions", "spatial_res", "start_date", "end_date"]
 )
 
 
@@ -45,12 +46,14 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
     _data_id_map = {
         "satellite-sea-ice-thickness:envisat": "Sea ice thickness (Envisat)",
         "satellite-sea-ice-thickness:cryosat-2": "Sea ice thickness (CryoSat-2)",
+        "satellite-sea-ice-thickness:combined": "Sea ice thickness (Combined)",
     }
 
     # Map second component of data ID to variable and sensor type information
     _var_map = {
-        "envisat": VariableProperties(["cdr"], "2002-10-01", "2010-10-31"),
-        "cryosat-2": VariableProperties(["cdr", "icdr"], "2010-11-01", None),
+        "envisat": VariableProperties("level_3", ["monthly"], ["1.0", "2.0", "3.0"], 25.0, "2002-10-01", "2010-10-31"),
+        "cryosat-2": VariableProperties("level_3", ["monthly"], ["1.0", "2.0", "3.0"], 25.0, "2010-11-01", None),
+        "combined": VariableProperties("level_4", ["daily"], ["1.0", "1.1"], 12.5, "2010-11-01", None),
     }
 
     def get_supported_data_ids(self) -> List[str]:
@@ -65,8 +68,6 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
                 min_date=variable_properties.start_date,
                 max_date=variable_properties.end_date,
             ),
-            # crs, bbox, time_period, and spatial_res omitted
-            # since they're constant.
             # There's only one variable available, but we can't
             # omit variable_names, because we need to support the
             # variable_names=[] case (to produce an empty cube).
@@ -77,23 +78,8 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
                 unique_items=True,
                 default=["all"],
             ),
-            type_of_record=JsonStringSchema(
-                enum=variable_properties.cdr_types,
-                title="Type of record",
-                description=(
-                    "This dataset combines a Climate Data Record (CDR), "
-                    "which has sufficient length, consistency, and continuity "
-                    "to be used to assess climate variability and change, "
-                    "and an Interim Climate Data Record (ICDR), which provides "
-                    "regular temporal extensions to the CDR and where "
-                    "consistency with the CDR is expected but not extensively "
-                    "checked. The ICDR is based on observations "
-                    "from CryoSat-2 only (from April 2015 onward)."
-                ),
-                default="cdr",
-            ),
             version=JsonStringSchema(
-                enum=["2.0", "1.0"], title="Data version", default="2.0"
+                enum=variable_properties.versions, title="Data version", default=variable_properties.versions[-1]
             ),
         )
 
@@ -115,19 +101,16 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
         variable_properties = self._var_map[mission]
 
         # Version string needs to be modified slightly
-        version = opener_params.get("version", "2_0").replace(".", "_")
+        version = opener_params.get("version", variable_properties.versions[-1]).replace(".", "_")
 
-        # If no climate data record type is specified in the opener parameters,
-        # it is determined from the data ID
-        cdr_type = opener_params.get("type_of_record", variable_properties.cdr_types[0])
-
-        satellites = {"cryosat-2": "cryosat_2", "envisat": "envisat"}
+        satellites = {"cryosat-2": ["cryosat_2"], "envisat": ["envisat"], "combined": ["combined_product"]}
 
         cds_params = dict(
-            satellite=satellites[mission],
-            cdr_type=cdr_type,
+            processing_level=variable_properties.processing_level,
+            satellite_mission=satellites[mission],
+            temporal_resolution=variable_properties.temporal_resolution,
             version=version,
-            variable="all",
+            variable=["sea_ice_thickness"],
             format="tgz",
         )
 
@@ -135,7 +118,8 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
             self.convert_time_range(opener_params["time_range"])
         )
         time_selectors.pop("time", None)
-        time_selectors.pop("day", None)
+        if mission != "combined":
+            time_selectors.pop("day", None)
         unsupported_months = ["05", "06", "07", "08", "09"]
         for unsupported_month in unsupported_months:
             if unsupported_month in time_selectors["month"]:
@@ -167,12 +151,23 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
             os.path.join(temp_dir, filename) for filename in next(os.walk(temp_dir))[2]
         ]
 
+        def preprocess(dataset: xr.DataArray):
+            if "time_bnds" in dataset.dims:
+                time_bounds = dataset["time_bnds"].values
+                dataset["time_bnds"] = xr.DataArray(
+                    time_bounds.reshape((1, 2)),
+                    dims=("time", "nv")
+                )
+            return dataset
+
         ds = xr.open_mfdataset(
-            paths, combine="by_coords", engine="netcdf4", chunks="auto", decode_cf=True
+            paths, combine="by_coords", engine="netcdf4", chunks="auto", decode_cf=True, preprocess=preprocess
         )
         ds.attrs.update(self.combine_netcdf_time_limits(paths))
 
-        ds = ds.set_coords(("time_bnds", "Lambert_Azimuthal_Grid"))
+        ds = ds.set_coords("time_bnds")
+        if "Lambert_Azimuthal_Grid" in ds.data_vars:
+            ds = ds.set_coords("Lambert_Azimuthal_Grid")
 
         return ds
 
@@ -181,70 +176,139 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
 
         # not including the flag meanings and flag values of status_flag and
         # quality_flag in the attributes, as these differ between versions
-        variable_descriptors = [
-            VariableDescriptor(
-                name="sea_ice_thickness",
-                dtype="float32",
-                dims=("time", "yc", "xc"),
-                attrs={
-                    "ancillary_variables": "uncertainty " "status_flag " "quality_flag",
-                    "comment": "this field is the primary sea ice thickness "
-                    "estimate for this climate data record",
-                    "coordinates": "time lat lon",
-                    "coverage_content_type": "physicalMeasurement",
-                    "grid_mapping": "Lambert_Azimuthal_Grid",
-                    "long_name": "Sea Ice Thickness",
-                    "standard_name": "sea_ice_thickness",
-                    "units": "m",
-                },
-            ),
-            VariableDescriptor(
-                name="quality_flag",
-                dtype="int8",
-                dims=("time", "yc", "xc"),
-                attrs={
-                    "comment": "The expert assessment on retrieval quality is "
-                    "only provided for grid cess with valid "
-                    "thickness retrieval",
-                    "coordinates": "time lat lon",
-                    "coverage_content_type": "qualityInformation",
-                    "grid_mapping": "Lambert_Azimuthal_Grid",
-                    "long_name": "Sea Ice Thickness Quality Flag",
-                    "standard_name": "quality_flag",
-                    "units": "1",
-                    "valid_max": "3",
-                    "valid_min": "0",
-                },
-            ),
-            VariableDescriptor(
-                name="status_flag",
-                dtype="int8",
-                dims=("time", "yc", "xc"),
-                attrs={
-                    "coordinates": "time lat lon",
-                    "coverage_content_type": "qualityInformation",
-                    "grid_mapping": "Lambert_Azimuthal_Grid",
-                    "long_name": "Sea Ice Thickness Status Flag",
-                    "standard_name": "status_flag",
-                    "units": "1",
-                    "valid_max": "5",
-                    "valid_min": "0",
-                },
-            ),
-            VariableDescriptor(
-                name="uncertainty",
-                dtype="float32",
-                dims=("time", "yc", "xc"),
-                attrs={
-                    "coordinates": "time lat lon",
-                    "coverage_content_type": "auxiliaryInformation",
-                    "grid_mapping": "Lambert_Azimuthal_Grid",
-                    "long_name": "Sea Ice Thickness Uncertainty",
-                    "standard_name": "sea_ice_thickness standard_error",
-                    "units": "m",
-                },
-            ),
-        ]
+        if mission == "combined":
+            variable_descriptors = [
+                VariableDescriptor(
+                    name="sea_ice_thickness",
+                    dtype="float32",
+                    dims=("time", "yc", "xc"),
+                    attrs={
+                        "ancillary_variables": "uncertainty " "status_flag " "quality_flag",
+                        "comment": "derived by optimal interpolation",
+                        "coordinates": "time lat lon",
+                        "grid_mapping": "Lambert_Azimuthal_Equal_Area",
+                        "long_name": "Sea Ice Thickness",
+                        "standard_name": "sea_ice_thickness",
+                        "units": "m",
+                    },
+                ),
+                VariableDescriptor(
+                    name="quality_flag",
+                    dtype="int8",
+                    dims=("time", "yc", "xc"),
+                    attrs={
+                        "coordinates": "time lat lon",
+                        "flag_meanings": "altimetry_radiometry altimetry radiometry interpolated no_sea_ice",
+                        "flag_values": [0, 1, 2, 3, 4],
+                        "grid_mapping": "Lambert_Azimuthal_Equal_Area",
+                        "long_name": "Sea Ice Thickness Quality Flag",
+                        "standard_name": "quality_flag",
+                        "units": "1",
+                        "valid_max": "4",
+                        "valid_min": "0",
+                    },
+                ),
+                VariableDescriptor(
+                    name="status_flag",
+                    dtype="int8",
+                    dims=("time", "yc", "xc"),
+                    attrs={
+                        "coordinates": "time lat lon",
+                        "flag_meanings": "nominal_retrieval open_ocean land_lake_landice retrieval_failed",
+                        "flag_values": [0, 1, 2, 3],
+                        "grid_mapping": "Lambert_Azimuthal_Equal_Area",
+                        "long_name": "Sea Ice Thickness Status Flag",
+                        "standard_name": "status_flag",
+                        "units": "1",
+                        "valid_max": "3",
+                        "valid_min": "0",
+                    },
+                ),
+                VariableDescriptor(
+                    name="uncertainty",
+                    dtype="float32",
+                    dims=("time", "yc", "xc"),
+                    attrs={
+                        "coordinates": "time lat lon",
+                        "grid_mapping": "Lambert_Azimuthal_Equal_Area",
+                        "comment": "derived by optimal interpolation",
+                        "long_name": "Sea Ice Thickness Uncertainty",
+                        "standard_name": "sea_ice_thickness standard_error",
+                        "units": "m",
+                    },
+                )
+            ]
+        else:
+            variable_descriptors = [
+                VariableDescriptor(
+                    name="sea_ice_thickness",
+                    dtype="float32",
+                    dims=("time", "yc", "xc"),
+                    attrs={
+                        "ancillary_variables": "uncertainty " "status_flag " "quality_flag",
+                        "comment": "this field is the primary sea ice thickness "
+                                   "estimate for this climate data record",
+                        "coordinates": "time lat lon",
+                        "coverage_content_type": "physicalMeasurement",
+                        "grid_mapping": "Lambert_Azimuthal_Grid",
+                        "long_name": "Sea Ice Thickness",
+                        "standard_name": "sea_ice_thickness",
+                        "units": "m",
+                    },
+                ),
+                VariableDescriptor(
+                    name="quality_flag",
+                    dtype="int8",
+                    dims=("time", "yc", "xc"),
+                    attrs={
+                        "comment": "The expert assessment on retrieval quality is "
+                                   "only provided for grid cess with valid "
+                                   "thickness retrieval",
+                        "coordinates": "time lat lon",
+                        "coverage_content_type": "qualityInformation",
+                        "flag_meanings": "nominal_quality intermediate_quality low_quality no_data",
+                        "flag_values": [0, 1, 2, 3],
+                        "grid_mapping": "Lambert_Azimuthal_Grid",
+                        "long_name": "Sea Ice Thickness Quality Flag",
+                        "standard_name": "quality_flag",
+                        "units": "1",
+                        "valid_max": "3",
+                        "valid_min": "0",
+                    },
+                ),
+                VariableDescriptor(
+                    name="status_flag",
+                    dtype="int8",
+                    dims=("time", "yc", "xc"),
+                    attrs={
+                        "coordinates": "time lat lon",
+                        "coverage_content_type": "qualityInformation",
+                        "grid_mapping": "Lambert_Azimuthal_Grid",
+                        "flag_meanings":
+                            "nominal_retrieval no_data open_ocean satellite_pole_hole land_lake_landice retrieval_failed",
+                        "flag_values": [0, 1, 2, 3, 4, 5],
+                        "long_name": "Sea Ice Thickness Status Flag",
+                        "standard_name": "status_flag",
+                        "units": "1",
+                        "valid_max": "5",
+                        "valid_min": "0",
+                    },
+                ),
+                VariableDescriptor(
+                    name="uncertainty",
+                    dtype="float32",
+                    dims=("time", "yc", "xc"),
+                    attrs={
+                        "coordinates": "time lat lon",
+                        "coverage_content_type": "auxiliaryInformation",
+                        "grid_mapping": "Lambert_Azimuthal_Grid",
+                        "long_name": "Sea Ice Thickness Uncertainty",
+                        "standard_name": "sea_ice_thickness standard_error",
+                        "units": "m",
+                    },
+                )
+            ]
+
         # lat and lon are currently removed during normalization,
         # so we don't include them in the descriptor
         coordinate_descriptors = [
@@ -271,30 +335,6 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
             #     }
             # ),
             VariableDescriptor(
-                name="time",
-                dtype="float64",
-                dims="time",
-                attrs={
-                    "standard_name": "time",
-                    "units": "seconds since 1970-01-01",
-                    "long_name": "Time",
-                    "axis": "T",
-                    "calendar": "standard",
-                    "bounds": "time_bnds",
-                    "coverage_content_type": "coordinate",
-                },
-            ),
-            VariableDescriptor(
-                name="time_bnds",
-                dtype="float64",
-                dims=("time", "nv"),
-                attrs={
-                    "units": "seconds since 1970-01-01",
-                    "long_name": "Time Bounds",
-                    "coverage_content_type": "coordinate",
-                },
-            ),
-            VariableDescriptor(
                 name="xc",
                 dtype="float64",
                 dims="xc",
@@ -316,24 +356,99 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
                     "coverage_content_type": "coordinate",
                 },
             ),
-            VariableDescriptor(
-                name="Lambert_Azimuthal_Grid",
-                dtype="int8",
-                dims=(),
-                attrs={
-                    "false_easting": 0.0,
-                    "false_northing": 0.0,
-                    "grid_mapping_name": "lambert_azimuthal_equal_area",
-                    "inverse_flattening": 298.257223563,
-                    "latitude_of_projection_origin": 90.0,
-                    "longitude_of_projection_origin": 0.0,
-                    "proj4_string": "+proj=laea +lon_0=0 +datum=WGS84 "
-                    "+ellps=WGS84 +lat_0=90.0",
-                    "semi_major_axis": 6378137.0,
-                },
-            ),
         ]
 
+        if mission == "combined":
+            coordinate_descriptors += [
+                VariableDescriptor(
+                    name="Lambert_Azimuthal_Equal_Area",
+                    dtype="int8",
+                    dims=(),
+                    attrs={
+                        "false_easting": 0.0,
+                        "false_northing": 0.0,
+                        "geographic_crs_name": "WGS 84",
+                        "grid_mapping_name": "lambert_azimuthal_equal_area",
+                        "horizontal_datum_name": "World Geodetic System 1984 ensemble",
+                        "inverse_flattening": 298.257223563,
+                        "latitude_of_projection_origin": 90.0,
+                        "longitude_of_prime_meridian": 0.0,
+                        "longitude_of_projection_origin": 0.0,
+                        "prime_meridian_name": "Greenwich",
+                        "projected_crs_name": "WGS 84 / NSIDC EASE-Grid 2.0 North",
+                        "reference_ellipsoid_name": "WGS 84",
+                        "semi_minor_axis": 6356752.31424518,
+                        "semi_major_axis": 6378137.0,
+                        "proj4_str":
+                            "+proj=laea +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +type=crs",
+                    },
+                ),
+                VariableDescriptor(
+                    name="time",
+                    dtype="float64",
+                    dims="time",
+                    attrs={
+                        "calendar": "gregorian",
+                        "long_name": "time",
+                        "units": "seconds since 1970-01-01",
+                    },
+                ),
+                VariableDescriptor(
+                    name="time_bnds",
+                    dtype="float64",
+                    dims=("time", "nv"),
+                    attrs={
+                        "calendar": "gregorian",
+                        "long_name": "time_bnds",
+                        "units": "seconds since 1970-01-01",
+                    },
+                ),
+            ]
+        else:
+            coordinate_descriptors += [
+                VariableDescriptor(
+                    name="Lambert_Azimuthal_Grid",
+                    dtype="int8",
+                    dims=(),
+                    attrs={
+                        "false_easting": 0.0,
+                        "false_northing": 0.0,
+                        "grid_mapping_name": "lambert_azimuthal_equal_area",
+                        "inverse_flattening": 298.257223563,
+                        "latitude_of_projection_origin": 90.0,
+                        "longitude_of_projection_origin": 0.0,
+                        "proj4_string": "+proj=laea +lon_0=0 +datum=WGS84 "
+                                        "+ellps=WGS84 +lat_0=90.0",
+                        "semi_major_axis": 6378137.0,
+                    },
+                ),
+                VariableDescriptor(
+                    name="time",
+                    dtype="float64",
+                    dims="time",
+                    attrs={
+                        "standard_name": "time",
+                        "units": "seconds since 1970-01-01",
+                        "long_name": "Time",
+                        "axis": "T",
+                        "calendar": "standard",
+                        "bounds": "time_bnds",
+                        "coverage_content_type": "coordinate",
+                    },
+                ),
+                VariableDescriptor(
+                    name="time_bnds",
+                    dtype="float64",
+                    dims=("time", "nv"),
+                    attrs={
+                        "units": "seconds since 1970-01-01",
+                        "long_name": "Time Bounds",
+                        "coverage_content_type": "coordinate",
+                    },
+                ),
+            ]
+
+        spatial_res = self._var_map[mission].spatial_res
         start_date = self._var_map[mission].start_date
         end_date = self._var_map[mission].end_date
 
@@ -343,7 +458,7 @@ class SeaIceThicknessHandler(CDSDatasetHandler):
             coords={desc.name: desc for desc in coordinate_descriptors},
             crs="EPSG:6931",
             bbox=(-180, 16.6239, 180, 90),
-            spatial_res=25.0,
+            spatial_res=spatial_res,
             time_range=(start_date, end_date),
             open_params_schema=self.get_open_data_params_schema(data_id),
         )

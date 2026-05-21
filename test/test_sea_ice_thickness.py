@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2022 Brockmann Consult GmbH
+# Copyright (c) 2022-2026 Brockmann Consult GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@ _CDS_API_KEY = "dummy"
 
 _ENVISAT_DATA_ID = "satellite-sea-ice-thickness:envisat"
 _CRYOSAT_2_DATA_ID = "satellite-sea-ice-thickness:cryosat-2"
+_COMBINED_DATA_ID = "satellite-sea-ice-thickness:combined"
 
 _OPEN_PARAMS_SCHEMA_TEMPLATE = {
     "type": "object",
@@ -66,21 +67,6 @@ _OPEN_PARAMS_SCHEMA_TEMPLATE = {
             },
             "uniqueItems": True,
         },
-        "type_of_record": {
-            "type": "string",
-            "default": "cdr",
-            "title": "Type of record",
-            "description": "This dataset combines a Climate Data Record (CDR), "
-            "which has sufficient length, consistency, and "
-            "continuity to be used to assess climate "
-            "variability and change, and an Interim Climate "
-            "Data Record (ICDR), which provides regular "
-            "temporal extensions to the CDR and where "
-            "consistency with the CDR is expected but not "
-            "extensively checked. The ICDR is based on "
-            "observations from CryoSat-2 only (from April 2015 "
-            "onward).",
-        },
         "version": {
             "type": "string",
             "default": "2.0",
@@ -96,13 +82,20 @@ _ENVISAT_PARAMS_SCHEMA["properties"]["time_range"]["items"][0]["minDate"] = "200
 _ENVISAT_PARAMS_SCHEMA["properties"]["time_range"]["items"][0]["maxDate"] = "2010-10-31"
 _ENVISAT_PARAMS_SCHEMA["properties"]["time_range"]["items"][1]["minDate"] = "2002-10-01"
 _ENVISAT_PARAMS_SCHEMA["properties"]["time_range"]["items"][1]["maxDate"] = "2010-10-31"
-_ENVISAT_PARAMS_SCHEMA["properties"]["type_of_record"]["enum"] = ["cdr"]
+_ENVISAT_PARAMS_SCHEMA["properties"]["version"]["enum"] = ["1.0", "2.0", "3.0"]
+_ENVISAT_PARAMS_SCHEMA["properties"]["version"]["default"] = "3.0"
 
 _CRYOSAT_PARAMS_SCHEMA = deepcopy(_OPEN_PARAMS_SCHEMA_TEMPLATE)
 _CRYOSAT_PARAMS_SCHEMA["properties"]["time_range"]["items"][0]["minDate"] = "2010-11-01"
 _CRYOSAT_PARAMS_SCHEMA["properties"]["time_range"]["items"][1]["minDate"] = "2010-11-01"
-_CRYOSAT_PARAMS_SCHEMA["properties"]["type_of_record"]["enum"] = ["cdr", "icdr"]
+_CRYOSAT_PARAMS_SCHEMA["properties"]["version"]["enum"] = ["1.0", "2.0", "3.0"]
+_CRYOSAT_PARAMS_SCHEMA["properties"]["version"]["default"] = "3.0"
 
+_COMBINED_PARAMS_SCHEMA = deepcopy(_OPEN_PARAMS_SCHEMA_TEMPLATE)
+_COMBINED_PARAMS_SCHEMA["properties"]["time_range"]["items"][0]["minDate"] = "2010-11-01"
+_COMBINED_PARAMS_SCHEMA["properties"]["time_range"]["items"][1]["minDate"] = "2010-11-01"
+_COMBINED_PARAMS_SCHEMA["properties"]["version"]["enum"] = ["1.0", "1.1"]
+_COMBINED_PARAMS_SCHEMA["properties"]["version"]["default"] = "1.1"
 
 class CDSSeaIceThicknessHandlerTest(unittest.TestCase):
     def setUp(self) -> None:
@@ -110,7 +103,7 @@ class CDSSeaIceThicknessHandlerTest(unittest.TestCase):
 
     def testGetSupportedDataIds(self):
         ids = self.sea_ice_handler.get_supported_data_ids()
-        self.assertEqual({_ENVISAT_DATA_ID, _CRYOSAT_2_DATA_ID}, set(ids))
+        self.assertEqual({_ENVISAT_DATA_ID, _CRYOSAT_2_DATA_ID, _COMBINED_DATA_ID}, set(ids))
 
     def testGetHumanReadableDataId(self):
         self.assertEqual(
@@ -121,19 +114,28 @@ class CDSSeaIceThicknessHandlerTest(unittest.TestCase):
             "Sea ice thickness (CryoSat-2)",
             self.sea_ice_handler.get_human_readable_data_id(_CRYOSAT_2_DATA_ID),
         )
+        self.assertEqual(
+            "Sea ice thickness (Combined)",
+            self.sea_ice_handler.get_human_readable_data_id(_COMBINED_DATA_ID),
+        )
 
     def test_describe_envisat_data(self):
-        self.assertDescriptor(_ENVISAT_DATA_ID, "2002-10-01", "2010-10-31")
+        self.assertDescriptor(_ENVISAT_DATA_ID, 25.0, "Lambert_Azimuthal_Grid", "2002-10-01", "2010-10-31")
 
     def test_describe_cryosat_data(self):
-        self.assertDescriptor(_CRYOSAT_2_DATA_ID, "2010-11-01", None)
+        self.assertDescriptor(_CRYOSAT_2_DATA_ID, 25.0, "Lambert_Azimuthal_Grid", "2010-11-01", None)
 
-    def assertDescriptor(self, data_id: str, start_date: str, end_date: Optional[str]):
+    def test_describe_combined_data(self):
+        self.assertDescriptor(_COMBINED_DATA_ID, 12.5, "Lambert_Azimuthal_Equal_Area", "2010-11-01", None)
+
+    def assertDescriptor(
+            self, data_id: str, spatial_res: float, crs_name: str, start_date: str, end_date: Optional[str]
+    ):
         descriptor = self.sea_ice_handler.describe_data(data_id)
         self.assertEqual(data_id, descriptor.data_id)
         self.assertEqual("EPSG:6931", descriptor.crs)
         self.assertEqual((-180, 16.6239, 180, 90), descriptor.bbox)
-        self.assertEqual(25.0, descriptor.spatial_res)
+        self.assertEqual(spatial_res, descriptor.spatial_res)
         self.assertEqual(start_date, descriptor.time_range[0])
         if end_date is None:
             self.assertIsNone(descriptor.time_range[1])
@@ -144,7 +146,7 @@ class CDSSeaIceThicknessHandlerTest(unittest.TestCase):
             set(descriptor.data_vars.keys()),
         )
         self.assertEqual(
-            {"time", "time_bnds", "xc", "yc", "Lambert_Azimuthal_Grid"},
+            {"time", "time_bnds", "xc", "yc", crs_name},
             set(descriptor.coords.keys()),
         )
 
@@ -160,6 +162,12 @@ class CDSSeaIceThicknessHandlerTest(unittest.TestCase):
         )
         self.assertEqual(_CRYOSAT_PARAMS_SCHEMA, cryosat_schema.to_dict())
 
+    def test_get_open_data_params_schema_combined(self):
+        combined_schema = self.sea_ice_handler.get_open_data_params_schema(
+            _COMBINED_DATA_ID
+        )
+        self.assertEqual(_COMBINED_PARAMS_SCHEMA, combined_schema.to_dict())
+
 
 class CdsSeaIceThicknessStoreTest(unittest.TestCase):
     def setUp(self) -> None:
@@ -173,25 +181,33 @@ class CdsSeaIceThicknessStoreTest(unittest.TestCase):
         ids = list(self.store.get_data_ids())
         self.assertIn(_ENVISAT_DATA_ID, ids)
         self.assertIn(_CRYOSAT_2_DATA_ID, ids)
+        self.assertIn(_COMBINED_DATA_ID, ids)
 
     def test_get_open_params_schema(self):
         envisat_open_params = self.store.get_open_data_params_schema(_ENVISAT_DATA_ID)
         self.assertEqual(_ENVISAT_PARAMS_SCHEMA, envisat_open_params.to_dict())
         cryosat_open_params = self.store.get_open_data_params_schema(_CRYOSAT_2_DATA_ID)
         self.assertEqual(_CRYOSAT_PARAMS_SCHEMA, cryosat_open_params.to_dict())
+        combined_open_params = self.store.get_open_data_params_schema(_COMBINED_DATA_ID)
+        self.assertEqual(_COMBINED_PARAMS_SCHEMA, combined_open_params.to_dict())
 
     def test_describe_envisat_data(self):
-        self.assertDescriptor(_ENVISAT_DATA_ID, "2002-10-01", "2010-10-31")
+        self.assertDescriptor(_ENVISAT_DATA_ID, 25.0, "Lambert_Azimuthal_Grid", "2002-10-01", "2010-10-31")
 
     def test_describe_cryosat_data(self):
-        self.assertDescriptor(_CRYOSAT_2_DATA_ID, "2010-11-01", None)
+        self.assertDescriptor(_CRYOSAT_2_DATA_ID, 25.0, "Lambert_Azimuthal_Grid", "2010-11-01", None)
 
-    def assertDescriptor(self, data_id: str, start_date: str, end_date: Optional[str]):
+    def test_describe_combined_data(self):
+        self.assertDescriptor(_COMBINED_DATA_ID, 12.5, "Lambert_Azimuthal_Equal_Area", "2010-11-01", None)
+
+    def assertDescriptor(
+            self, data_id: str, spatial_res: float, crs_name: str, start_date: str, end_date: Optional[str]
+    ):
         descriptor = self.store.describe_data(data_id)
         self.assertEqual(data_id, descriptor.data_id)
         self.assertEqual("EPSG:6931", descriptor.crs)
         self.assertEqual((-180, 16.6239, 180, 90), descriptor.bbox)
-        self.assertEqual(25.0, descriptor.spatial_res)
+        self.assertEqual(spatial_res, descriptor.spatial_res)
         self.assertEqual(start_date, descriptor.time_range[0])
         if end_date is None:
             self.assertIsNone(descriptor.time_range[1])
@@ -202,11 +218,11 @@ class CdsSeaIceThicknessStoreTest(unittest.TestCase):
             set(descriptor.data_vars.keys()),
         )
         self.assertEqual(
-            {"time", "time_bnds", "xc", "yc", "Lambert_Azimuthal_Grid"},
+            {"time", "time_bnds", "xc", "yc", crs_name},
             set(descriptor.coords.keys()),
         )
 
-    def test_open_envisat(self):
+    def test_sea_ice_thickness_open_envisat(self):
         dataset = self.store.open_data(
             _ENVISAT_DATA_ID, time_range=["2005-03-01", "2005-04-30"]
         )
@@ -220,7 +236,7 @@ class CdsSeaIceThicknessStoreTest(unittest.TestCase):
         self.assertCountEqual(description.coords.keys(), map(str, dataset.coords))
         self.assertCountEqual(description.data_vars.keys(), map(str, dataset.data_vars))
 
-    def test_open_cryosat_2(self):
+    def test_sea_ice_thickness_open_cryosat_2(self):
         dataset = self.store.open_data(
             _CRYOSAT_2_DATA_ID, time_range=["2016-03-01", "2016-04-30"]
         )
@@ -231,5 +247,19 @@ class CdsSeaIceThicknessStoreTest(unittest.TestCase):
             "2016-04-30T23:59:59.999999", dataset.attrs["time_coverage_end"]
         )
         description = self.store.describe_data(_CRYOSAT_2_DATA_ID)
+        self.assertCountEqual(description.coords.keys(), map(str, dataset.coords))
+        self.assertCountEqual(description.data_vars.keys(), map(str, dataset.data_vars))
+
+    def test_sea_ice_thickness_open_combined(self):
+        dataset = self.store.open_data(
+            _COMBINED_DATA_ID, time_range=["2017-02-05", "2017-02-08"]
+        )
+        self.assertTrue("sea_ice_thickness" in dataset.variables)
+        self.assertEqual(4, len(dataset.variables["time"]))
+        self.assertEqual("2017-02-02 00:00:00+00:00", dataset.attrs["time_coverage_start"])
+        self.assertEqual(
+            "2017-02-11 23:59:59.999999+00:00", dataset.attrs["time_coverage_end"]
+        )
+        description = self.store.describe_data(_COMBINED_DATA_ID)
         self.assertCountEqual(description.coords.keys(), map(str, dataset.coords))
         self.assertCountEqual(description.data_vars.keys(), map(str, dataset.data_vars))
