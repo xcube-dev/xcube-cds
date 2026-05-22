@@ -2,19 +2,24 @@ version: '{build}'
 
 image:
   - Ubuntu2204
-  - macos
+  - macOS
 
 configuration: Release
 
 platform:
   - x64
 
+# Do not build feature branch with open Pull Requests.
+# Note that a feature branch build may still occur on the first push to
+# the branch -- see
+# https://help.appveyor.com/discussions/questions/18437-skip_branch_with_pr-setting-doesnt-work
+skip_branch_with_pr: true
+
 for:
 -
   matrix:
     only:
-      - image: macos
-      - image: Previous macos  # not usually needed, but might use it while debugging
+      - image: macOS
   install:
     - curl -Ls https://micro.mamba.pm/api/micromamba/osx-64/latest | tar -xvj bin/micromamba
     - mv bin/micromamba ./micromamba
@@ -30,6 +35,7 @@ build_script:
   # Diagnostics
   - echo $PLATFORM
   - echo $APPVEYOR_BUILD_WORKER_IMAGE
+  - echo $APPVEYOR_BUILD_FOLDER
   - uname -a
   - pwd
   - ls
@@ -44,28 +50,13 @@ build_script:
   - export MAMBA_EXE=$(pwd)/micromamba
   - . $MAMBA_ROOT_PREFIX/etc/profile.d/mamba.sh
 
-  # Clone xcube repository, install xcube dependencies with micromamba,
-  # and install the latest version of xcube with setup.py.
-  - git clone https://github.com/xcube-dev/xcube $HOME/xcube
-  - micromamba create --name xc --file $HOME/xcube/environment.yml
-  - micromamba activate xc
-  - cd $HOME/xcube
-  - pip install --no-deps .
-
-  # Use micromamba to install all xcube-cds dependencies *except* xcube
-  # (already manually installed), then install xcube-cds itself with setup.py.
+  - micromamba create --name xcube-cds --file $APPVEYOR_BUILD_FOLDER/environment.yml
+  - micromamba activate xcube-cds
   - cd $APPVEYOR_BUILD_FOLDER
-  - grep -v "^  - xcube" environment.yml > env_no_xcube.yml
-  - micromamba install --yes --name xc --file env_no_xcube.yml
   - pip install --no-deps .
 
-  # Make sure pytest is installed
-  - micromamba install --yes --name xc --channel conda-forge pytest attrs
-
-  # Print some diagnostics (useful for debugging)
+  - git status
   - micromamba list
-  - xcube --version
-  - python -c "from xcube_cds.version import version; print(f'xcube_cds version {version}')"
 
   # Run the test suite
-  - python -m pytest
+  - pytest -v --cov=xcube_cds

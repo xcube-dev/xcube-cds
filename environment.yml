@@ -16,3 +16,6 @@ dependencies:
   # Optional
   # for support of cftime with matplotlib (to run sea ice thickness notebook)
   - nc-time-axis >=1.4.1
+  # Testing
+  - pytest
+  - pytest-cov
