@@ -1,0 +1,1 @@
+{"_dataset_name": "satellite-sea-ice-thickness", "processing_level": "level_4", "satellite_mission": "combined_product", "temporal_resolution": "daily", "version": "1_1", "variable": "sea_ice_thickness", "format": "tgz", "day": ["05", "06", "07", "08"], "month": "02", "year": "2017"}
