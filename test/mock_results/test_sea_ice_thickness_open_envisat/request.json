@@ -1,0 +1,1 @@
+{"_dataset_name": "satellite-sea-ice-thickness", "processing_level": "level_3", "satellite_mission": "envisat", "temporal_resolution": "monthly", "version": "3_0", "variable": "sea_ice_thickness", "format": "tgz", "month": ["03", "04"], "year": "2005"}
