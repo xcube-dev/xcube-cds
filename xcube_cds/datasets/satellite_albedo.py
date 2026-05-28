@@ -22,6 +22,8 @@
 
 import collections
 from typing import Dict, Union, List, Tuple, Any
+
+import pandas as pd
 import xarray as xr
 
 from xcube.core.store import DatasetDescriptor, VariableDescriptor
@@ -319,6 +321,18 @@ _SENSOR_MAP = {
     ),
 }
 
+_SATELLITE_TIMES = {
+    "spot": ("1998-04-10", "2014-05-31"),
+    "proba": ("2013-10-31", "2020-06-30"),
+    "noaa_7": ("1981-09-20", "1984-12-31"),
+    "noaa_9": ("1985-03-20", "1988-11-10"),
+    "noaa_11": ("1988-11-30", "1994-09-20"),
+    "noaa_14": ("1995-02-10", "2001-03-10"),
+    "noaa_16": ("2001-03-20", "2002-09-10"),
+    "noaa_17": ("2002-09-20", "2005-12-31"),
+    "sentinel_3": ("2018-07-10", "2024-12-31")
+}
+
 _VARIABLE_NAMES = {
     "albb_bh": "Broadband Hemispherical",
     "albb_dh": "Broadband Directional",
@@ -461,6 +475,21 @@ class AlbedoHandler(CDSDatasetHandler):
             open_params_schema=self.get_open_data_params_schema(data_id),
         )
 
+    @staticmethod
+    def _validate_satellite_param(satellites: List[str], time_range: List[str]) -> List[str]:
+        satellite_param = []
+        request_start_time = pd.Timestamp(time_range[0])
+        request_end_time = pd.Timestamp(time_range[1])
+        for satellite in satellites:
+            satellite_start_time = pd.Timestamp(_SATELLITE_TIMES[satellite][0])
+            satellite_end_time = pd.Timestamp(_SATELLITE_TIMES[satellite][1])
+            if satellite_start_time > request_end_time or satellite_end_time < request_start_time:
+                continue
+            satellite_param.append(satellite)
+        if len(satellite_param) == 0:
+            raise ValueError("No valid satellite for specified time range")
+        return satellite_param
+
     def transform_params(
         self, opener_params: Dict, data_id: str
     ) -> Tuple[str, Dict[str, Any]]:
@@ -469,13 +498,15 @@ class AlbedoHandler(CDSDatasetHandler):
         sensor_params = _SENSOR_MAP[sensor]
         var_name = data_id.split(":")[2]
 
+        time_range = opener_params["time_range"]
         time_params_from_range = self.transform_time_params(
-            self.convert_time_range(opener_params["time_range"])
+            self.convert_time_range(time_range)
         )
 
         satellite = opener_params.get(
-            "satellite", [sensor_params.satellites[-1]]
+            "satellite", sensor_params.satellites
         )
+        satellite = self._validate_satellite_param(satellite, time_range)
         product_version = opener_params.get(
             "product_versions", [sensor_params.product_versions[-1]]
         )
