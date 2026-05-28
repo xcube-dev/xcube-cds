@@ -1,6 +1,6 @@
 ## Changes in 1.4.1 (in development)
 
-- Fixed determination of satellite parameter of Albeo Dataset 
+- Fixed determination of satellite parameter of Albedo Dataset 
 
 ## Changes in 1.4.0
 
