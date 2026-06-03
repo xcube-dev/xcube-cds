@@ -504,7 +504,7 @@ class AlbedoHandler(CDSDatasetHandler):
         )
 
         satellite = opener_params.get(
-            "satellite", sensor_params.satellites
+            "satellites", sensor_params.satellites
         )
         satellite = self._validate_satellite_param(satellite, time_range)
         product_version = opener_params.get(

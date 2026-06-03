@@ -319,7 +319,7 @@ class AlbedoHandlerTest(unittest.TestCase):
         }
         self.assertEqual(s3_alsp_dh_vars, set(descriptor.data_vars.keys()))
 
-    def test_open_data(self):
+    def test_satellite_albedo_open_data(self):
         opener = CDSDataOpener(
             client_class=get_cds_client(),
             endpoint_url=_CDS_API_URL,
@@ -354,3 +354,18 @@ class AlbedoHandlerTest(unittest.TestCase):
             ],
             dataset.data_vars,
         )
+
+    def test_satellite_albedo_open_data_fail(self):
+        opener = CDSDataOpener(
+            client_class=get_cds_client(),
+            endpoint_url=_CDS_API_URL,
+            cds_api_key=_CDS_API_KEY,
+        )
+        with self.assertRaises(ValueError) as ve:
+            opener.open_data(
+                "satellite-albedo:avhrr:albb_bh",
+                satellites=["noaa_7", "noaa_9"],
+                bbox=[-1, -1, 1, 1],
+                time_range=["2004-01-01", "2004-04-01"],
+            )
+        self.assertEqual("No valid satellite for specified time range", str(ve.exception))
