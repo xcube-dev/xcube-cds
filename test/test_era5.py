@@ -269,6 +269,7 @@ class CDSEra5TimeseriesTest(unittest.TestCase):
         self.assertIn("time_range", schema.required)
         self.assertIn("variable_names", schema.required)
         self.assertNotIn("bbox", schema.properties)
+        self.assertEqual(21, len(schema.properties["variable_names"].items.enum))
 
     def test_describe_era5_timeseries(self):
         descriptor = self.store.describe_data(self.data_id)

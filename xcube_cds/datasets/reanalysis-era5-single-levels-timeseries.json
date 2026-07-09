@@ -17,16 +17,28 @@
   "time_period": "1H",
   "variables": [
     [
-      "100m_u_component_of_wind",
-      "u100",
-      "m s**-1",
-      "100 metre U wind component"
+      "2m_temperature",
+      "t2m",
+      "K",
+      "2 metre temperature"
     ],
     [
-      "100m_v_component_of_wind",
-      "v100",
-      "m s**-1",
-      "100 metre V wind component"
+      "2m_dewpoint_temperature",
+      "d2m",
+      "K",
+      "2 metre dewpoint temperature"
+    ],
+    [
+      "skin_temperature",
+      "skt",
+      "K",
+      "Skin temperature"
+    ],
+    [
+      "sea_surface_temperature",
+      "sst",
+      "K",
+      "Sea surface temperature"
     ],
     [
       "10m_u_component_of_wind",
@@ -41,52 +53,22 @@
       "10 metre V wind component"
     ],
     [
-      "2m_dewpoint_temperature",
-      "d2m",
-      "K",
-      "2 metre dewpoint temperature"
+      "100m_u_component_of_wind",
+      "u100",
+      "m s**-1",
+      "100 metre U wind component"
     ],
     [
-      "2m_temperature",
-      "t2m",
-      "K",
-      "2 metre temperature"
+      "100m_v_component_of_wind",
+      "v100",
+      "m s**-1",
+      "100 metre V wind component"
     ],
     [
-      "mean_sea_level_pressure",
-      "msl",
-      "Pa",
-      "Mean sea level pressure"
-    ],
-    [
-      "mean_wave_direction",
-      "mwd",
-      "Degree true",
-      "Mean wave direction"
-    ],
-    [
-      "mean_wave_period",
-      "mwp",
-      "s",
-      "Mean wave period"
-    ],
-    [
-      "sea_surface_temperature",
-      "sst",
-      "K",
-      "Sea surface temperature"
-    ],
-    [
-      "significant_height_of_combined_wind_waves_and_swell",
-      "swh",
-      "m",
-      "Significant height of combined wind waves and swell"
-    ],
-    [
-      "skin_temperature",
-      "skt",
-      "K",
-      "Skin temperature"
+      "10m_wind_gust_since_previous_post_processing",
+      "fg10",
+      "m s-1",
+      "10m wind gust since previous post-processing"
     ],
     [
       "surface_pressure",
@@ -95,16 +77,70 @@
       "Surface pressure"
     ],
     [
+      "mean_sea_level_pressure",
+      "msl",
+      "Pa",
+      "Mean sea level pressure"
+    ],
+    [
+      "total_precipitation",
+      "tp",
+      "m",
+      "Total precipitation"
+    ],
+    [
       "surface_solar_radiation_downwards",
       "ssrd",
       "J m**-2",
       "Surface solar radiation downwards"
     ],
     [
+      "total_sky_direct_solar_radiation_at_surface",
+      "fdir",
+      "J m-2",
+      "Total sky direct solar radiation at surface"
+    ],
+    [
       "surface_thermal_radiation_downwards",
       "strd",
       "J m**-2",
       "Surface thermal radiation downwards"
+    ],
+    [
+      "total_cloud_cover",
+      "tcc",
+      "Dimensionless",
+      "Total cloud cover"
+    ],
+    [
+      "cloud_base_height",
+      "cbh",
+      "m",
+      "Cloud base height"
+    ],
+    [
+      "boundary_layer_height",
+      "blh",
+      "m",
+      "Boundary layer height"
+    ],
+    [
+      "significant_height_of_combined_wind_waves_and_swell",
+      "swh",
+      "m",
+      "Significant height of combined wind waves and swell"
+    ],
+    [
+      "mean_wave_period",
+      "mwp",
+      "s",
+      "Mean wave period"
+    ],
+    [
+      "mean_wave_direction",
+      "mwd",
+      "Degree true",
+      "Mean wave direction"
     ]
   ]
 }
