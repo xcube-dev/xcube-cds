@@ -1,5 +1,8 @@
 ## Changes in 1.4.2 (in development)
 
+- Add support for new variables available in the 
+  [ERA5 hourly time-series data on single levels from 1940 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-timeseries?tab=overview) dataset (#125).
+
 ## Changes in 1.4.1
 
 - Fixed determination of satellite parameter of Albedo Dataset 
