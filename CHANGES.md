@@ -2,7 +2,7 @@
 
 - Add support for new variables available in the 
   [ERA5 hourly time-series data on single levels from 1940 to present](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-timeseries?tab=overview) dataset (#125).
-- Adjusted Drought Indices Dataset after breaking API changes for the reanalysis product. (#126)
+- Adjusted Drought Indices Dataset after breaking API changes for the reanalysis product. (#127)
 
 ## Changes in 1.4.1
 

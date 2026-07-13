@@ -1,1 +1,0 @@
-{"_dataset_name": "derived-drought-historical-monthly", "variable": ["standardised_precipitation_index", "test_for_normality_spi"], "accumulation_period": ["1", "3"], "area": [0.875, -0.875, -0.875, 0.875], "version": "1_0", "product_type": ["ensemble_members"], "dataset_type": "consolidated_dataset", "year": ["2015", "2016"], "month": ["01", "02", "10", "11", "12"]}
