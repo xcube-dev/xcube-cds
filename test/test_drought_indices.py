@@ -25,6 +25,7 @@
 See test_store.py for further documentation.
 """
 
+import datetime
 import unittest
 from test.mocks import get_cds_client
 
@@ -74,7 +75,14 @@ class CDSDroughtIndicesDatasetHandlerTest(unittest.TestCase):
         self.assertEqual((-180.0, -90.0, 180.0, 90.0), descriptor.bbox)
         self.assertEqual(0.25, descriptor.spatial_res)
         self.assertEqual("1940-01-01", descriptor.time_range[0])
-        self.assertEqual("2025-12-31", descriptor.time_range[1])
+        self.assertEqual(
+            (
+                (datetime.datetime.now() - datetime.timedelta(days=90))
+                .replace(day=1)
+                .strftime("%Y-%m-%d")
+            ),
+            descriptor.time_range[1],
+        )
         self.assertEqual("1M", descriptor.time_period)
         self.assertEqual(("time", "lat", "lon"), descriptor.data_vars["spi1"].dims)
 
@@ -85,7 +93,14 @@ class CDSDroughtIndicesDatasetHandlerTest(unittest.TestCase):
         self.assertEqual((-180.0, -90.0, 180.0, 90.0), descriptor.bbox)
         self.assertEqual(0.25, descriptor.spatial_res)
         self.assertEqual("1940-01-01", descriptor.time_range[0])
-        self.assertEqual("2025-12-31", descriptor.time_range[1])
+        self.assertEqual(
+            (
+                (datetime.datetime.now() - datetime.timedelta(days=90))
+                .replace(day=1)
+                .strftime("%Y-%m-%d")
+            ),
+            descriptor.time_range[1],
+        )
         self.assertEqual("1M", descriptor.time_period)
         self.assertEqual(
             ("time", "realization", "lat", "lon"), descriptor.data_vars["spi1"].dims
