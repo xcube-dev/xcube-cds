@@ -19,15 +19,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
 import datetime
 import glob
 import os
 import pathlib
 import zipfile
 
-import numpy as np
-import pandas as pd
 import xarray as xr
 from xcube.core.store import DatasetDescriptor, VariableDescriptor
 from xcube.util.jsonschema import (
@@ -63,7 +60,11 @@ class DroughtIndicesDatasetHandler(CDSDatasetHandler):
         ]
         self._accumulation_periods = [1, 3, 6, 12, 24, 36, 48]
         self._min_date = "1940-01-01"
-        self._max_date = "2025-12-31"
+        self._max_date = (
+            (datetime.datetime.now() - datetime.timedelta(days=90))
+            .replace(day=1)
+            .strftime("%Y-%m-%d")
+        )
         self._bbox = (-180.0, -90.0, 180.0, 90.0)
         self._spatial_res = 0.25
 
