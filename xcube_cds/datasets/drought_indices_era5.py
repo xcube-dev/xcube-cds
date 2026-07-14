@@ -26,8 +26,6 @@ import os
 import pathlib
 import zipfile
 
-import numpy as np
-import pandas as pd
 import xarray as xr
 from xcube.core.store import DatasetDescriptor, VariableDescriptor
 from xcube.util.jsonschema import (
@@ -63,7 +61,11 @@ class DroughtIndicesDatasetHandler(CDSDatasetHandler):
         ]
         self._accumulation_periods = [1, 3, 6, 12, 24, 36, 48]
         self._min_date = "1940-01-01"
-        self._max_date = "2025-12-31"
+        self._max_date = (
+            (datetime.datetime.now() - datetime.timedelta(days=90))
+            .replace(day=1)
+            .strftime("%Y-%m-%d")
+        )
         self._bbox = (-180.0, -90.0, 180.0, 90.0)
         self._spatial_res = 0.25
 
@@ -191,45 +193,22 @@ class DroughtIndicesDatasetHandler(CDSDatasetHandler):
         file_paths = glob.glob(f"{path_temp}/*")
         dss = []
 
-        if cds_api_params["product_type"] == ["reanalysis"]:
-            for var_name in open_params["variable_names"]:
-                for accum_period in open_params["accumulation_periods"]:
-                    pattern = self._get_filepath_pattern(var_name, accum_period)
-                    file_sel = [path for path in file_paths if pattern in path]
-                    file_sel = sorted(file_sel)
-                    ds = xr.open_mfdataset(
-                        file_sel,
-                        engine="netcdf4",
-                        chunks="auto",
-                        combine_attrs="drop_conflicts",
-                    )
-                    ds = ds.assign_coords({"time": ds.time.dt.floor("D")})
-                    assert len(ds.data_vars) == 1
-                    ds_varname = self._get_varname(var_name, accum_period)
-                    ds = ds.rename({list(ds.data_vars.keys())[0]: ds_varname})
-                    dss.append(ds)
-        else:
-            for var_name in open_params["variable_names"]:
-                for accum_period in open_params["accumulation_periods"]:
-                    pattern = self._get_filepath_pattern(var_name, accum_period)
-                    file_sel = [path for path in file_paths if pattern in path]
-                    file_sel = sorted(file_sel)
-                    dss_inner = []
-                    for path in file_sel:
-                        ds = xr.open_dataset(path, engine="netcdf4", chunks="auto")
-                        if "standardised_precipitation" in var_name:
-                            ds = ds.assign_coords({"time": ds.time.dt.floor("D")})
-                        else:
-                            time_axis = ds.time.dt.floor("D")
-                            ds = ds.rename({"time": "realization"})
-                            ds = ds.assign_coords(realization=np.arange(1, 11))
-                            ds = ds.expand_dims(time=time_axis[:1])
-                        dss_inner.append(ds)
-                    ds = xr.concat(dss_inner, "time", combine_attrs="drop_conflicts")
-                    assert len(ds.data_vars) == 1
-                    ds_varname = self._get_varname(var_name, accum_period)
-                    ds = ds.rename({list(ds.data_vars.keys())[0]: ds_varname})
-                    dss.append(ds)
+        for var_name in open_params["variable_names"]:
+            for accum_period in open_params["accumulation_periods"]:
+                pattern = self._get_filepath_pattern(var_name, accum_period)
+                file_sel = [path for path in file_paths if pattern in path]
+                file_sel = sorted(file_sel)
+                ds = xr.open_mfdataset(
+                    file_sel,
+                    engine="netcdf4",
+                    chunks="auto",
+                    combine_attrs="drop_conflicts",
+                )
+                ds = ds.assign_coords({"time": ds.time.dt.floor("D")})
+                assert len(ds.data_vars) == 1
+                ds_varname = self._get_varname(var_name, accum_period)
+                ds = ds.rename({list(ds.data_vars.keys())[0]: ds_varname})
+                dss.append(ds)
         ds_final = xr.merge(dss, join="outer", combine_attrs="drop_conflicts")
         start, end = open_params["time_range"]
         ds_final = ds_final.sel(time=slice(start, end))
